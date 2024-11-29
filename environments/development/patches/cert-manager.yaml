@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+  namespace: infrastructure
+spec:
+  dnsNames:
+    - "dev.home.brettswift.com"
+    - "*.dev.home.brettswift.com"
+  secretName: wildcard-tls 

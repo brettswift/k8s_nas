@@ -51,4 +51,25 @@ kubectl create secret generic vpn-credentials \
     --from-literal=password="$VPN_PASSWORD" \
     --dry-run=client -o yaml | kubectl apply -f -
 
+if [ "$ENVIRONMENT" = "development" ]; then
+    echo "Creating Route53 DNS record for development environment..."
+    # Using AWS CLI to create/update Route53 record
+    aws route53 change-resource-record-sets \
+        --hosted-zone-id "$AWS_HOSTED_ZONE_ID" \
+        --change-batch '{
+            "Changes": [{
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                    "Name": "dev.home.brettswift.com",
+                    "Type": "A",
+                    "AliasTarget": {
+                        "HostedZoneId": "'$AWS_HOSTED_ZONE_ID'",
+                        "DNSName": "home.brettswift.com",
+                        "EvaluateTargetHealth": true
+                    }
+                }
+            }]
+        }'
+fi
+
 echo "Secrets configured successfully!" 

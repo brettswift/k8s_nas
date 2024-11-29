@@ -20,7 +20,11 @@ k8s_nas/
 │   ├── secrets/            # Secret templates
 │   └── storage-classes/    # Storage configurations
 ├── environments/            # Environment-specific configs
-│   └── production/
+│   ├── production/
+│   │   ├── kustomization.yaml
+│   │   ├── values.yaml
+│   │   └── patches/
+│   └── development/
 │       ├── kustomization.yaml
 │       ├── values.yaml
 │       └── patches/
@@ -73,13 +77,13 @@ All configuration is managed in `environments/production/values.yaml`:
 - AWS configuration
 - VPN settings
 
-### Storage
+### Storage Configuration
 
 - Media storage is shared between pods using a PersistentVolume at `/mnt/data`
 - Each application has its own config PVC
 - All media apps can access the shared storage
 
-### SSL/DNS
+### SSL/DNS Configuration
 
 - Uses cert-manager with Route53 DNS validation
 - Wildcard certificate for *.home.brettswift.com
@@ -99,22 +103,22 @@ All configuration is managed in `environments/production/values.yaml`:
 - qBittorrent: Torrent client (VPN protected)
 - Prowlarr: Indexer management
 
-### Infrastructure
+### Infrastructure Components
 
 - nginx-ingress: Ingress controller
 - cert-manager: SSL certificate management
 
-## Accessing Services
+## Service Access
 
 All services are available at their respective paths:
 
-- ArgoCD: https://home.brettswift.com/argocd
-- Homepage: https://home.brettswift.com
-- Jellyfin: https://home.brettswift.com/jellyfin
-- Sonarr: https://home.brettswift.com/sonarr
-- Radarr: https://home.brettswift.com/radarr
-- Prowlarr: https://home.brettswift.com/prowlarr
-- qBittorrent: https://home.brettswift.com/qbittorrent
+- ArgoCD: <https://home.brettswift.com/argocd>
+- Homepage: <https://home.brettswift.com>
+- Jellyfin: <https://home.brettswift.com/jellyfin>
+- Sonarr: <https://home.brettswift.com/sonarr>
+- Radarr: <https://home.brettswift.com/radarr>
+- Prowlarr: <https://home.brettswift.com/prowlarr>
+- qBittorrent: <https://home.brettswift.com/qbittorrent>
 
 ## Troubleshooting
 
@@ -132,7 +136,7 @@ kubectl logs -n <namespace> <pod-name>
 - Storage permissions: Verify PVC bindings
 - SSL certificates: Check cert-manager pods
 
-## Development
+## Development Process
 
 1. Clone this repository
 2. Make changes to relevant files
@@ -145,7 +149,7 @@ kubectl kustomize environments/production
 1. Commit and push changes
 2. ArgoCD will automatically apply updates
 
-## Maintenance
+## System Maintenance
 
 Monitor system health:
 
@@ -158,4 +162,31 @@ kubectl get certificates -n infrastructure
 
 # Monitor storage usage
 kubectl get pv,pvc --all-namespaces
+```
+
+## Environment Setup
+
+### Production Environment
+
+- URL: <https://home.brettswift.com>
+- Full resources
+- Production Let's Encrypt certificates
+
+### Development Environment
+
+- URL: <https://dev.home.brettswift.com>
+- Reduced resources
+- Staging Let's Encrypt certificates
+- Temporary storage
+
+To deploy to development:
+
+```shell
+kubectl apply -k environments/development
+```
+
+To deploy to production:
+
+```shell
+kubectl apply -k environments/production
 ```
