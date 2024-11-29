@@ -6,7 +6,7 @@ metadata:
 spec:
   project: nas
   source:
-    repoURL: https://github.com/yourusername/k8s_nas.git
+    repoURL: https://github.com/brettswift/k8s_nas.git
     targetRevision: HEAD
     path: apps/infrastructure
   destination:

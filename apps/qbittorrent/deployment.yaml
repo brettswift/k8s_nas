@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: qbittorrent
+        vpn-required: "true"
     spec:
       initContainers:
         - name: init-vpn
@@ -61,6 +62,10 @@ spec:
               value: "America/Edmonton"
             - name: WEBUI_PORT
               value: "8080"
+            - name: all_proxy
+              value: "http://gluetun-proxy:8888"
+            - name: ALL_PROXY
+              value: "http://gluetun-proxy:8888"
           volumeMounts:
             - name: config
               mountPath: /config

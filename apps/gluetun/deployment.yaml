@@ -20,6 +20,9 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
+          ports:
+            - containerPort: 8888  # HTTP proxy
+            - containerPort: 8388  # Shadowsocks
           env:
             - name: VPN_SERVICE_PROVIDER
               value: "ipvanish"
@@ -35,14 +38,6 @@ spec:
                 secretKeyRef:
                   name: vpn-credentials
                   key: password
-          ports:
-            - containerPort: 8888  # HTTP proxy
-            - containerPort: 8388  # Shadowsocks
-            - containerPort: 8080  # qBittorrent web
-            - containerPort: 6881  # qBittorrent
-          volumeMounts:
-            - name: gluetun-config
-              mountPath: /gluetun
       volumes:
         - name: gluetun-config
           persistentVolumeClaim:
