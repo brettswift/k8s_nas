@@ -3,11 +3,9 @@ kind: Ingress
 metadata:
   name: bazarr
   namespace: media
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
-    - host: nas.example.com
+    - host: ${INGRESS_HOSTNAME}
       http:
         paths:
           - path: /bazarr

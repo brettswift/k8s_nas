@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - ../../base/config
   - ../../base/namespaces
   - ../../base/storage-classes
   - ../../apps/jellyfin
@@ -13,5 +14,19 @@ resources:
   - ../../apps/qbittorrent
   - ../../apps/gluetun
 
+configMapGenerator:
+  - name: nas-config
+    files:
+      - values.yaml
+
+vars:
+  - name: HOSTNAME
+    objref:
+      kind: ConfigMap
+      name: nas-config
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.network.hostname
+
 patches:
-  - path: patches/resource-limits.yaml 
+  - path: patches/resource-limits.yaml

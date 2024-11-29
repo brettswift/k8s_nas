@@ -3,11 +3,9 @@ kind: Ingress
 metadata:
   name: sonarr
   namespace: media
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
-    - host: nas.example.com
+    - host: ${INGRESS_HOSTNAME}
       http:
         paths:
           - path: /sonarr
@@ -16,4 +14,4 @@ spec:
               service:
                 name: sonarr
                 port:
-                  number: 8989 
+                  number: 8989

@@ -1,0 +1,21 @@
+# Storage Configuration
+storage:
+  path: /mnt/data
+  size: 3500Gi
+  nodeName: k3s-node
+
+# VPN Configuration
+vpn:
+  provider: ipvanish
+  countries: "Canada,United States"
+  proxy:
+    port: 8888
+
+# Network Configuration
+network:
+  hostname: home.brettswift.com
+
+# Common Settings
+timezone: America/Edmonton
+uid: "1000"
+gid: "1000" 

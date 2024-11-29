@@ -3,11 +3,9 @@ kind: Ingress
 metadata:
   name: prowlarr
   namespace: downloads
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
-    - host: nas.example.com
+    - host: ${INGRESS_HOSTNAME}
       http:
         paths:
           - path: /prowlarr
@@ -16,4 +14,4 @@ spec:
               service:
                 name: prowlarr
                 port:
-                  number: 9696 
+                  number: 9696

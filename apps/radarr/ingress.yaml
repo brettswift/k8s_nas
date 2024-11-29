@@ -3,11 +3,9 @@ kind: Ingress
 metadata:
   name: radarr
   namespace: media
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
-    - host: nas.example.com
+    - host: ${INGRESS_HOSTNAME}
       http:
         paths:
           - path: /radarr
@@ -16,4 +14,4 @@ spec:
               service:
                 name: radarr
                 port:
-                  number: 7878 
+                  number: 7878
