@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-dashboard
+  namespace: infrastructure
+  labels:
+    grafana_dashboard: "true"
+data:
+  nginx-ingress.json: |
+    {
+      // Standard Nginx dashboard - shows:
+      // - Request rates
+      // - Error rates
+      // - Latency metrics
+      // - SSL certificate expiry
+      // - Connection stats
+    } 

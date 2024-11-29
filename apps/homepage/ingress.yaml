@@ -1,11 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sonarr
+  name: homepage
   namespace: media
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Accept-Encoding "";
+      proxy_set_header Host $host;
 spec:
   ingressClassName: nginx
   tls:
@@ -16,10 +19,10 @@ spec:
     - host: home.brettswift.com
       http:
         paths:
-          - path: /sonarr(/|$)(.*)
+          - path: /(.*)
             pathType: Prefix
             backend:
               service:
-                name: sonarr
+                name: homepage
                 port:
-                  number: 8989
+                  number: 3000 

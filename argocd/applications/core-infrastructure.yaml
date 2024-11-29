@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-infrastructure
+  namespace: argocd
+spec:
+  project: nas
+  source:
+    repoURL: https://github.com/brettswift/k8s_nas.git
+    targetRevision: HEAD
+    path: apps/core-infrastructure
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infrastructure
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true 

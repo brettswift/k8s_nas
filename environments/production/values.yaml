@@ -1,3 +1,21 @@
+# Network Configuration
+network:
+  hostname: home.brettswift.com
+
+# AWS Configuration
+aws:
+  region: us-east-1
+  hostedZoneId: ${AWS_HOSTED_ZONE_ID}
+
+# SSL Configuration
+ssl:
+  email: ${LETS_ENCRYPT_EMAIL}
+
+# Common Settings
+timezone: America/Edmonton
+uid: "1000"
+gid: "1000"
+
 # Storage Configuration
 storage:
   path: /mnt/data
@@ -10,12 +28,3 @@ vpn:
   countries: "Canada,United States"
   proxy:
     port: 8888
-
-# Network Configuration
-network:
-  hostname: home.brettswift.com
-
-# Common Settings
-timezone: America/Edmonton
-uid: "1000"
-gid: "1000" 

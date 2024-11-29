@@ -1,0 +1,9 @@
+controller:
+  service:
+    type: LoadBalancer
+  config:
+    use-forwarded-headers: "true"
+  metrics:
+    enabled: true
+  extraArgs:
+    enable-ssl-passthrough: "" 

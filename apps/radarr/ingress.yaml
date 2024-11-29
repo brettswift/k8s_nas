@@ -3,12 +3,20 @@ kind: Ingress
 metadata:
   name: radarr
   namespace: media
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: wildcard-tls
+      hosts:
+        - home.brettswift.com
   rules:
-    - host: ${INGRESS_HOSTNAME}
+    - host: home.brettswift.com
       http:
         paths:
-          - path: /radarr
+          - path: /radarr(/|$)(.*)
             pathType: Prefix
             backend:
               service:
