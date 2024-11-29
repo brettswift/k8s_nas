@@ -42,6 +42,27 @@ k8s_nas/
 
 ## Initial Setup
 
+The setup scripts will create and configure:
+
+On the host machine:
+
+- Minikube cluster with required resources
+- Storage directory at `/mnt/data` (production) or `./dev_storage` (development)
+- ArgoCD configuration and port forwarding
+
+In AWS:
+
+- Route53 DNS entries for your domain
+- DNS validation records for Let's Encrypt certificates
+- Development subdomain (dev.home.brettswift.com)
+
+In Kubernetes:
+
+- Required namespaces (media, downloads, infrastructure)
+- Secrets for AWS and VPN credentials
+- Storage volumes and claims
+- ArgoCD applications for deployment
+
 Run the following setup scripts in order:
 
 ```shell
@@ -65,6 +86,50 @@ These scripts will:
 - Create necessary secrets for AWS Route53 and VPN
 - Configure storage directories with proper permissions
 - Deploy all required infrastructure and applications
+
+## Branch Strategy and Deployment
+
+The repository uses two main branches for deployment:
+
+### Main Branch
+
+- Used for production deployments
+- Protected branch - requires PR review
+- Deploys to: <https://home.brettswift.com>
+- ArgoCD Application: `nas-production`
+
+### Dev Branch
+
+- Used for development/testing
+- Deploys to: <https://dev.home.brettswift.com>
+- ArgoCD Application: `nas-development`
+- Features reduced resources and staging certificates
+
+### Workflow
+
+1. Create feature branch from `dev`
+2. Make changes and test locally using kustomize
+3. Push changes and create PR to `dev`
+4. Once merged, ArgoCD automatically deploys to development environment
+5. Test changes in development environment
+6. Create PR from `dev` to `main`
+7. After review and merge, ArgoCD deploys to production
+
+### Testing Changes
+
+Test development changes:
+
+```shell
+kubectl kustomize environments/development
+```
+
+Test production changes:
+
+```shell
+kubectl kustomize environments/production
+```
+
+Both environments can run simultaneously, allowing side-by-side comparison.
 
 ## Configuration
 
