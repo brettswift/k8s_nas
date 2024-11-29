@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gluetun
+  namespace: downloads
+spec:
+  ports:
+    - port: 8888
+      name: proxy
+    - port: 8388
+      name: shadowsocks
+    - port: 8080
+      name: qbit-web
+    - port: 6881
+      name: qbit-data
+  selector:
+    app: gluetun 

@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prowlarr
+  namespace: downloads
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+    - host: nas.example.com
+      http:
+        paths:
+          - path: /prowlarr
+            pathType: Prefix
+            backend:
+              service:
+                name: prowlarr
+                port:
+                  number: 9696 

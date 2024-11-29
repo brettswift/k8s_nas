@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: downloads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      initContainers:
+        - name: init-vpn
+          image: busybox
+          command: ['sh', '-c', 'sysctl -w net.ipv4.conf.all.rp_filter=2']
+          securityContext:
+            privileged: true
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "ipvanish"
+            - name: SERVER_COUNTRIES
+              value: "Canada,United States"
+            - name: OPENVPN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-credentials
+                  key: username
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-credentials
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["wget", "-q", "--spider", "http://google.com"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:libtorrentv1
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Edmonton"
+            - name: WEBUI_PORT
+              value: "8080"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data/torrents
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 20
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-storage 

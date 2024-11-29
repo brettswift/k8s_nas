@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/namespaces
+  - ../../base/storage-classes
+  - ../../apps/jellyfin
+  - ../../apps/sonarr
+  - ../../apps/radarr
+  - ../../apps/prowlarr
+  - ../../apps/bazarr
+  - ../../apps/jellyseerr
+  - ../../apps/qbittorrent
+  - ../../apps/gluetun
+
+patches:
+  - path: patches/resource-limits.yaml 
