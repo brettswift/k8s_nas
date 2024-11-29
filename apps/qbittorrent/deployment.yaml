@@ -43,9 +43,13 @@ spec:
                   key: password
           readinessProbe:
             exec:
-              command: ["wget", "-q", "--spider", "http://google.com"]
+              command: ["/scripts/check-vpn.sh"]
             initialDelaySeconds: 10
             periodSeconds: 10
+            volumeMounts:
+              - name: healthcheck-scripts
+                mountPath: /scripts
+                readOnly: true
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:libtorrentv1
           env:
@@ -62,6 +66,9 @@ spec:
               mountPath: /config
             - name: data
               mountPath: /data/torrents
+            - name: healthcheck-scripts
+              mountPath: /scripts
+              readOnly: true
           startupProbe:
             httpGet:
               path: /
@@ -84,4 +91,8 @@ spec:
             claimName: qbittorrent-config
         - name: data
           persistentVolumeClaim:
-            claimName: data-storage 
+            claimName: data-storage
+        - name: healthcheck-scripts
+          configMap:
+            name: qbittorrent-healthcheck
+            defaultMode: 0555

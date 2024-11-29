@@ -3,9 +3,21 @@ kind: Service
 metadata:
   name: qbittorrent
   namespace: downloads
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
 spec:
   ports:
     - port: 8080
+      name: web
       targetPort: 8080
+    - port: 6881
+      name: bittorrent
+      targetPort: 6881
+      protocol: TCP
+    - port: 6881
+      name: bittorrent-udp
+      targetPort: 6881
+      protocol: UDP
   selector:
     app: qbittorrent 
