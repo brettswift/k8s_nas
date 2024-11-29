@@ -8,4 +8,5 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: /tmp/k8s_nas_dev    # This directory will be in .gitignore 
+    path: dev_storage    # This will be relative to the repo root
+  storageClassName: local-path
