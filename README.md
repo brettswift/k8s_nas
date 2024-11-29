@@ -108,6 +108,7 @@ All configuration is managed in `environments/production/values.yaml`:
 
 All services are available at their respective paths:
 
+- ArgoCD: https://home.brettswift.com/argocd
 - Homepage: https://home.brettswift.com
 - Jellyfin: https://home.brettswift.com/jellyfin
 - Sonarr: https://home.brettswift.com/sonarr
