@@ -38,81 +38,49 @@ k8s_nas/
 
 ## Initial Setup
 
-1. Start minikube with enough resources:
+Run the following setup scripts in order:
 
-    `minikube start --cpus 4 --memory 8192 --disk-size 100g`
+```shell
+# 1. Configure minikube with required resources
+./setup/01_ensure_minikube_setup.sh
 
-2. Enable required addons:
+# 2. Install and configure ArgoCD
+./setup/02_install_argocd.sh
 
-    ```shell
-    minikube addons enable ingress
-    minikube addons enable metrics-server
-    ```
+# 3. Configure AWS Route53 and VPN credentials
+./setup/03_configure_secrets.sh
 
-3. Install ArgoCD:
+# 4. Set up storage directories
+./setup/04_configure_storage.sh
+```
 
-    kubectl create namespace argocd
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+These scripts will:
 
-4. Access ArgoCD:
-
-    # Get the admin password
-    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-
-    # Port forward to access UI
-    kubectl port-forward svc/argocd-server -n argocd 8080:443
-
-5. Create required secrets:
-
-    # AWS Route53 credentials for cert-manager
-    kubectl create secret generic aws-credentials -n infrastructure \
-      --from-literal=access-key-id=YOUR_ACCESS_KEY \
-      --from-literal=secret-access-key=YOUR_SECRET_KEY \
-      --from-literal=region=YOUR_REGION
-
-    # VPN Credentials
-    kubectl create secret generic vpn-credentials -n downloads \
-      --from-literal=username=YOUR_VPN_USER \
-      --from-literal=password=YOUR_VPN_PASS
-
-6. Configure storage:
-
-    # Create media storage directory
-    mkdir -p /mnt/data
-    sudo chown -R 1000:1000 /mnt/data
-
-7. Deploy via ArgoCD:
-
-    # Login to ArgoCD
-    argocd login localhost:8080
-
-    # Add this repository
-    argocd repo add https://github.com/brettswift/k8s_nas.git
-
-    # Create the project
-    kubectl apply -f argocd/projects/nas.yaml
-
-    # Deploy core infrastructure (nginx-ingress, cert-manager)
-    kubectl apply -f argocd/applications/core-infrastructure.yaml
-
-    # Deploy media applications
-    kubectl apply -f argocd/applications/media-apps.yaml
+- Configure minikube with required resources and addons
+- Install and set up ArgoCD
+- Create necessary secrets for AWS Route53 and VPN
+- Configure storage directories with proper permissions
+- Deploy all required infrastructure and applications
 
 ## Configuration
 
 ### Environment Variables
+
 All configuration is managed in `environments/production/values.yaml`:
+
 - Network settings (hostname, ports)
 - Storage paths and sizes
 - AWS configuration
 - VPN settings
 
 ### Storage
+
 - Media storage is shared between pods using a PersistentVolume at `/mnt/data`
 - Each application has its own config PVC
 - All media apps can access the shared storage
 
 ### SSL/DNS
+
 - Uses cert-manager with Route53 DNS validation
 - Wildcard certificate for *.home.brettswift.com
 - Managed by nginx-ingress
@@ -120,22 +88,26 @@ All configuration is managed in `environments/production/values.yaml`:
 ## Applications
 
 ### Media Management
+
 - Sonarr: TV Shows
 - Radarr: Movies
 - Jellyfin: Media Server
 - Bazarr: Subtitles
 
 ### Downloads
+
 - qBittorrent: Torrent client (VPN protected)
 - Prowlarr: Indexer management
 
 ### Infrastructure
+
 - nginx-ingress: Ingress controller
 - cert-manager: SSL certificate management
 
 ## Accessing Services
 
 All services are available at their respective paths:
+
 - Homepage: https://home.brettswift.com
 - Jellyfin: https://home.brettswift.com/jellyfin
 - Sonarr: https://home.brettswift.com/sonarr
@@ -145,18 +117,19 @@ All services are available at their respective paths:
 
 ## Troubleshooting
 
-1. Check pod status:
+Common issues and solutions:
 
-    kubectl get pods -A
+```shell
+# Check pod status
+kubectl get pods -A
 
-2. Check logs:
+# Check logs
+kubectl logs -n <namespace> <pod-name>
+```
 
-    kubectl logs -n <namespace> <pod-name>
-
-3. Common issues:
-   - VPN connectivity: Check qBittorrent pod logs
-   - Storage permissions: Verify PVC bindings
-   - SSL certificates: Check cert-manager pods
+- VPN connectivity: Check qBittorrent pod logs
+- Storage permissions: Verify PVC bindings
+- SSL certificates: Check cert-manager pods
 
 ## Development
 
@@ -164,21 +137,24 @@ All services are available at their respective paths:
 2. Make changes to relevant files
 3. Test changes:
 
-    kubectl kustomize environments/production
+```shell
+kubectl kustomize environments/production
+```
 
-4. Commit and push changes
-5. ArgoCD will automatically apply updates
+1. Commit and push changes
+2. ArgoCD will automatically apply updates
 
 ## Maintenance
 
-1. Monitor ArgoCD sync status:
+Monitor system health:
 
-    argocd app list
+```shell
+# Check ArgoCD sync status
+argocd app list
 
-2. Check certificate status:
+# Check certificate status
+kubectl get certificates -n infrastructure
 
-    kubectl get certificates -n infrastructure
-
-3. Monitor storage usage:
-
-    kubectl get pv,pvc --all-namespaces
+# Monitor storage usage
+kubectl get pv,pvc --all-namespaces
+```
