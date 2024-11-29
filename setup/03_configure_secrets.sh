@@ -26,7 +26,7 @@ prompt_var() {
 # Prompt for AWS credentials if not set
 prompt_var "AWS_ACCESS_KEY_ID" "Enter AWS Access Key ID"
 prompt_var "AWS_SECRET_ACCESS_KEY" "Enter AWS Secret Access Key" true
-prompt_var "AWS_REGION" "Enter AWS Region (e.g., us-east-1)"
+prompt_var "AWS_REGION" "Enter AWS Region (e.g., us-east-2)"
 
 # Prompt for VPN credentials if not set
 prompt_var "VPN_USERNAME" "Enter VPN Username"
