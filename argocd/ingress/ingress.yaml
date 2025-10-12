@@ -14,7 +14,7 @@ spec:
   - host: localhost
     http:
       paths:
-      - path: /argo
+      - path: /argocd
         pathType: Prefix
         backend:
           service:

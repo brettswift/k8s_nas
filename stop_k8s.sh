@@ -25,17 +25,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 fi
 
 if [[ "$OS" == "macos" ]]; then
-    # macOS - kill k3s process
-    if [[ -f .k3s_pid ]]; then
-        K3S_PID=$(cat .k3s_pid)
-        if kill -0 $K3S_PID 2>/dev/null; then
-            echo "Stopping k3s (PID: $K3S_PID)..."
-            kill $K3S_PID
-        fi
-        rm -f .k3s_pid
+    # macOS - stop k3d cluster
+    if k3d cluster list | grep -q "nas-cluster"; then
+        echo "Stopping k3d cluster..."
+        k3d cluster stop nas-cluster
     fi
-    # Also kill any remaining k3s processes
-    pkill -f k3s || true
 else
     # Linux - use systemd
     if systemctl is-active --quiet k3s 2>/dev/null; then

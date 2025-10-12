@@ -32,48 +32,44 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-# Check if k3s is installed
-if ! command -v k3s &> /dev/null; then
-    echo "k3s not found. Installing k3s..."
-    
-    if [[ "$OS" == "macos" ]]; then
-        # macOS - use Homebrew
+# Check if k3d is installed (for macOS) or k3s (for Linux)
+if [[ "$OS" == "macos" ]]; then
+    if ! command -v k3d &> /dev/null; then
+        echo "k3d not found. Installing k3d..."
         if ! command -v brew &> /dev/null; then
             echo "Homebrew not found. Please install Homebrew first:"
             echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
             exit 1
         fi
-        brew install k3s
+        brew install k3d
+    fi
+    
+    # Check if k3d cluster is running
+    if ! k3d cluster list | grep -q "nas-cluster"; then
+        echo "Creating k3d cluster..."
+        k3d cluster create nas-cluster --port "30080:30080@loadbalancer" --port "30443:30443@loadbalancer" --k3s-arg "--disable=traefik@server:0"
+        export KUBECONFIG=$(k3d kubeconfig write nas-cluster)
     else
-        # Linux - use official installer
+        echo "k3d cluster already exists"
+        export KUBECONFIG=$(k3d kubeconfig write nas-cluster)
+    fi
+else
+    # Linux - use k3s
+    if ! command -v k3s &> /dev/null; then
+        echo "k3s not found. Installing k3s..."
         curl -sfL https://get.k3s.io | sh -
-        # Add k3s to PATH
         export PATH=$PATH:/usr/local/bin
         echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
     fi
-fi
-
-# Check if k3s is running
-if ! systemctl is-active --quiet k3s 2>/dev/null && ! pgrep -f k3s >/dev/null; then
-    echo "Starting k3s..."
-    if [[ "$OS" == "macos" ]]; then
-        # macOS - start k3s manually
-        k3s server --write-kubeconfig-mode 644 --disable traefik &
-        K3S_PID=$!
-        echo $K3S_PID > .k3s_pid
-        sleep 10
-        export KUBECONFIG=~/.k3s/kubeconfig.yaml
-    else
-        # Linux - use systemd
+    
+    # Check if k3s is running
+    if ! systemctl is-active --quiet k3s 2>/dev/null; then
+        echo "Starting k3s..."
         sudo systemctl start k3s
         sudo systemctl enable k3s
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-    fi
-else
-    echo "k3s already running"
-    if [[ "$OS" == "macos" ]]; then
-        export KUBECONFIG=~/.k3s/kubeconfig.yaml
     else
+        echo "k3s already running"
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
     fi
 fi
@@ -100,13 +96,8 @@ echo "Setting up ArgoCD admin user..."
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo "ArgoCD admin password: $ARGOCD_PASSWORD"
 
-# Set up port forwarding
-echo "Setting up port forwarding..."
-kubectl port-forward svc/argocd-server -n argocd 8080:443 &
-PORT_FORWARD_PID=$!
-echo $PORT_FORWARD_PID > .port_forward_pid
-
-# Wait for port forward to be ready
+# Wait for ingress to be ready
+echo "Waiting for ingress to be ready..."
 sleep 5
 
 # Set up ArgoCD project
@@ -147,12 +138,11 @@ echo "Waiting for ArgoCD applications to sync..."
 sleep 10
 
 echo "=== Kubernetes Cluster Started Successfully ==="
-echo "ArgoCD is available at: https://localhost:8080"
-echo "Username: admin"
-echo "Password: $ARGOCD_PASSWORD"
+echo "ArgoCD is available at: http://localhost:30080/argocd"
+echo "Username: admin or bswift"
+echo "Password: $ARGOCD_PASSWORD (admin) or 8480 (bswift)"
 echo ""
 echo "ArgoCD is ready with GitOps enabled!"
 echo "Create new apps in argocd/applications/ and they'll auto-sync!"
 echo ""
 echo "To stop the cluster, run: ./stop_k8s.sh"
-echo "Port forward PID: $PORT_FORWARD_PID"
