@@ -7,6 +7,7 @@ spec:
   description: "NAS Media Server Project"
   
   sourceRepos:
+  - 'https://github.com/brettswift/docker-compose-nas.git'
   - 'https://github.com/brettswift/k8s_nas.git'
   
   destinations:
@@ -16,6 +17,12 @@ spec:
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace
+  - group: ''
+    kind: PersistentVolume
+  - group: ''
+    kind: PersistentVolumeClaim
+  - group: ''
+    kind: StorageClass
   - group: 'networking.k8s.io'
     kind: Ingress
   - group: 'networking.k8s.io'
@@ -31,10 +38,28 @@ spec:
   - group: ''
     kind: Deployment
   - group: ''
+    kind: StatefulSet
+  - group: ''
     kind: Pod
   - group: 'apps'
     kind: Deployment
   - group: 'apps'
     kind: StatefulSet
+  - group: 'apps'
+    kind: ReplicaSet
+  - group: 'extensions'
+    kind: Ingress
   - group: 'networking.k8s.io'
     kind: Ingress
+  - group: 'networking.istio.io'
+    kind: VirtualService
+  - group: 'networking.istio.io'
+    kind: Gateway
+  - group: 'networking.istio.io'
+    kind: DestinationRule
+  - group: 'cert-manager.io'
+    kind: Certificate
+  - group: 'cert-manager.io'
+    kind: ClusterIssuer
+  - group: 'cert-manager.io'
+    kind: Issuer

@@ -1,3 +1,0 @@
-# This file exists to test this project without a /mnt/data folder required.  All files downloaded will be served from here. 
-# Delete this after cleaning up the dev stack
-# All other contents of this directory are git-ignored 
