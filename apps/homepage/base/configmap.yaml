@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+data:
+  services.yaml: |
+    - Development:
+        - Demo App:
+            href: http://sample-hello.demo.svc.cluster.local
+            description: Sample Hello World app routed by Istio
+            icon: kubernetes.png
+            server: sample-hello
+            container: sample-hello
+        - ArgoCD:
+            href: https://argocd.argocd.svc.cluster.local
+            description: GitOps deployment platform
+            icon: argocd.png
+            server: argocd
+            container: argocd-server
+    - Media:
+        - Jellyfin:
+            href: http://jellyfin.media.svc.cluster.local
+            description: Media server
+            icon: jellyfin.png
+            server: jellyfin
+            container: jellyfin
+        - Jellyseerr:
+            href: http://jellyseerr.media.svc.cluster.local
+            description: Media requests
+            icon: jellyseerr.png
+            server: jellyseerr
+            container: jellyseerr
+    - System:
+        - Kubernetes Dashboard:
+            href: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+            description: K8s cluster management
+            icon: kubernetes.png
+            server: kubernetes-dashboard
+            container: kubernetes-dashboard
+  settings.yaml: |
+    title: Brett's Home Lab
+    subtitle: Kubernetes Media Server
+    logo: https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/kubernetes.svg
+    favicon: https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/kubernetes.svg
+    background: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80
+    theme: dark
+    color: slate
+    layout: auto
+    language: en
+    timezone: America/Denver
+    units: metric
+    search: true
+    hideVersion: false
+    disableUpdateCheck: false
+    experimental: false
