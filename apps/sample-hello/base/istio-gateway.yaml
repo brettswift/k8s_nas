@@ -38,4 +38,4 @@ spec:
     - destination:
         host: sample-hello.demo.svc.cluster.local
         port:
-          number: 8080
+          number: 80
