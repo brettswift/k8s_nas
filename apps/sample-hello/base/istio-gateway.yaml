@@ -15,8 +15,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "localhost.local"
-    - "home.brettswift.com"
+    - "*"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -28,8 +27,7 @@ metadata:
     app.kubernetes.io/instance: sample-hello
 spec:
   hosts:
-  - "localhost.local"
-  - "home.brettswift.com"
+  - "*"
   gateways:
   - sample-hello-gateway
   http:
