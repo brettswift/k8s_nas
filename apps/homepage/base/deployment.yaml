@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  labels:
+    app: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homepage
+  template:
+    metadata:
+      labels:
+        app: homepage
+    spec:
+      serviceAccountName: homepage
+      containers:
+      - name: homepage
+        image: ghcr.io/gethomepage/homepage:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: UMASK
+          value: "002"
+        - name: HOMEPAGE_ALLOWED_HOSTS
+          value: "localhost:8081,localhost.local,home.brettswift.com"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        - name: logs
+          mountPath: /app/config/logs
+      volumes:
+      - name: config
+        configMap:
+          name: homepage-config
+      - name: logs
+        emptyDir: {}

@@ -1,0 +1,7 @@
+resources:
+- namespace.yaml
+- serviceaccount.yaml
+- deployment.yaml
+- service.yaml
+- configmap.yaml
+- istio-gateway.yaml
