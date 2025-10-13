@@ -10,13 +10,7 @@ spec:
   - 'https://github.com/brettswift/k8s_nas.git'
   
   destinations:
-  - namespace: 'demo'
-    server: https://kubernetes.default.svc
-  - namespace: 'media'
-    server: https://kubernetes.default.svc
-  - namespace: 'homepage'
-    server: https://kubernetes.default.svc
-  - namespace: 'default'
+  - namespace: '*'
     server: https://kubernetes.default.svc
   
   clusterResourceWhitelist:

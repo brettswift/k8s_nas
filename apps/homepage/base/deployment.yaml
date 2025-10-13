@@ -29,12 +29,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /app/config
-        - name: icons
-          mountPath: /app/public/icons
       volumes:
       - name: config
         configMap:
           name: homepage-config
-      - name: icons
-        configMap:
-          name: homepage-icons
