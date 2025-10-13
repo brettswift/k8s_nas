@@ -53,3 +53,14 @@ data:
     hideVersion: false
     disableUpdateCheck: false
     experimental: false
+  kubernetes.yaml: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: homepage-kubernetes
+    data:
+      enabled: true
+      namespace: homepage
+      server: https://kubernetes.default.svc
+      token: ""
+      skipTLSVerify: true
