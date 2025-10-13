@@ -4,3 +4,4 @@ metadata:
   name: demo
   labels:
     istio-injection: enabled
+

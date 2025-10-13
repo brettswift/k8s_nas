@@ -130,3 +130,4 @@ echo "To enable sidecar injection for a namespace:"
 echo "  kubectl label namespace <namespace> istio-injection=enabled"
 echo ""
 echo "Istio ingress gateway is available on NodePort 80/443"
+

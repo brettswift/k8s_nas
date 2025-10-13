@@ -64,3 +64,4 @@ if [[ "$HTTP_CODE" == "200" ]]; then
 else
   echo "Login verification returned HTTP $HTTP_CODE for $USER_NAME (check logs)"
 fi
+
