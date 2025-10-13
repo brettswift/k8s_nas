@@ -6,9 +6,9 @@ metadata:
 spec:
   project: nas
   source:
-    repoURL: https://github.com/brettswift/brettswift.git
+    repoURL: https://github.com/brettswift/k8s_nas.git
     targetRevision: feat/istio_argo
-    path: bs-mediaserver-projects/k8s_nas/apps/sample-hello/overlays/dev
+    path: apps/sample-hello/overlays/dev
   destination:
     server: https://kubernetes.default.svc
     namespace: default
