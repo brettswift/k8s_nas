@@ -34,6 +34,8 @@ spec:
   - match:
     - uri:
         prefix: /demo
+    rewrite:
+      uri: /
     route:
     - destination:
         host: sample-hello.demo.svc.cluster.local
