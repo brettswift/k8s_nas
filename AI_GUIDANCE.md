@@ -1,0 +1,176 @@
+# AI Guidance for Kubernetes NAS Project
+
+## Project Overview
+
+This project migrates a Docker Compose-based media server setup to Kubernetes with ArgoCD for GitOps deployment. The goal is to create a local development environment that mirrors production infrastructure.
+
+## Current State
+
+### What's Working
+- ✅ k3s cluster is running locally
+- ✅ ArgoCD is installed and accessible via port forwarding
+- ✅ Basic Kubernetes infrastructure is in place
+- ✅ Git repository structure is set up with ArgoCD applications
+
+### What's Broken
+- ❌ **ArgoCD authentication is completely broken** - no users can log in
+- ❌ Ingress configuration has path rewriting issues
+- ❌ User management configuration is inconsistent
+
+## Key Decisions Made
+
+### 1. Local Development Setup
+- **k3s** chosen over minikube for lighter weight and better production parity
+- **ArgoCD** for GitOps instead of manual kubectl deployments
+- **Port forwarding** as primary access method (ingress has issues)
+
+### 2. Authentication Issues
+- Tried multiple approaches to fix ArgoCD login:
+  - Setting passwords in `argocd-secret`
+  - Setting passwords in `argocd-cm` configmap
+  - Using bcrypt hashes for passwords
+  - Both approaches failed - users get 401 Unauthorized
+
+### 3. Current Authentication Configuration
+```yaml
+# argocd-rbac-cm
+policy.csv: |
+  p, role:admin, applications, *, */*, allow
+  p, role:admin, clusters, *, *, allow
+  p, role:admin, repositories, *, *, allow
+  g, admin, role:admin
+  g, bswift, role:admin
+
+# argocd-cm (attempted)
+users.admin.password: $2a$10$rRyBsGSHK6.ucBf3StsONe2BZ8F8eq5kFNe2r0u4ubUiYvczLz2Ca
+users.bswift.password: $2a$10$rRyBsGSHK6.ucBf3StsONe2BZ8F8eq5kFNe2r0u4ubUiYvczLz2Ca
+
+# argocd-secret (current)
+admin.password: 8480
+```
+
+## Supporting Scripts
+
+### `start_k8s.sh`
+- Main setup script that installs k3s, ArgoCD, and required plugins
+- Handles both macOS (k3d) and Linux (k3s) environments
+- Creates ArgoCD users and configures RBAC
+
+### `local-argocd-access.sh`
+- Sets up port forwarding to ArgoCD
+- Provides login credentials
+- Handles cleanup of port forwards
+
+### `k8s_plugins.sh`
+- Installs essential Kubernetes plugins (kubectl, helm, etc.)
+
+## Local Testing Process
+
+### 1. Start the Environment
+```bash
+./start_k8s.sh
+```
+
+### 2. Access ArgoCD
+```bash
+./local-argocd-access.sh
+```
+- Opens https://localhost:8080
+- **CRITICAL**: Login currently fails with 401 Unauthorized
+
+### 3. Expected Workflow
+1. Login to ArgoCD dashboard
+2. Connect Git repository
+3. Deploy applications via ArgoCD
+4. Monitor deployments in UI
+
+## Critical Issues to Fix
+
+### 1. ArgoCD Authentication (PRIORITY 1)
+- **Problem**: No users can authenticate despite multiple configuration attempts
+- **Symptoms**: 401 Unauthorized on all login attempts
+- **Attempted Solutions**:
+  - Password in secret vs configmap
+  - Different password formats
+  - bcrypt hashing
+  - User creation in RBAC
+- **Next Steps**: Need to debug ArgoCD authentication mechanism
+
+### 2. Ingress Configuration
+- **Problem**: Path rewriting issues with `/argocd` prefix
+- **Symptoms**: Assets load incorrectly, white screen
+- **Workaround**: Using port forwarding instead
+
+## File Structure
+
+```
+k8s_nas/
+├── start_k8s.sh                 # Main setup script
+├── local-argocd-access.sh       # ArgoCD access helper
+├── k8s_plugins.sh              # Plugin installer
+├── argocd/                     # ArgoCD configuration
+│   ├── applications/           # ArgoCD app definitions
+│   ├── ingress/               # Ingress configuration
+│   └── projects/              # ArgoCD projects
+├── apps/                      # Application definitions
+│   ├── core-infrastructure/   # Base services
+│   ├── media-services/        # Media server apps
+│   └── monitoring/            # Observability stack
+└── environments/              # Environment-specific configs
+    ├── dev/
+    └── prod/
+```
+
+## Next Steps for GPT
+
+1. **Fix ArgoCD Authentication**
+   - Debug why users can't authenticate
+   - Check ArgoCD server logs for specific errors
+   - Verify secret/configmap configuration
+   - Test with ArgoCD CLI if needed
+
+2. **Complete Service Migration**
+   - Migrate Docker Compose services to Kubernetes manifests
+   - Set up proper ingress for production access
+   - Configure persistent volumes for data
+
+3. **Production Readiness**
+   - Decide between Istio and Traefik for routing
+   - Set up proper TLS certificates
+   - Configure monitoring and logging
+
+## Environment Variables
+
+```bash
+# ArgoCD Configuration
+ARGOCD_ADMIN_PASSWORD=8480
+ARGOCD_BSWIFT_PASSWORD=8480
+
+# Git Configuration
+GIT_REPO_URL=https://github.com/brettswift/brettswift
+GIT_BRANCH=feat/istio_argo
+```
+
+## Debugging Commands
+
+```bash
+# Check ArgoCD status
+kubectl get pods -n argocd
+kubectl logs deployment/argocd-server -n argocd
+
+# Check authentication config
+kubectl get configmap argocd-cm -n argocd -o yaml
+kubectl get configmap argocd-rbac-cm -n argocd -o yaml
+kubectl get secret argocd-secret -n argocd -o yaml
+
+# Test port forwarding
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+## Notes for GPT
+
+- The user is extremely frustrated with the authentication issues
+- Multiple attempts have been made to fix login - all failed
+- Focus on getting basic ArgoCD login working before proceeding
+- The project structure is sound, but authentication is blocking progress
+- Use the existing scripts as a foundation, don't rebuild from scratch

@@ -1,13 +1,13 @@
 # Production Server Bootstrap Guide
 
-This guide covers setting up a production server with k3s + ArgoCD for GitOps deployment.
+This guide covers setting up a production server with k3s + ArgoCD for GitOps deployment and mirrors the local setup used for development. Follow these steps for localhost first, then apply the same to your target host (home.brettswift.com).
 
 ## Prerequisites
 
 - Clean server (Ubuntu/Pop!_OS recommended)
 - Root/sudo access
 - Internet connectivity
-- GitHub repository access
+- GitHub repository access (the repo is private)
 
 ## 1. Server Setup
 
@@ -39,12 +39,16 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ## 2. Clone Repository
 
 ```bash
-# Clone this repository
-git clone https://github.com/brettswift/k8s_nas.git
-cd k8s_nas
+# Clone monorepo (private)
+# Replace with your Git URL if different
+GIT_URL=https://github.com/brettswift/brettswift.git
+BRANCH=feat/istio_argo
+
+git clone -b "$BRANCH" "$GIT_URL" bswift
+cd bswift/bs-mediaserver-projects/k8s_nas
 
 # Make scripts executable
-chmod +x start_k8s.sh stop_k8s.sh k8s_plugins.sh
+chmod +x start_k8s.sh stop_k8s.sh k8s_plugins.sh scripts/argocd-local-user.sh
 ```
 
 ## 3. Install Kubernetes Plugins
@@ -54,11 +58,11 @@ chmod +x start_k8s.sh stop_k8s.sh k8s_plugins.sh
 ./k8s_plugins.sh
 ```
 
-## 4. Install ArgoCD
+## 4. Install ArgoCD (Local and Prod are the same)
 
 ```bash
 # Create ArgoCD namespace
-kubectl create namespace argocd
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
 # Install ArgoCD
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -67,76 +71,78 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 ```
 
-## 5. Configure ArgoCD
+## 5. Configure ArgoCD Access to Private Git (CRITICAL)
 
-### Set up ArgoCD project
+Your ArgoCD Applications (root-app, argocd-ingress, etc.) point to a private repo. Without credentials, you will see:
+
+- "failed to list refs: authentication required: Repository not found"
+
+Two supported options are below. Pick one.
+
+### Option A: HTTPS with GitHub Token (PAT)
+
 ```bash
-kubectl apply -f argocd/projects/nas.yaml
-```
+# 1) Create a secret with username + PAT (token)
+#    - username can be anything non-empty for PAT
+#    - token must have repo:read on the private repo
+kubectl -n argocd create secret generic repo-github-pat \
+  --from-literal=username=bswift \
+  --from-literal=password="${GITHUB_TOKEN}"
 
-### Configure GitHub access (if using private repos)
-```bash
-# Create GitHub token secret
-kubectl create secret generic github-token \
-  --from-literal=token=YOUR_GITHUB_TOKEN \
-  -n argocd
-
-# Or use SSH key
-kubectl create secret generic github-ssh \
-  --from-file=sshPrivateKey=~/.ssh/id_rsa \
-  -n argocd
-```
-
-### Set up ArgoCD ingress
-```bash
-kubectl apply -f argocd/applications/argocd-ingress.yaml
-```
-
-## 6. Configure DNS and SSL
-
-### Update ingress for your domain
-Edit `argocd/ingress/ingress.yaml`:
-```yaml
-spec:
-  rules:
-  - host: your-domain.com  # Change from localhost
-    http:
-      paths:
-      - path: /argo
-        pathType: Prefix
-        backend:
-          service:
-            name: argocd-server
-            port:
-              number: 443
-```
-
-### Set up cert-manager for SSL
-```bash
-# Create cluster issuer
-kubectl apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
+# 2) Register the repository in ArgoCD using a Repository CR
+cat <<'EOF' | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Repository
 metadata:
-  name: letsencrypt-prod
+  name: brettswift-monorepo
+  namespace: argocd
 spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: your-email@example.com
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
+  repo: https://github.com/brettswift/brettswift.git
+  type: git
+  usernameSecret:
+    name: repo-github-pat
+    key: username
+  passwordSecret:
+    name: repo-github-pat
+    key: password
 EOF
 ```
 
-## 7. Set up App-of-Apps Pattern
+### Option B: SSH with Deploy Key
 
-### Create root application
 ```bash
-kubectl apply -f - <<EOF
+# 1) Create secret with private key (no passphrase) and known_hosts (recommended)
+ssh-keyscan github.com > known_hosts
+kubectl -n argocd create secret generic repo-github-ssh \
+  --from-file=sshPrivateKey=~/.ssh/id_rsa \
+  --from-file=known_hosts=known_hosts
+
+# 2) Register repository in ArgoCD
+cat <<'EOF' | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Repository
+metadata:
+  name: brettswift-monorepo-ssh
+  namespace: argocd
+spec:
+  repo: git@github.com:brettswift/brettswift.git
+  type: git
+  sshPrivateKeySecret:
+    name: repo-github-ssh
+    key: sshPrivateKey
+  knownHosts: |
+$(sed 's/^/    /' known_hosts)
+EOF
+```
+
+> After applying either option, ArgoCD can fetch any path within the repo. The app sources in this project use paths under `bs-mediaserver-projects/k8s_nas`.
+
+## 6. App-of-Apps (Root Application)
+
+This repo follows an app-of-apps pattern (inspired by `argocd-cts-umb-app-of-apps`). The root app points to `argocd/applications/` in this monorepo.
+
+```bash
+cat <<'EOF' | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -145,9 +151,9 @@ metadata:
 spec:
   project: nas
   source:
-    repoURL: https://github.com/brettswift/k8s_nas.git
-    targetRevision: HEAD
-    path: argocd/applications
+    repoURL: https://github.com/brettswift/brettswift.git   # or ssh URL
+    targetRevision: HEAD                                    # or a branch, e.g. feat/istio_argo
+    path: bs-mediaserver-projects/k8s_nas/argocd/applications
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -160,87 +166,178 @@ spec:
 EOF
 ```
 
-## 8. Access ArgoCD
+## 7. Ingress (Local Parity)
 
-### Get admin password
+- Local: expose ArgoCD at `http://localhost/argocd` (via NGINX Ingress). For dev, you can also use the helper script `./local-argocd-access.sh` (port-forward) while iterating.
+- Prod: expose at `https://home.brettswift.com/argocd` (update host in the ingress and configure cert-manager).
+
+If health flips to Unknown, verify:
+- Ingress points to `argocd-server` service over HTTP (backend-protocol: HTTP).
+- `argocd-server` service targets port 8080.
+- NGINX controller is Running and has no errors.
+
+## 8. Create Local Users (admin/bswift)
+
+Use the provided script to set a local ArgoCD user with a bcrypt password and restart the server:
+
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+# Example: set admin to password 8480
+./scripts/argocd-local-user.sh admin 8480
+
+# Example: create/enable bswift user with password 8480
+./scripts/argocd-local-user.sh bswift 8480
 ```
 
-### Access dashboard
-- URL: `https://your-domain.com/argo`
-- Username: `admin`
-- Password: (from above command)
+## 9. Sample App + Environments
 
-## 9. GitOps Workflow
+Create a minimal app and env overlays to validate GitOps flow.
 
-Once set up, the workflow is:
-
-1. **Create application manifest** in `argocd/applications/`
-2. **Commit and push** to Git
-3. **ArgoCD automatically syncs** the new application
-
-### Example: Adding a new app
 ```bash
-# Create new application
-cat > argocd/applications/my-app.yaml <<EOF
+# App base
+mkdir -p apps/sample-hello/base
+cat > apps/sample-hello/base/deployment.yaml <<'YAML'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-hello
+  template:
+    metadata:
+      labels:
+        app: sample-hello
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/nginxinc/nginx-unprivileged:alpine
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh","-c"]
+        args: ["echo 'hello from $(ENV_NAME)' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        env:
+        - name: ENV_NAME
+          value: base
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-hello
+spec:
+  selector:
+    app: sample-hello
+  ports:
+  - port: 80
+    targetPort: 8080
+YAML
+
+# Kustomize base
+cat > apps/sample-hello/base/kustomization.yaml <<'YAML'
+resources:
+- deployment.yaml
+YAML
+
+# Environments (overlays)
+mkdir -p apps/sample-hello/overlays/dev apps/sample-hello/overlays/prod
+cat > apps/sample-hello/overlays/dev/kustomization.yaml <<'YAML'
+resources:
+- ../../base
+patches:
+- target:
+    kind: Deployment
+    name: sample-hello
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: dev
+YAML
+
+cat > apps/sample-hello/overlays/prod/kustomization.yaml <<'YAML'
+resources:
+- ../../base
+patches:
+- target:
+    kind: Deployment
+    name: sample-hello
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: prod
+YAML
+```
+
+Create an ArgoCD Application for the sample app (dev overlay):
+
+```bash
+cat <<'EOF' | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: my-app
+  name: sample-hello-dev
   namespace: argocd
 spec:
   project: nas
   source:
-    repoURL: https://github.com/brettswift/k8s_nas.git
+    repoURL: https://github.com/brettswift/brettswift.git
     targetRevision: HEAD
-    path: apps/my-app
+    path: bs-mediaserver-projects/k8s_nas/apps/sample-hello/overlays/dev
   destination:
     server: https://kubernetes.default.svc
-    namespace: my-app
+    namespace: default
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
 EOF
+```
 
+## 10. Access ArgoCD
+
+### Get admin password (if using the initial secret)
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+```
+
+### Access dashboard
+
+- Local URL: `http://localhost/argocd` (via ingress) or `https://localhost:8080` (via port-forward)
+- Username: `admin`
+- Password: as configured with `scripts/argocd-local-user.sh` (e.g., 8480) or the initial secret
+
+## 11. GitOps Workflow
+
+Once set up, the workflow is:
+
+1. **Create application manifest** in `argocd/applications/`
+2. **Commit and push** to your branch (e.g., `feat/istio_argo`)
+3. **ArgoCD automatically syncs** the new application
+
+### Example: Adding a new app
+
+```bash
 # Commit and push
-git add argocd/applications/my-app.yaml
-git commit -m "Add my-app application"
-git push origin main
+git add apps/sample-hello argocd/applications/sample-hello-dev.yaml
+git commit -m "Add sample-hello dev application"
+git push origin "$BRANCH"
 ```
 
-## 10. Monitoring and Maintenance
+## 12. Troubleshooting
 
-### Check ArgoCD status
-```bash
-kubectl get applications -n argocd
-kubectl get pods -n argocd
-```
+- **Repository not found / authentication required**:
+  - Ensure you created a Repository CR pointing to the monorepo.
+  - Ensure credentials secret (PAT or SSH key) exists and names/keys match the CR.
+  - Verify ArgoCD can reach GitHub (no firewall/DNS issues).
+- **Ingress Unknown/Unhealthy**:
+  - Confirm annotations: `nginx.ingress.kubernetes.io/backend-protocol: HTTP` and regex rewrite.
+  - Confirm `argocd-server` service targets port 8080.
+  - Check NGINX ingress controller logs.
+- **Login fails**:
+  - Use `./scripts/argocd-local-user.sh admin 8480` to forcibly reset the local admin password.
 
-### View logs
-```bash
-kubectl logs -n argocd deployment/argocd-server
-kubectl logs -n argocd deployment/argocd-application-controller
-```
+## 13. Notes
 
-### Update ArgoCD
-```bash
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-```
-
-## Security Considerations
-
-- Use HTTPS for ArgoCD access
-- Rotate admin password regularly
-- Use RBAC for team access
-- Keep ArgoCD updated
-- Monitor for security vulnerabilities
-
-## Troubleshooting
-
-### Common issues:
-- **ArgoCD not syncing**: Check GitHub token/SSH key
-- **SSL issues**: Verify cert-manager and DNS
-- **Ingress not working**: Check NGINX controller status
-- **Applications failing**: Check resource limits and permissions
+- Pattern inspired by `argocd-cts-umb-app-of-apps` (AWS), adapted for local + home lab (`home.brettswift.com`).
+- Local testing should use the same manifests/structure used in prod for parity.
