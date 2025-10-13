@@ -9,7 +9,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
     description: "Root application for k8s_nas ApplicationSets pattern"
 spec:
-  project: nas
+  project: default
   source:
     repoURL: https://github.com/brettswift/k8s_nas.git
     path: argocd/applicationsets
