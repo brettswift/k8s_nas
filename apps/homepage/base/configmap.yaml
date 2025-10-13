@@ -64,3 +64,6 @@ data:
       server: https://kubernetes.default.svc
       token: ""
       skipTLSVerify: true
+  docker.yaml: |
+    version: "3.8"
+    services: {}
