@@ -7,9 +7,9 @@ spec:
   project: nas
   
   source:
-    repoURL: https://github.com/brettswift/k8s_nas.git
-    targetRevision: HEAD
-    path: argocd/ingress
+    repoURL: https://github.com/brettswift/brettswift.git
+    targetRevision: feat/istio_argo
+    path: bs-mediaserver-projects/k8s_nas/argocd/ingress
   
   destination:
     server: https://kubernetes.default.svc
