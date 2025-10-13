@@ -1,0 +1,4 @@
+resources:
+- ../applications/argocd-ingress.yaml
+- ../applications/sample-hello-dev.yaml
+
