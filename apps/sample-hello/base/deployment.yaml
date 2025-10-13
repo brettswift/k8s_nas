@@ -18,7 +18,7 @@ spec:
         ports:
         - containerPort: 8080
         command: ["/bin/sh","-c"]
-        args: ["echo 'hello from $(ENV_NAME)' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        args: ["echo 'hello from $(ENV_NAME)' > /tmp/index.html && cp /tmp/index.html /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
         env:
         - name: ENV_NAME
           value: base
