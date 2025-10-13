@@ -1,0 +1,3 @@
+# ArgoCD manages itself via ApplicationSets
+# This is a placeholder for future ArgoCD configuration
+resources: []

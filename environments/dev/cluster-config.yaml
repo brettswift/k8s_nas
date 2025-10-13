@@ -1,0 +1,23 @@
+# Development environment configuration
+# This cluster runs on local laptop with minimal resources
+
+cluster:
+  name: local-cluster
+  environment: dev
+  region: local
+  cloud-provider: local
+
+# Default service labels for dev environment
+defaultLabels:
+  infrastructure-enabled: "true"
+  sample-hello-enabled: "true"
+  # Media services disabled by default in dev
+  jellyfin-enabled: "false"
+  radarr-enabled: "false"
+  sonarr-enabled: "false"
+
+# Resource limits for dev environment
+resources:
+  cpu: "500m"
+  memory: "512Mi"
+  replicas: 1

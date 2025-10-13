@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: sample-hello
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+    argocd.argoproj.io/sync-options: RequireSyncOrder=true
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          sample-hello-enabled: "true"
+  template:
+    metadata:
+      name: "sample-hello-{{name}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "20"
+        argocd.argoproj.io/sync-options: RequireSyncOrder=true
+      labels:
+        environment: "{{metadata.labels.environment}}"
+        type: "application"
+        category: "demo"
+    spec:
+      project: nas
+      source:
+        repoURL: https://github.com/brettswift/k8s_nas.git
+        targetRevision: dev
+        path: apps/sample-hello/overlays/dev
+      destination:
+        server: "{{server}}"
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
