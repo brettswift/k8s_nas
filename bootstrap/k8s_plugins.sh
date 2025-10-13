@@ -42,34 +42,12 @@ fi
 
 # Add Helm repositories
 echo "Adding Helm repositories..."
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo add cert-manager https://charts.jetstack.io
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 
-# Install NGINX Ingress Controller (since we disabled Traefik in k3s)
-echo "Installing NGINX Ingress Controller..."
-if ! kubectl get namespace ingress-nginx &> /dev/null; then
-    kubectl create namespace ingress-nginx
-fi
-
-if ! helm list -n ingress-nginx | grep -q ingress-nginx; then
-    helm install ingress-nginx ingress-nginx/ingress-nginx \
-        --namespace ingress-nginx \
-        --set controller.service.type=NodePort \
-        --set controller.service.nodePorts.http=30080 \
-        --set controller.service.nodePorts.https=30443
-else
-    echo "NGINX Ingress Controller already installed"
-fi
-
-# Wait for ingress controller to be ready
-echo "Waiting for NGINX Ingress Controller to be ready..."
-kubectl wait --namespace ingress-nginx \
-    --for=condition=ready pod \
-    --selector=app.kubernetes.io/component=controller \
-    --timeout=300s
+# Note: NGINX Ingress Controller removed - using Istio for ingress instead
 
 # Install cert-manager
 echo "Installing cert-manager..."
@@ -128,7 +106,8 @@ kubectl wait --namespace istio-system \
 
 echo "=== Kubernetes Plugins Installation Complete ==="
 echo "Installed components:"
-echo "- NGINX Ingress Controller (port 30080/30443)"
 echo "- cert-manager"
 echo "- Istio (base, istiod, ingress-gateway)"
 echo "- Helm repositories updated"
+echo ""
+echo "Note: NGINX Ingress Controller removed - using Istio for ingress"
