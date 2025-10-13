@@ -54,16 +54,11 @@ data:
     disableUpdateCheck: false
     experimental: false
   kubernetes.yaml: |
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: homepage-kubernetes
-    data:
-      enabled: true
-      namespace: homepage
-      server: https://kubernetes.default.svc
-      token: ""
-      skipTLSVerify: true
+    enabled: true
+    namespace: homepage
+    server: https://kubernetes.default.svc
+    token: ""
+    skipTLSVerify: true
   docker.yaml: |
     version: "3.8"
     services: {}
@@ -85,3 +80,5 @@ data:
     - Entertainment:
         - YouTube:
             href: https://youtube.com/
+  proxmox.yaml: |
+    enabled: false
