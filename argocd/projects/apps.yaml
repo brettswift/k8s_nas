@@ -18,6 +18,10 @@ spec:
     kind: Namespace
   - group: 'networking.k8s.io'
     kind: Ingress
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding
   
   namespaceResourceWhitelist:
   - group: ''
@@ -26,6 +30,8 @@ spec:
     kind: Secret
   - group: ''
     kind: Service
+  - group: ''
+    kind: ServiceAccount
   - group: ''
     kind: Deployment
   - group: 'apps'
