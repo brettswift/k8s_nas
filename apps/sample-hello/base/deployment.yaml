@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-hello
+  template:
+    metadata:
+      labels:
+        app: sample-hello
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/nginxinc/nginx-unprivileged:alpine
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh","-c"]
+        args: ["echo 'hello from $(ENV_NAME)' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        env:
+        - name: ENV_NAME
+          value: base
+

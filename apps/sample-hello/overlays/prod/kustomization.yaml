@@ -1,0 +1,11 @@
+resources:
+- ../../base
+patches:
+- target:
+    kind: Deployment
+    name: sample-hello
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: prod
+

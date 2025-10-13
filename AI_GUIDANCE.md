@@ -1,3 +1,15 @@
+# General behaviour
+
+Use single-turn, non-stop execution. Treat any chat message as an end-of-turn; therefore:
+
+- Execute end-to-end within one turn: run a command, read output, decide next command, run it, re-check, loop, and only send a final message when the task completes or is truly blocked.
+- Do not say "I’ll check in X seconds" or ask for approvals mid-task. Embed polling/retries/timeouts inside the turn.
+- When long waits are needed, launch bounded background watchers and send ntfy updates for milestones (e.g., Synced/Healthy); still return only after the objective is met or a hard error occurs.
+- Prefer small, sequential commands (one action per execution step) while making decisions in-between based on stdout/stderr/exit codes.
+- Exit conditions: send one final summary (and ntfy) when all subtasks are done, or a hard blocker remains after reasonable automated remediation.
+- Idempotence & safety: write idempotent scripts; use `set -euo pipefail`; never echo secrets; put tokens into dotfiles or Kubernetes Secrets; never commit secrets.
+- Logging/commits: amend commits with concise results (what works/what doesn’t) per the repo convention; record root causes when found.
+
 # AI Guidance for Kubernetes NAS Project
 
 ## Project Overview
