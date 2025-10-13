@@ -16,4 +16,4 @@ spec:
           service:
             name: sample-hello
             port:
-              number: 8080
+              number: 80
