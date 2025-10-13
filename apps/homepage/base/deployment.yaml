@@ -26,6 +26,8 @@ spec:
           value: "1000"
         - name: UMASK
           value: "002"
+        - name: HOMEPAGE_ALLOWED_HOSTS
+          value: "localhost:8081,localhost.local,home.brettswift.com"
         volumeMounts:
         - name: config
           mountPath: /app/config
