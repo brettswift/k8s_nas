@@ -9,13 +9,13 @@ metadata:
 spec:
   tls:
   - hosts:
-    - home.brettswift.com
+    - argocd.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
-  - host: home.brettswift.com
+  - host: argocd.home.brettswift.com
     http:
       paths:
-      - path: /argocd
+      - path: /
         pathType: Prefix
         backend:
           service:
