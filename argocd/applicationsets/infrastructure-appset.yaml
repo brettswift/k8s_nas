@@ -30,7 +30,7 @@ spec:
         type: "infrastructure"
         category: "core"
     spec:
-      project: nas
+      project: infrastructure
       source:
         repoURL: https://github.com/brettswift/k8s_nas.git
         targetRevision: dev

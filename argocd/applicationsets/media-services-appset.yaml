@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: sample-hello
+  name: media-services
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "20"
+    argocd.argoproj.io/sync-wave: "30"
     argocd.argoproj.io/sync-options: RequireSyncOrder=true
 spec:
   generators:
@@ -16,28 +16,28 @@ spec:
         server: https://kubernetes.default.svc
         environment: dev
         region: local
-        sample-hello-enabled: "true"
+        media-services-enabled: "true"
   template:
     metadata:
-      name: "sample-hello-{{name}}"
+      name: "media-services-{{name}}"
       finalizers:
         - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "20"
+        argocd.argoproj.io/sync-wave: "30"
         argocd.argoproj.io/sync-options: RequireSyncOrder=true
       labels:
         environment: "{{environment}}"
         type: "application"
-        category: "demo"
+        category: "media"
     spec:
       project: apps
       source:
         repoURL: https://github.com/brettswift/k8s_nas.git
         targetRevision: dev
-        path: apps/sample-hello/overlays/dev
+        path: apps/media-services
       destination:
         server: "{{server}}"
-        namespace: demo
+        namespace: media
       syncPolicy:
         automated:
           prune: true
