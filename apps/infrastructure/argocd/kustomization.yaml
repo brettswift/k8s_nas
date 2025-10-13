@@ -1,0 +1,3 @@
+# ArgoCD Istio configuration
+resources:
+- istio-gateway.yaml

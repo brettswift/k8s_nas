@@ -4,6 +4,43 @@ set -euo pipefail
 # OS-agnostic Kubernetes setup script using k3s
 # Supports macOS, Linux, and Pop!_OS
 
+# Parse command line arguments
+BOOTSTRAP=false
+BOOTSTRAP_ISTIO=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --bootstrap)
+            BOOTSTRAP=true
+            shift
+            ;;
+        --bootstrap-istio)
+            BOOTSTRAP=true
+            BOOTSTRAP_ISTIO=true
+            shift
+            ;;
+        --help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --bootstrap        Run bootstrap after cluster startup"
+            echo "  --bootstrap-istio  Run bootstrap with Istio installation"
+            echo "  --help            Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  $0                    # Start cluster only"
+            echo "  $0 --bootstrap       # Start cluster and run bootstrap"
+            echo "  $0 --bootstrap-istio # Start cluster and bootstrap with Istio"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 echo "=== Starting Kubernetes Cluster (k3s) ==="
 
 # Detect OS
@@ -78,9 +115,11 @@ fi
 echo "Waiting for k3s to be ready..."
 kubectl wait --for=condition=Ready nodes --all --timeout=300s
 
-# Install required plugins
-echo "Installing Kubernetes plugins..."
-./k8s_plugins.sh
+# Install required plugins (if not using bootstrap)
+if [[ "$BOOTSTRAP" == "false" ]]; then
+    echo "Installing Kubernetes plugins..."
+    ./bootstrap/k8s_plugins.sh
+fi
 
 echo "Installing ArgoCD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
@@ -100,49 +139,34 @@ echo "ArgoCD admin password: $ARGOCD_PASSWORD"
 echo "Waiting for ingress to be ready..."
 sleep 5
 
-# Set up ArgoCD project
-echo "Setting up ArgoCD project..."
-kubectl apply -f argocd/projects/nas.yaml
+# Set up ArgoCD projects
+echo "Setting up ArgoCD projects..."
+kubectl apply -f argocd/projects/
 
-# Apply the ArgoCD ingress application
-echo "Setting up ArgoCD ingress..."
-kubectl apply -f argocd/applications/argocd-ingress.yaml
-
-# Set up app-of-apps pattern for GitOps
-echo "Setting up app-of-apps pattern..."
-kubectl apply -f - <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: root-app
-  namespace: argocd
-spec:
-  project: nas
-  source:
-    repoURL: https://github.com/brettswift/k8s_nas.git
-    targetRevision: HEAD
-    path: argocd/applications
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-    - CreateNamespace=true
-EOF
+# Set up ApplicationSets pattern for GitOps
+echo "Setting up ApplicationSets pattern..."
+kubectl apply -f root-application.yaml
 
 # Wait for the applications to be synced
 echo "Waiting for ArgoCD applications to sync..."
 sleep 10
 
+# Run bootstrap if requested
+if [[ "$BOOTSTRAP" == "true" ]]; then
+    echo "Running bootstrap..."
+    if [[ "$BOOTSTRAP_ISTIO" == "true" ]]; then
+        ./bootstrap/bootstrap.sh --istio
+    else
+        ./bootstrap/bootstrap.sh
+    fi
+fi
+
 echo "=== Kubernetes Cluster Started Successfully ==="
-echo "ArgoCD is available at: http://localhost:30080/argocd"
+echo "ArgoCD is available at: https://localhost:8080"
 echo "Username: admin or bswift"
 echo "Password: $ARGOCD_PASSWORD (admin) or 8480 (bswift)"
 echo ""
 echo "ArgoCD is ready with GitOps enabled!"
-echo "Create new apps in argocd/applications/ and they'll auto-sync!"
+echo "Applications are managed via ApplicationSets in argocd/applicationsets/"
 echo ""
 echo "To stop the cluster, run: ./stop_k8s.sh"

@@ -1,0 +1,43 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-hello-gateway
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: sample-hello
+    app.kubernetes.io/instance: sample-hello
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: sample-hello-vs
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: sample-hello
+    app.kubernetes.io/instance: sample-hello
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - sample-hello-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /demo
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: sample-hello.demo.svc.cluster.local
+        port:
+          number: 80

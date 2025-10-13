@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: admin
+  namespace: argocd
+spec:
+  description: "Admin project for ArgoCD and cluster-wide resources"
+  
+  sourceRepos:
+  - 'https://github.com/brettswift/k8s_nas.git'
+  
+  destinations:
+  - namespace: 'argocd'
+    server: https://kubernetes.default.svc
+  - namespace: '*'
+    server: https://kubernetes.default.svc
+  
+  clusterResourceWhitelist:
+  - group: 'argoproj.io'
+    kind: ApplicationSet
+  - group: 'argoproj.io'
+    kind: AppProject
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding
+  - group: 'apiextensions.k8s.io'
+    kind: CustomResourceDefinition
+  
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Secret
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: Deployment
+  - group: 'apps'
+    kind: Deployment
+  - group: 'apps'
+    kind: StatefulSet

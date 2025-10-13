@@ -14,7 +14,7 @@ Use single-turn, non-stop execution. Treat any chat message as an end-of-turn; t
 
 ## Project Overview
 
-This project migrates a Docker Compose-based media server setup to Kubernetes with ArgoCD for GitOps deployment. The goal is to create a local development environment that mirrors production infrastructure.
+This project migrates a Docker Compose-based media server setup to Kubernetes with ArgoCD ApplicationSets for label-driven GitOps deployment. The goal is to create a local development environment that mirrors production infrastructure using a modern ApplicationSets pattern.
 
 ## Current State
 
@@ -22,28 +22,34 @@ This project migrates a Docker Compose-based media server setup to Kubernetes wi
 - ✅ k3s cluster is running locally
 - ✅ ArgoCD is installed and accessible via port forwarding
 - ✅ Basic Kubernetes infrastructure is in place
-- ✅ Git repository structure is set up with ArgoCD applications
+- ✅ Sample hello world application deployed and working
+- ✅ Demo path accessible at http://localhost:30080/demo
 
-### What's Broken
-- ❌ **ArgoCD authentication is completely broken** - no users can log in
-- ❌ Ingress configuration has path rewriting issues
-- ❌ User management configuration is inconsistent
+### What's Being Refactored
+- 🔄 **Migrating from static Applications to ApplicationSets**
+- 🔄 **Moving from feat/istio_argo branch to dev branch**
+- 🔄 **Implementing label-driven service deployment**
 
 ## Key Decisions Made
 
-### 1. Local Development Setup
-- **k3s** chosen over minikube for lighter weight and better production parity
-- **ArgoCD** for GitOps instead of manual kubectl deployments
-- **Port forwarding** as primary access method (ingress has issues)
+### 1. ApplicationSets Pattern
+- **Label-driven deployment**: Services enabled/disabled via cluster labels
+- **Environment-based**: `dev` branch for local, `main` for production
+- **Dynamic service management**: No code changes needed to enable/disable services
 
-### 2. Authentication Issues
-- Tried multiple approaches to fix ArgoCD login:
-  - Setting passwords in `argocd-secret`
-  - Setting passwords in `argocd-cm` configmap
-  - Using bcrypt hashes for passwords
-  - Both approaches failed - users get 401 Unauthorized
+### 2. Branch Strategy
+- **`dev`**: Local development cluster (this machine)
+- **`main`**: Production server deployments  
+- **`feat/*`**: Feature branches for development
+- **Deployment**: `git push origin feat/application_sets:dev`
 
-### 3. Current Authentication Configuration
+### 3. Service Management
+- **Cluster labels**: `kubectl label cluster local-cluster service-enabled=true`
+- **Logical grouping**: `apps/media-services/` for related services
+- **Infrastructure always-on**: ArgoCD, ingress, cert-manager
+- **Applications optional**: Enable via labels
+
+### 4. Current Authentication Configuration
 ```yaml
 # argocd-rbac-cm
 policy.csv: |

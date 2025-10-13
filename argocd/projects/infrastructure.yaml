@@ -1,21 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: nas
+  name: infrastructure
   namespace: argocd
 spec:
-  description: "NAS Media Server Project"
+  description: "Infrastructure project for core services"
   
   sourceRepos:
   - 'https://github.com/brettswift/k8s_nas.git'
   
   destinations:
-  - namespace: '*'
+  - namespace: 'ingress-nginx'
+    server: https://kubernetes.default.svc
+  - namespace: 'cert-manager'
+    server: https://kubernetes.default.svc
+  - namespace: 'monitoring'
     server: https://kubernetes.default.svc
   
   clusterResourceWhitelist:
-  - group: ''
-    kind: Namespace
   - group: 'networking.k8s.io'
     kind: Ingress
   - group: 'networking.k8s.io'
@@ -30,8 +32,6 @@ spec:
     kind: Service
   - group: ''
     kind: Deployment
-  - group: ''
-    kind: Pod
   - group: 'apps'
     kind: Deployment
   - group: 'apps'

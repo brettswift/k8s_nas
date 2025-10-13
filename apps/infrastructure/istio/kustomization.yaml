@@ -1,0 +1,2 @@
+resources:
+- istio-gateway-patch.yaml

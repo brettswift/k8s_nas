@@ -42,20 +42,58 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 # Clone monorepo (private)
 # Replace with your Git URL if different
 GIT_URL=https://github.com/brettswift/brettswift.git
-BRANCH=feat/istio_argo
+BRANCH=feat/application_sets
 
 git clone -b "$BRANCH" "$GIT_URL" bswift
 cd bswift/bs-mediaserver-projects/k8s_nas
 
 # Make scripts executable
-chmod +x start_k8s.sh stop_k8s.sh k8s_plugins.sh scripts/argocd-local-user.sh
+chmod +x start_k8s.sh stop_k8s.sh bootstrap/*.sh
 ```
 
-## 3. Install Kubernetes Plugins
+## 3. Bootstrap Options
+
+The `start_k8s.sh` script now supports bootstrap options:
+
+### Basic Bootstrap (Plugins Only)
+```bash
+./start_k8s.sh --bootstrap
+```
+This will:
+- Start the k3s cluster
+- Install ArgoCD
+- Run bootstrap script with plugins (cert-manager, Istio base)
+- Set up ApplicationSets pattern
+
+### Full Bootstrap with Istio
+```bash
+./start_k8s.sh --bootstrap-istio
+```
+This will:
+- Start the k3s cluster
+- Install ArgoCD
+- Run bootstrap script with plugins AND Istio service mesh
+- Set up ApplicationSets pattern
+
+### Manual Bootstrap
+```bash
+# Start cluster only
+./start_k8s.sh
+
+# Then run bootstrap manually
+./bootstrap/bootstrap.sh --istio
+```
+
+## 4. Install Kubernetes Plugins (Manual)
+
+If you didn't use the bootstrap option, you can install plugins manually:
 
 ```bash
-# Install NGINX Ingress, cert-manager, Istio
-./k8s_plugins.sh
+# Install cert-manager and Istio base
+./bootstrap/k8s_plugins.sh
+
+# Or install with Istio service mesh
+./bootstrap/bootstrap.sh --istio
 ```
 
 ## 4. Install ArgoCD (Local and Prod are the same)

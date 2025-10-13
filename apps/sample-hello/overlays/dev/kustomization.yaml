@@ -8,4 +8,20 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/env/0/value
       value: dev
+- target:
+    kind: ConfigMap
+    name: sample-hello-config
+  patch: |-
+        - op: replace
+          path: /data/index.html
+          value: |
+            <!DOCTYPE html>
+            <html>
+            <head><title>Hello from dev</title></head>
+            <body>
+              <h1>Hello from dev</h1>
+              <p>This is a sample hello world application deployed via ArgoCD!</p>
+              <p><strong>Routed by Istio Service Mesh</strong></p>
+            </body>
+            </html>
 
