@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-hello-dev
+  namespace: argocd
+spec:
+  project: nas
+  source:
+    repoURL: https://github.com/brettswift/k8s_nas.git
+    targetRevision: feat/istio_argo
+    path: apps/sample-hello/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-hello
+  template:
+    metadata:
+      labels:
+        app: sample-hello
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/nginxinc/nginx-unprivileged:alpine
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: html-content
+          mountPath: /usr/share/nginx/html
+        env:
+        - name: ENV_NAME
+          value: base
+      volumes:
+      - name: html-content
+        configMap:
+          name: sample-hello-config
+

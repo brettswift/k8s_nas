@@ -1,257 +1,64 @@
-# Kubernetes NAS
+# Kubernetes NAS - ArgoCD GitOps Setup
 
-A complete media server solution running on Kubernetes, managed by ArgoCD.
+A clean Kubernetes setup with ArgoCD for GitOps deployment of media server applications.
+
+## Quick Start
+
+1. **Start the cluster:**
+   ```bash
+   ./start_k8s.sh
+   ```
+
+2. **Access ArgoCD:**
+   - URL: https://localhost:8080 (port forward)
+   - Username: `admin`
+   - Password: (displayed in terminal output)
+
+3. **Stop the cluster:**
+   ```bash
+   ./stop_k8s.sh
+   ```
+
+## Architecture
+
+- **k3s**: Lightweight Kubernetes cluster
+- **NGINX Ingress**: Ingress controller (replaces k3s Traefik)
+- **cert-manager**: SSL certificate management
+- **Istio**: Service mesh (for future use)
+- **ArgoCD**: GitOps deployment tool
 
 ## Repository Structure
 
-```shell
+```
 k8s_nas/
-├── apps/                      # Application manifests
-│   ├── sonarr/
-│   ├── radarr/
-│   ├── jellyfin/
-│   ├── qbittorrent/
-│   ├── prowlarr/
-│   ├── bazarr/
-│   └── jellyseerr/
-├── base/                     # Base configurations
-│   ├── config/              # Shared configurations
-│   ├── namespaces/         # Namespace definitions
-│   ├── secrets/            # Secret templates
-│   └── storage-classes/    # Storage configurations
-├── environments/            # Environment-specific configs
-│   ├── production/
-│   │   ├── kustomization.yaml
-│   │   ├── values.yaml
-│   │   └── patches/
-│   └── development/
-│       ├── kustomization.yaml
-│       ├── values.yaml
-│       └── patches/
-└── argocd/                  # ArgoCD configurations
+├── start_k8s.sh              # Start k3s + ArgoCD
+├── stop_k8s.sh               # Stop k3s
+├── k8s_plugins.sh            # Install plugins
+├── BOOTSTRAP.md              # Production server setup guide
+└── argocd/
+    ├── projects/
+    │   └── nas.yaml          # Basic project permissions
     ├── applications/
-    └── projects/
+    │   └── argocd-ingress.yaml  # ArgoCD ingress
+    └── ingress/
+        ├── ingress.yaml      # ArgoCD ingress config
+        └── kustomization.yaml
 ```
 
-## Prerequisites
+## Adding Applications
 
-- kubectl
-- minikube
-- argocd CLI
-- helm
+To add a new application:
 
-## Initial Setup
+1. Create application manifest in `argocd/applications/`
+2. Commit and push to Git
+3. ArgoCD will automatically sync (if using app-of-apps pattern)
 
-The setup scripts will create and configure:
+## Production Deployment
 
-On the host machine:
-
-- Minikube cluster with required resources
-- Storage directory at `/mnt/data` (production) or `./dev_storage` (development)
-- ArgoCD configuration and port forwarding
-
-In AWS:
-
-- Route53 DNS entries for your domain
-- DNS validation records for Let's Encrypt certificates
-- Development subdomain (dev.home.brettswift.com)
-
-In Kubernetes:
-
-- Required namespaces (media, downloads, infrastructure)
-- Secrets for AWS and VPN credentials
-- Storage volumes and claims
-- ArgoCD applications for deployment
-
-Run the following setup scripts in order:
-
-```shell
-# 1. Configure minikube with required resources
-./setup/01_ensure_minikube_setup.sh
-
-# 2. Install and configure ArgoCD
-./setup/02_install_argocd.sh
-
-# 3. Configure AWS Route53 and VPN credentials
-./setup/03_configure_secrets.sh
-
-# 4. Set up storage directories
-./setup/04_configure_storage.sh
-```
-
-These scripts will:
-
-- Configure minikube with required resources and addons
-- Install and set up ArgoCD
-- Create necessary secrets for AWS Route53 and VPN
-- Configure storage directories with proper permissions
-- Deploy all required infrastructure and applications
-
-## Branch Strategy and Deployment
-
-The repository uses two main branches for deployment:
-
-### Main Branch
-
-- Used for production deployments
-- Protected branch - requires PR review
-- Deploys to: <https://home.brettswift.com>
-- ArgoCD Application: `nas-production`
-
-### Dev Branch
-
-- Used for development/testing
-- Deploys to: <https://dev.home.brettswift.com>
-- ArgoCD Application: `nas-development`
-- Features reduced resources and staging certificates
-
-### Workflow
-
-1. Create feature branch from `dev`
-2. Make changes and test locally using kustomize
-3. Push changes and create PR to `dev`
-4. Once merged, ArgoCD automatically deploys to development environment
-5. Test changes in development environment
-6. Create PR from `dev` to `main`
-7. After review and merge, ArgoCD deploys to production
-
-### Testing Changes
-
-Test development changes:
-
-```shell
-kubectl kustomize environments/development
-```
-
-Test production changes:
-
-```shell
-kubectl kustomize environments/production
-```
-
-Both environments can run simultaneously, allowing side-by-side comparison.
-
-## Configuration
-
-### Environment Variables
-
-All configuration is managed in `environments/production/values.yaml`:
-
-- Network settings (hostname, ports)
-- Storage paths and sizes
-- AWS configuration
-- VPN settings
-
-### Storage Configuration
-
-- Media storage is shared between pods using a PersistentVolume at `/mnt/data`
-- Each application has its own config PVC
-- All media apps can access the shared storage
-
-### SSL/DNS Configuration
-
-- Uses cert-manager with Route53 DNS validation
-- Wildcard certificate for *.home.brettswift.com
-- Managed by nginx-ingress
-
-## Applications
-
-### Media Management
-
-- Sonarr: TV Shows
-- Radarr: Movies
-- Jellyfin: Media Server
-- Bazarr: Subtitles
-
-### Downloads
-
-- qBittorrent: Torrent client (VPN protected)
-- Prowlarr: Indexer management
-
-### Infrastructure Components
-
-- nginx-ingress: Ingress controller
-- cert-manager: SSL certificate management
-
-## Service Access
-
-All services are available at their respective paths:
-
-- ArgoCD: <https://home.brettswift.com/argocd>
-- Homepage: <https://home.brettswift.com>
-- Jellyfin: <https://home.brettswift.com/jellyfin>
-- Sonarr: <https://home.brettswift.com/sonarr>
-- Radarr: <https://home.brettswift.com/radarr>
-- Prowlarr: <https://home.brettswift.com/prowlarr>
-- qBittorrent: <https://home.brettswift.com/qbittorrent>
+See `BOOTSTRAP.md` for complete production server setup instructions.
 
 ## Troubleshooting
 
-Common issues and solutions:
-
-```shell
-# Check pod status
-kubectl get pods -A
-
-# Check logs
-kubectl logs -n <namespace> <pod-name>
-```
-
-- VPN connectivity: Check qBittorrent pod logs
-- Storage permissions: Verify PVC bindings
-- SSL certificates: Check cert-manager pods
-
-## Development Process
-
-1. Clone this repository
-2. Make changes to relevant files
-3. Test changes:
-
-```shell
-kubectl kustomize environments/production
-```
-
-1. Commit and push changes
-2. ArgoCD will automatically apply updates
-
-## System Maintenance
-
-Monitor system health:
-
-```shell
-# Check ArgoCD sync status
-argocd app list
-
-# Check certificate status
-kubectl get certificates -n infrastructure
-
-# Monitor storage usage
-kubectl get pv,pvc --all-namespaces
-```
-
-## Environment Setup
-
-### Production Environment
-
-- URL: <https://home.brettswift.com>
-- Full resources
-- Production Let's Encrypt certificates
-
-### Development Environment
-
-- URL: <https://dev.home.brettswift.com>
-- Reduced resources
-- Staging Let's Encrypt certificates
-- Temporary storage
-
-To deploy to development:
-
-```shell
-kubectl apply -k environments/development
-```
-
-To deploy to production:
-
-```shell
-kubectl apply -k environments/production
-```
+- **Port conflicts**: Make sure ports 8080, 30080, 30443 are available
+- **k3s issues**: Check `kubectl get nodes` and `kubectl get pods -A`
+- **ArgoCD access**: Verify port forwarding with `kubectl port-forward svc/argocd-server -n argocd 8080:443`

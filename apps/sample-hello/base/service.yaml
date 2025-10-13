@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-hello
+spec:
+  selector:
+    app: sample-hello
+  ports:
+  - port: 80
+    targetPort: 8080
+
