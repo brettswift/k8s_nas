@@ -74,3 +74,5 @@ data:
     enabled: false
   custom.css: |
     /* Custom CSS for Homepage */
+  custom.js: |
+    // Custom JavaScript for Homepage
