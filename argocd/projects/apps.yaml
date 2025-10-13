@@ -40,6 +40,10 @@ spec:
     kind: DaemonSet
   - group: 'networking.k8s.io'
     kind: Ingress
+  - group: 'networking.istio.io'
+    kind: Gateway
+  - group: 'networking.istio.io'
+    kind: VirtualService
   - group: 'batch'
     kind: Job
   - group: 'batch'

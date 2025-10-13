@@ -2,6 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: sample-hello-gateway
+  namespace: demo
   labels:
     app.kubernetes.io/name: sample-hello
     app.kubernetes.io/instance: sample-hello
@@ -20,6 +21,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: sample-hello-vs
+  namespace: demo
   labels:
     app.kubernetes.io/name: sample-hello
     app.kubernetes.io/instance: sample-hello
@@ -34,6 +36,6 @@ spec:
         prefix: /demo
     route:
     - destination:
-        host: sample-hello
+        host: sample-hello.demo.svc.cluster.local
         port:
           number: 8080
