@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: istio-infrastructure
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          environment: production
+  template:
+    metadata:
+      name: 'istio-infrastructure-{{name}}'
+    spec:
+      project: infrastructure
+      source:
+        repoURL: 'https://github.com/brettswift/k8s_nas.git'
+        targetRevision: feat/first_deploy_to_server
+        path: apps/infrastructure/istio
+      destination:
+        server: '{{server}}'
+        namespace: istio-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

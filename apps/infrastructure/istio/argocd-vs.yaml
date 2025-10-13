@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: argocd-vs
+  namespace: argocd
+spec:
+  hosts:
+  - home.brettswift.com
+  gateways:
+  - istio-system/main-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /argocd
+    route:
+    - destination:
+        host: argocd-server
+        port:
+          number: 443
+    rewrite:
+      uri: /
