@@ -67,3 +67,11 @@ data:
   docker.yaml: |
     version: "3.8"
     services: {}
+  widgets.yaml: |
+    - resources:
+        cpu: true
+        memory: true
+        disk: "/"
+    - search:
+        provider: duckduckgo
+        target: _blank
