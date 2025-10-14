@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
+        targetRevision: feat/jellyfin
         path: apps/media-services
       destination:
         server: "{{server}}"
