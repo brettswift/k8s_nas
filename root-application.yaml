@@ -11,9 +11,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/brettswift/k8s_nas.git
+    repoURL: git@github.com:brettswift/k8s_nas.git
     path: argocd/applicationsets
-    targetRevision: dev
+    targetRevision: feat/first_deploy_to_server
     directory:
       recurse: true
   destination:

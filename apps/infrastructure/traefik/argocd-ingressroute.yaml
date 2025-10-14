@@ -1,0 +1,28 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd-ingressroute
+  namespace: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`home.brettswift.com`) && PathPrefix(`/argocd`)
+      kind: Rule
+      services:
+        - name: argocd-server
+          port: 80
+      middlewares:
+        - name: argocd-stripprefix
+  tls:
+    secretName: home-brettswift-com-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: argocd-stripprefix
+  namespace: argocd
+spec:
+  stripPrefix:
+    prefixes:
+      - /argocd

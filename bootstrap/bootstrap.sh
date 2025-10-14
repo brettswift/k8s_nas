@@ -81,3 +81,4 @@ if [[ "$INSTALL_ISTIO" == "true" ]]; then
     echo "Istio is installed and ready!"
     echo "To enable sidecar injection: kubectl label namespace <namespace> istio-injection=enabled"
 fi
+

@@ -32,8 +32,8 @@ spec:
     spec:
       project: apps
       source:
-        repoURL: https://github.com/brettswift/k8s_nas.git
-        targetRevision: dev
+        repoURL: git@github.com:brettswift/k8s_nas.git
+        targetRevision: feat/first_deploy_to_server
         path: apps/media-services
       destination:
         server: "{{server}}"
@@ -50,3 +50,4 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
+

@@ -40,3 +40,4 @@ spec:
     kind: Deployment
   - group: 'apps'
     kind: StatefulSet
+
