@@ -12,10 +12,10 @@ spec:
   generators:
   - list:
       elements:
-      - name: local-cluster
+      - name: production-cluster
         server: https://kubernetes.default.svc
-        environment: dev
-        region: local
+        environment: production
+        region: server
         media-services-enabled: "true"
   template:
     metadata:
