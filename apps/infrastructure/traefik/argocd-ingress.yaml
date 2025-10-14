@@ -6,7 +6,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/router.middlewares: argocd-stripprefix@kubernetescrd
 spec:
   tls:
   - hosts:
@@ -23,3 +23,13 @@ spec:
             name: argocd-server
             port:
               number: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: argocd-stripprefix
+  namespace: argocd
+spec:
+  stripPrefix:
+    prefixes:
+      - /argocd
