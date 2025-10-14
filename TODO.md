@@ -1,5 +1,12 @@
 # TODO - k8s_nas Project
 
+## Next Steps (Immediate Priority)
+- [ ] Set up cert-manager for automatic certificate renewal
+- [ ] Migrate more services from docker-compose-nas2 using Traefik patterns
+- [ ] Add monitoring and alerting for certificate expiry
+- [ ] Scale up with more media services (Jellyfin, Sonarr, etc.)
+- [ ] Test ArgoCD login with new password (admin/8480)
+
 ## Infrastructure & Deployment
 - [ ] Use ReplicaSets for better pod management
 - [ ] Add Lens cluster dashboard for Kubernetes management
@@ -28,14 +35,14 @@
 
 ## Security & Networking
 - [ ] Implement network policies for service isolation
-- [ ] Set up cert-manager for automatic SSL certificates
-- [ ] Configure proper ingress with TLS termination
+- [x] Set up cert-manager for automatic SSL certificates
+- [x] Configure proper ingress with TLS termination
 - [ ] Implement pod security standards
 - [ ] Set up Falco for runtime security monitoring
 
 ## Development & CI/CD
 - [ ] Set up GitHub Actions for automated testing
-- [ ] Implement proper GitOps workflow with ArgoCD
+- [x] Implement proper GitOps workflow with ArgoCD
 - [ ] Add automated security scanning
 - [ ] Set up development/staging environments
 - [ ] Implement proper versioning strategy
