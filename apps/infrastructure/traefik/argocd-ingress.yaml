@@ -6,8 +6,6 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/rewrite-target: /$2
-    traefik.ingress.kubernetes.io/use-regex: "true"
 spec:
   tls:
   - hosts:
@@ -17,8 +15,8 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /argocd(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /argocd
+        pathType: Prefix
         backend:
           service:
             name: argocd-server
