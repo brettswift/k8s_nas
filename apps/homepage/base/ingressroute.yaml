@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: homepage-ingressroute
+  namespace: homepage
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`home.brettswift.com`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: homepage
+          port: 80
+  tls:
+    secretName: home-brettswift-com-tls

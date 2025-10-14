@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: feat/first_deploy_to_server
+        targetRevision: main
         path: apps/media-services
       destination:
         server: "{{server}}"

@@ -17,7 +17,7 @@ spec:
       project: infrastructure
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: feat/first_deploy_to_server
+        targetRevision: main
         path: apps/infrastructure/traefik
       destination:
         server: '{{url}}'

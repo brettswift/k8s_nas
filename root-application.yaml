@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: git@github.com:brettswift/k8s_nas.git
     path: argocd/applicationsets
-    targetRevision: feat/first_deploy_to_server
+    targetRevision: main
     directory:
       recurse: true
   destination:

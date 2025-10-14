@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: https://github.com/brettswift/k8s_nas.git
-        targetRevision: dev
+        targetRevision: main
         path: apps/sample-hello/overlays/dev
       destination:
         server: "{{server}}"
