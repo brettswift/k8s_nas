@@ -1,4 +1,5 @@
 # Media services will be added here in the future
 # Examples: jellyfin, radarr, sonarr, etc.
-resources: []
+resources:
+- jellyfin/deployment.yaml
 
