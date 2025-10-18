@@ -2,6 +2,6 @@
 # Examples: jellyfin, radarr, sonarr, etc.
 resources:
 - jellyfin/deployment.yaml
-- jellyfin/ingress.yaml
+- jellyfin/ingressroute.yaml
 - jellyfin/middleware.yaml
 
