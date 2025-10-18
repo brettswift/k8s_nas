@@ -5,7 +5,7 @@ metadata:
   namespace: media
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
     - match: Host(`home.brettswift.com`) && PathPrefix(`/jellyfin`)
       kind: Rule
@@ -14,3 +14,5 @@ spec:
           port: 80
       middlewares:
         - name: jellyfin-stripprefix
+  tls:
+    secretName: home-brettswift-com-tls
