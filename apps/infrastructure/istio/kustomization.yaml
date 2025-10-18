@@ -5,4 +5,5 @@ resources:
 - gateway.yaml
 - argocd-vs.yaml
 - homepage-vs.yaml
+- jellyfin-vs.yaml
 - tls-secret.yaml
