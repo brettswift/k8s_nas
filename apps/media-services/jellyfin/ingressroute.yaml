@@ -12,5 +12,7 @@ spec:
       services:
         - name: jellyfin
           port: 80
+      middlewares:
+        - name: jellyfin-stripprefix
   tls:
     secretName: home-brettswift-com-tls
