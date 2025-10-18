@@ -4,13 +4,9 @@ metadata:
   name: jellyfin
   namespace: media
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/backend-protocol: HTTP
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    traefik.ingress.kubernetes.io/router.middlewares: media-jellyfin-stripprefix@kubernetescrd
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
   - host: home.brettswift.com
     http:

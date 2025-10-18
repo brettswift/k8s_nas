@@ -3,4 +3,5 @@
 resources:
 - jellyfin/deployment.yaml
 - jellyfin/ingress.yaml
+- jellyfin/middleware.yaml
 
