@@ -5,10 +5,11 @@ metadata:
   namespace: argocd
 spec:
   generators:
-  - clusters:
-      selector:
-        matchLabels:
-          environment: production
+  - list:
+      elements:
+      - name: production-cluster
+        server: https://kubernetes.default.svc
+        environment: production
   template:
     metadata:
       name: 'istio-infrastructure-{{name}}'
