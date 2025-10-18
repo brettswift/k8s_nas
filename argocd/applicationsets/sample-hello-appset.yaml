@@ -32,8 +32,8 @@ spec:
     spec:
       project: apps
       source:
-        repoURL: https://github.com/brettswift/k8s_nas.git
-        targetRevision: main
+        repoURL: git@github.com:brettswift/k8s_nas.git
+        targetRevision: feat/jellyfin
         path: apps/sample-hello/overlays/dev
       destination:
         server: "{{server}}"
