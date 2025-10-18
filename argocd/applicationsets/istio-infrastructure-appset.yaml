@@ -16,7 +16,7 @@ spec:
     spec:
       project: infrastructure
       source:
-        repoURL: 'https://github.com/brettswift/k8s_nas.git'
+        repoURL: 'git@github.com:brettswift/k8s_nas.git'
         targetRevision: feat/jellyfin
         path: apps/infrastructure/istio
       destination:
