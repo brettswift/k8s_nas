@@ -16,12 +16,18 @@ spec:
     server: https://kubernetes.default.svc
   - namespace: 'monitoring'
     server: https://kubernetes.default.svc
+  - namespace: 'istio-system'
+    server: https://kubernetes.default.svc
   
   clusterResourceWhitelist:
   - group: 'networking.k8s.io'
     kind: Ingress
   - group: 'networking.k8s.io'
     kind: NetworkPolicy
+  - group: 'networking.istio.io'
+    kind: Gateway
+  - group: 'networking.istio.io'
+    kind: VirtualService
   
   namespaceResourceWhitelist:
   - group: ''
