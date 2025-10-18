@@ -3,5 +3,5 @@ resources:
 - deployment.yaml
 - service.yaml
 - configmap.yaml
-- istio-gateway.yaml
+- ingress.yaml
 
