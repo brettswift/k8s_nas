@@ -35,6 +35,8 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /media
+        - name: server-media
+          mountPath: /mnt
         resources:
           requests:
             memory: "512Mi"
@@ -49,6 +51,10 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: jellyfin-media
+      - name: server-media
+        hostPath:
+          path: /mnt
+          type: Directory
 ---
 apiVersion: v1
 kind: Service
