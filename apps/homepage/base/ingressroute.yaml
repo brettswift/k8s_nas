@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`home.brettswift.com`) && PathPrefix(`/`)
+    - match: Host(`home.brettswift.com`) && (Path(`/`) || PathPrefix(`/_next`))
       kind: Rule
       services:
         - name: homepage
