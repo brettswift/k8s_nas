@@ -30,7 +30,7 @@ spec:
           value: "1000"
         - name: TZ
           value: "America/Denver"
-        - name: JELLYFIN_PublishedServerUrl
+        - name: JELLYFIN_SERVER_BASEURL
           value: "https://home.brettswift.com/jellyfin"
         volumeMounts:
         - name: config
