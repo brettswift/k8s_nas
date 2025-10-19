@@ -3,11 +3,13 @@ kind: IngressRoute
 metadata:
   name: homepage-ingressroute
   namespace: homepage
+  annotations:
+    traefik.ingress.kubernetes.io/router.priority: "1"
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`home.brettswift.com`) && (Path(`/`) || PathPrefix(`/_next`))
+    - match: Host(`home.brettswift.com`) && PathPrefix(`/`)
       kind: Rule
       services:
         - name: homepage

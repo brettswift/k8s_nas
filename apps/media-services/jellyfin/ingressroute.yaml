@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: jellyfin
   namespace: media
+  annotations:
+    traefik.ingress.kubernetes.io/router.priority: "10"
 spec:
   entryPoints:
     - websecure
@@ -12,5 +14,7 @@ spec:
       services:
         - name: jellyfin
           port: 80
+      middlewares:
+        - name: jellyfin-stripprefix
   tls:
     secretName: home-brettswift-com-tls
