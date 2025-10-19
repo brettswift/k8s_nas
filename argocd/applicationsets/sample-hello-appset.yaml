@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: feat/jellyfin
+        targetRevision: feat/nginx-routing
         path: apps/sample-hello/overlays/dev
       destination:
         server: "{{server}}"
