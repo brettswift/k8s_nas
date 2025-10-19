@@ -1,3 +1,2 @@
-# ArgoCD Istio configuration
 resources:
-- istio-gateway.yaml
+- ingress.yaml

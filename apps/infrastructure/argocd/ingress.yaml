@@ -1,12 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jellyfin-nginx
-  namespace: media
+  name: argocd-ingress
+  namespace: argocd
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: SAMEORIGIN";
+      more_set_headers "X-Content-Type-Options: nosniff";
 spec:
   ingressClassName: nginx
   tls:
@@ -17,10 +19,10 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /jellyfin
+      - path: /argocd
         pathType: Prefix
         backend:
           service:
-            name: jellyfin
+            name: argocd-server
             port:
-              number: 80
+              number: 443

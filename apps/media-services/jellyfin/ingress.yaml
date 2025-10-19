@@ -1,12 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jellyfin
+  name: jellyfin-ingress
   namespace: media
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: media-jellyfin-stripprefix@kubernetescrd
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: traefik
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - home.brettswift.com
+    secretName: home-brettswift-com-tls
   rules:
   - host: home.brettswift.com
     http:

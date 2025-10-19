@@ -19,6 +19,4 @@ spec:
           number: 443
     rewrite:
       uri: /
-    rewrite:
-      uri: /
 
