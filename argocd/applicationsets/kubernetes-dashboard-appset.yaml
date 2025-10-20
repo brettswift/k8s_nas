@@ -30,7 +30,7 @@ spec:
         type: "infrastructure"
         category: "dashboard"
     spec:
-      project: infrastructure
+      project: default
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
         targetRevision: feat/nginx-routing
