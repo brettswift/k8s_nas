@@ -33,6 +33,8 @@ spec:
           value: "America/Denver"
         - name: JELLYFIN_PublishedServerUrl
           value: "https://home.brettswift.com/jellyfin"
+        - name: JELLYFIN_SERVER_PUBLICURL
+          value: "https://home.brettswift.com/jellyfin"
         volumeMounts:
         - name: config
           mountPath: /config

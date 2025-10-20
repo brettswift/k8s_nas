@@ -6,7 +6,6 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
@@ -23,20 +22,6 @@ spec:
     http:
       paths:
       - path: /jellyfin
-        pathType: Prefix
-        backend:
-          service:
-            name: jellyfin
-            port:
-              number: 80
-      - path: /jellyfin/web
-        pathType: Prefix
-        backend:
-          service:
-            name: jellyfin
-            port:
-              number: 80
-      - path: /web
         pathType: Prefix
         backend:
           service:
