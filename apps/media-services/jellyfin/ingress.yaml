@@ -6,9 +6,12 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^/jellyfin/(.*) /$1 break;
-      rewrite ^/jellyfin$ /web/ redirect;
+    # Inserts custom nginx configuration for URL rewriting:
+    # - The first rule rewrites requests from /jellyfin/* to /* (removing the base path), e.g. /jellyfin/api → /api.
+    # - The second rule redirects /jellyfin (no trailing slash or path) to /web/ (Jellyfin's web UI).
+    # nginx.ingress.kubernetes.io/configuration-snippet: |
+      # rewrite ^/jellyfin/(.*) /$1 break;
+      # rewrite ^/jellyfin$ /web/ redirect;
 spec:
   ingressClassName: nginx
   tls:
