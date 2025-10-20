@@ -176,7 +176,7 @@ metadata:
   namespace: kubernetes-dashboard
 spec:
   replicas: 1
-  revisionHistoryLimit: 10
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       k8s-app: kubernetes-dashboard
@@ -271,7 +271,7 @@ metadata:
   namespace: kubernetes-dashboard
 spec:
   replicas: 1
-  revisionHistoryLimit: 10
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       k8s-app: dashboard-metrics-scraper
