@@ -6,20 +6,20 @@ data:
   services.yaml: |
     - Development:
         - Demo App:
-            href: http://localhost:8081/demo
-            description: Sample Hello World app routed by Istio
+            href: https://home.brettswift.com/demo
+            description: Sample Hello World app routed by NGINX
             icon: kubernetes.png
         - ArgoCD:
-            href: https://localhost:8080
+            href: https://home.brettswift.com/argocd
             description: GitOps deployment platform
             icon: argocd.png
     - Media:
         - Jellyfin:
-            href: http://localhost:8081/jellyfin
+            href: https://home.brettswift.com/jellyfin
             description: Media server
             icon: jellyfin.png
         - Jellyseerr:
-            href: http://localhost:8081/jellyseerr
+            href: https://home.brettswift.com/jellyseerr
             description: Media requests
             icon: jellyseerr.png
     - System:
