@@ -7,6 +7,7 @@ metadata:
     app: jellyfin
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app: jellyfin
@@ -17,7 +18,7 @@ spec:
     spec:
       containers:
       - name: jellyfin
-        image: jellyfin/jellyfin:latest
+        image: lscr.io/linuxserver/jellyfin:latest
         ports:
         - containerPort: 8096
           name: http
@@ -30,17 +31,13 @@ spec:
           value: "1000"
         - name: TZ
           value: "America/Denver"
-        - name: JELLYFIN_SERVER_BASEURL
-          value: "https://home.brettswift.com/jellyfin"
-        - name: JELLYFIN_SERVER_PUBLICURL
+        - name: JELLYFIN_PublishedServerUrl
           value: "https://home.brettswift.com/jellyfin"
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
-          mountPath: /media
-        - name: server-media
-          mountPath: /mnt
+          mountPath: /data
         resources:
           requests:
             memory: "512Mi"
@@ -48,16 +45,29 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /jellyfin/health
+            port: 8096
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /jellyfin/health
+            port: 8096
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
       volumes:
       - name: config
         persistentVolumeClaim:
           claimName: jellyfin-config
       - name: media
-        persistentVolumeClaim:
-          claimName: jellyfin-media
-      - name: server-media
         hostPath:
-          path: /mnt
+          path: /mnt/data
           type: Directory
 ---
 apiVersion: v1
@@ -90,17 +100,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-path
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: jellyfin-media
-  namespace: media
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
   storageClassName: local-path
