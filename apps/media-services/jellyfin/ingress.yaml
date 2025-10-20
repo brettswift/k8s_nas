@@ -36,3 +36,10 @@ spec:
             name: jellyfin
             port:
               number: 80
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: 80
