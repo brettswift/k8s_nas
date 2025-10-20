@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: production-cluster
+        server: https://kubernetes.default.svc
+        environment: production
+  template:
+    metadata:
+      name: 'monitoring-{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: 'git@github.com:brettswift/k8s_nas.git'
+        targetRevision: feat/nginx-routing
+        path: apps/infrastructure/monitoring
+      destination:
+        server: '{{server}}'
+        namespace: monitoring
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

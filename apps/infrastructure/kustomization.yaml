@@ -1,4 +1,5 @@
 resources:
 - nginx-ingress/
 - argocd/
+- monitoring/
 

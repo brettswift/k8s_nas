@@ -23,10 +23,14 @@ data:
             description: Media requests
             icon: jellyseerr.png
     - System:
-        - Kubernetes Dashboard:
-            href: https://home.brettswift.com/dashboard
-            description: K8s cluster management
-            icon: kubernetes.png
+        - Prometheus:
+            href: https://home.brettswift.com/prometheus
+            description: Metrics collection and monitoring
+            icon: prometheus.png
+        - Grafana:
+            href: https://home.brettswift.com/grafana
+            description: Monitoring dashboards and visualization
+            icon: grafana.png
   settings.yaml: |
     title: Brett's Home Lab
     subtitle: Kubernetes Media Server
