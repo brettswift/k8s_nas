@@ -1,5 +1,4 @@
 resources:
-- namespace.yaml
 - dashboard.yaml
 - admin-user.yaml
 - ingress.yaml
