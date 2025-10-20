@@ -22,6 +22,39 @@ data:
             href: https://home.brettswift.com/jellyseerr
             description: Media requests
             icon: jellyseerr.png
+        - Sonarr:
+            href: https://home.brettswift.com/sonarr
+            description: Series management
+            icon: sonarr.png
+        - Radarr:
+            href: https://home.brettswift.com/radarr
+            description: Movies management
+            icon: radarr.png
+        - Lidarr:
+            href: https://home.brettswift.com/lidarr
+            description: Music management
+            icon: lidarr.png
+        - Bazarr:
+            href: https://home.brettswift.com/bazarr
+            description: Subtitles management
+            icon: bazarr.png
+        - Prowlarr:
+            href: https://home.brettswift.com/prowlarr
+            description: Indexers management
+            icon: prowlarr.png
+    - Download:
+        - qBittorrent:
+            href: https://home.brettswift.com/qbittorrent
+            description: BitTorrent client
+            icon: qbittorrent.png
+        - Sabnzbd:
+            href: https://home.brettswift.com/sabnzbd
+            description: Usenet client
+            icon: sabnzbd.png
+        - Flaresolverr:
+            href: https://home.brettswift.com/flaresolverr
+            description: CAPTCHA solver
+            icon: flaresolverr.png
     - System:
         - Prometheus:
             href: https://home.brettswift.com/prometheus
