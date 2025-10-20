@@ -29,6 +29,10 @@ spec:
           value: "true"
         - name: GF_SERVER_DOMAIN
           value: "home.brettswift.com"
+        - name: GF_SECURITY_COOKIE_SECURE
+          value: "true"
+        - name: GF_SECURITY_COOKIE_SAMESITE
+          value: "none"
         # - name: GF_INSTALL_PLUGINS
         #   value: "grafana-kubernetes-app"
         # - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
