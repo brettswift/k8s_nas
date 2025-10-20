@@ -1,5 +1,5 @@
-# Media services will be added here in the future
-# Examples: radarr, sonarr, etc.
+# Media services
 # Note: Jellyfin is deployed separately via jellyfin-appset.yaml
-resources: []
+resources:
+- starr/
 
