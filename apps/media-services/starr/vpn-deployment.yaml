@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpn
+  namespace: starr
+  labels:
+    app: vpn
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: vpn
+  template:
+    metadata:
+      labels:
+        app: vpn
+    spec:
+      containers:
+      - name: vpn
+        image: qmcgaw/gluetun:latest
+        ports:
+        - containerPort: 8888
+          name: http-proxy
+        - containerPort: 8388
+          name: shadowsocks
+        - containerPort: 7878
+          name: radarr
+        - containerPort: 8989
+          name: sonarr
+        - containerPort: 8080
+          name: qbittorrent
+        - containerPort: 6881
+          name: qbit-tcp
+        - containerPort: 6881
+          name: qbit-udp
+          protocol: UDP
+        env:
+        - name: OPENVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_PASSWORD
+        - name: OPENVPN_USER
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_USER
+        - name: VPN_SERVICE_PROVIDER
+          value: "ipvanish"
+        - name: SERVER_COUNTRIES
+          value: "Canada,United States"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - ping
+            - -c
+            - "1"
+            - www.google.com
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - ping
+            - -c
+            - "1"
+            - www.google.com
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vpn
+  namespace: starr
+  labels:
+    app: vpn
+spec:
+  selector:
+    app: vpn
+  ports:
+  - name: http-proxy
+    port: 8888
+    targetPort: 8888
+  - name: shadowsocks
+    port: 8388
+    targetPort: 8388
+  - name: radarr
+    port: 7878
+    targetPort: 7878
+  - name: sonarr
+    port: 8989
+    targetPort: 8989
+  - name: qbittorrent
+    port: 8080
+    targetPort: 8080
+  - name: qbit-tcp
+    port: 6881
+    targetPort: 6881
+  - name: qbit-udp
+    port: 6881
+    targetPort: 6881
+    protocol: UDP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vpn-secrets
+  namespace: starr
+type: Opaque
+data:
+  # These will need to be populated with actual base64 encoded values
+  OPENVPN_PASSWORD: ""  # Base64 encoded password
+  OPENVPN_USER: ""      # Base64 encoded username

@@ -1,0 +1,23 @@
+resources:
+- namespace.yaml
+- common-configmap.yaml
+- sonarr-deployment.yaml
+- sonarr-ingress.yaml
+- radarr-deployment.yaml
+- radarr-ingress.yaml
+- lidarr-deployment.yaml
+- lidarr-ingress.yaml
+- bazarr-deployment.yaml
+- bazarr-ingress.yaml
+- prowlarr-deployment.yaml
+- prowlarr-ingress.yaml
+- jellyseerr-deployment.yaml
+- jellyseerr-ingress.yaml
+- flaresolverr-deployment.yaml
+- flaresolverr-ingress.yaml
+- vpn-deployment.yaml
+- qbittorrent-deployment.yaml
+- qbittorrent-ingress.yaml
+- sabnzbd-deployment.yaml
+- sabnzbd-ingress.yaml
+- unpackerr-deployment.yaml
