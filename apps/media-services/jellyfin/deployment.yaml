@@ -35,6 +35,8 @@ spec:
           value: "https://home.brettswift.com/jellyfin"
         - name: JELLYFIN_SERVER_PUBLICURL
           value: "https://home.brettswift.com/jellyfin"
+        - name: JELLYFIN_SERVER_BASEPATH
+          value: "/jellyfin"
         volumeMounts:
         - name: config
           mountPath: /config
