@@ -33,7 +33,7 @@ data:
     logo: https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/kubernetes.svg
     favicon: https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/kubernetes.svg
     #background: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80
-    background: https://images.unsplash.com/photo-1533134486753-c833f0ed4866?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170 
+    background: https://images.unsplash.com/photo-1740775525864-d8cc2ec1983e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170
     theme: dark
     color: slate
     layout: auto
