@@ -29,6 +29,10 @@ spec:
           value: "true"
         - name: GF_INSTALL_PLUGINS
           value: "grafana-kubernetes-app"
+        - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
+          value: "grafana-kubernetes-app"
+        - name: GF_PLUGIN_UPDATE_INTERVAL
+          value: "24h"
         resources:
           requests:
             memory: "256Mi"
