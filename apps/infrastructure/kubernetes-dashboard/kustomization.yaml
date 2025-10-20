@@ -1,5 +1,4 @@
 resources:
 - dashboard.yaml
 - admin-user.yaml
-- dashboard-http-service.yaml
 - ingress.yaml
