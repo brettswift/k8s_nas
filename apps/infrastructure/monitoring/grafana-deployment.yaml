@@ -27,6 +27,8 @@ spec:
           value: "https://home.brettswift.com/grafana"
         - name: GF_SERVER_SERVE_FROM_SUB_PATH
           value: "true"
+        - name: GF_SERVER_DOMAIN
+          value: "home.brettswift.com"
         # - name: GF_INSTALL_PLUGINS
         #   value: "grafana-kubernetes-app"
         # - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
