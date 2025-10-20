@@ -24,7 +24,7 @@ data:
             icon: jellyseerr.png
     - System:
         - Kubernetes Dashboard:
-            href: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+            href: https://home.brettswift.com/dashboard
             description: K8s cluster management
             icon: kubernetes.png
   settings.yaml: |
