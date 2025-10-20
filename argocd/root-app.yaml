@@ -8,7 +8,7 @@ spec:
   
   source:
     repoURL: https://github.com/brettswift/k8s_nas.git
-    targetRevision: HEAD
+    targetRevision: main
     path: argocd-minimal/applications
   
   destination:
