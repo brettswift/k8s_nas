@@ -32,11 +32,10 @@ spec:
         - name: TZ
           value: "America/Denver"
         - name: JELLYFIN_PublishedServerUrl
-          value: "https://home.brettswift.com/jellyfin"
-        - name: JELLYFIN_SERVER_PUBLICURL
-          value: "https://home.brettswift.com/jellyfin"
-        - name: JELLYFIN_SERVER_BASEPATH
-          value: "/jellyfin"
+          valueFrom:
+            configMapKeyRef:
+              name: jellyfin-config
+              key: JELLYFIN_PublishedServerUrl
         volumeMounts:
         - name: config
           mountPath: /config

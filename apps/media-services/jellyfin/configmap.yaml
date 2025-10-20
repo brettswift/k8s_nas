@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-config
+  namespace: media
+data:
+  JELLYFIN_PublishedServerUrl: "https://home.brettswift.com/jellyfin"
