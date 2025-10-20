@@ -22,7 +22,7 @@ spec:
       project: infrastructure
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: feat/nginx-routing
+        targetRevision: main
         path: apps/infrastructure/argocd
       destination:
         server: "{{server}}"

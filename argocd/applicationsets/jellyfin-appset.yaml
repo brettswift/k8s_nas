@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: homepage
+  name: jellyfin
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "25"
+    argocd.argoproj.io/sync-wave: "35"
     argocd.argoproj.io/sync-options: RequireSyncOrder=true
 spec:
   generators:
@@ -16,28 +16,28 @@ spec:
         server: https://kubernetes.default.svc
         environment: production
         region: server
-        homepage-enabled: "true"
+        jellyfin-enabled: "true"
   template:
     metadata:
-      name: "homepage-{{name}}"
+      name: "jellyfin-{{name}}"
       finalizers:
         - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "25"
+        argocd.argoproj.io/sync-wave: "35"
         argocd.argoproj.io/sync-options: RequireSyncOrder=true
       labels:
         environment: "{{environment}}"
         type: "application"
-        category: "dashboard"
+        category: "media"
     spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
-        path: apps/homepage/base
+        targetRevision: feat/jellyfin
+        path: apps/media-services/jellyfin
       destination:
         server: "{{server}}"
-        namespace: homepage
+        namespace: media
       syncPolicy:
         automated:
           prune: true
@@ -50,4 +50,3 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
-
