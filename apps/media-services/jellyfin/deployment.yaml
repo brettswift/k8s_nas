@@ -47,7 +47,7 @@ spec:
             cpu: "1000m"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /jellyfin/health
             port: 8096
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -55,7 +55,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /health
+            path: /jellyfin/health
             port: 8096
           initialDelaySeconds: 10
           periodSeconds: 10
