@@ -32,7 +32,7 @@ spec:
         - name: TZ
           value: "America/Denver"
         - name: JELLYFIN_PublishedServerUrl
-          value: "https://home.brettswift.com/jellyfin"
+          value: "https://home.brettswift.com"
         volumeMounts:
         - name: config
           mountPath: /config
