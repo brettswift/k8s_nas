@@ -1,3 +1,2 @@
 resources:
-- https://raw.githubusercontent.com/argoproj/argo-cd/v3.1.9/manifests/install.yaml
 - ingress.yaml
