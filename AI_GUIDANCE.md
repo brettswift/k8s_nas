@@ -1,5 +1,7 @@
 # General behaviour
 
+**CRITICAL: This is a GitOps project. ALL changes must be made via Git commits and ArgoCD ApplicationSets. NO manual kubectl commands without explicit permission.**
+
 Use single-turn, non-stop execution. Treat any chat message as an end-of-turn; therefore:
 
 - Execute end-to-end within one turn: run a command, read output, decide next command, run it, re-check, loop, and only send a final message when the task completes or is truly blocked.
@@ -187,8 +189,10 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## Notes for GPT
 
+- **CRITICAL: This is a GitOps project. ALL infrastructure changes must be made via Git commits and ArgoCD ApplicationSets. NO manual kubectl commands without explicit permission.**
 - The user is extremely frustrated with the authentication issues
 - Multiple attempts have been made to fix login - all failed
 - Focus on getting basic ArgoCD login working before proceeding
 - The project structure is sound, but authentication is blocking progress
 - Use the existing scripts as a foundation, don't rebuild from scratch
+- All configuration changes must be committed to Git and deployed via ArgoCD
