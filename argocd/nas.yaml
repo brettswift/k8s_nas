@@ -7,7 +7,6 @@ spec:
   description: "NAS Media Server Project"
   
   sourceRepos:
-  - 'https://github.com/brettswift/docker-compose-nas.git'
   - 'https://github.com/brettswift/k8s_nas.git'
   
   destinations:

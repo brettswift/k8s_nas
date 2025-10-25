@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unpackerr
+  namespace: starr
+  labels:
+    app: unpackerr
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: unpackerr
+  template:
+    metadata:
+      labels:
+        app: unpackerr
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: unpackerr
+        image: golift/unpackerr:latest
+        env:
+        - name: TZ
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: TZ
+        - name: UN_SONARR_0_URL
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SONARR_URL
+        - name: UN_SONARR_0_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: starr-secrets
+              key: SONARR_API_KEY
+        - name: UN_RADARR_0_URL
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: RADARR_URL
+        - name: UN_RADARR_0_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: starr-secrets
+              key: RADARR_API_KEY
+        - name: UN_PATHS_0_TRIGGER
+          value: "true"
+        - name: UN_DEBUG
+          value: "true"
+        volumeMounts:
+        - name: downloads
+          mountPath: /data/torrents
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+      volumes:
+      - name: downloads
+        hostPath:
+          path: /mnt/downloads
+          type: Directory
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: starr-secrets
+  namespace: starr
+type: Opaque
+data:
+  # These will need to be populated with actual base64 encoded API keys
+  SONARR_API_KEY: ""     # Base64 encoded API key
+  RADARR_API_KEY: ""     # Base64 encoded API key
+  LIDARR_API_KEY: ""     # Base64 encoded API key
+  BAZARR_API_KEY: ""     # Base64 encoded API key
+  PROWLARR_API_KEY: ""   # Base64 encoded API key
+  JELLYSEERR_API_KEY: "" # Base64 encoded API key
+  SABNZBD_API_KEY: ""    # Base64 encoded API key
