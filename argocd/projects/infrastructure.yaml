@@ -25,6 +25,8 @@ spec:
     server: https://kubernetes.default.svc
   
   clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
   - group: 'networking.k8s.io'
     kind: Ingress
   - group: 'networking.k8s.io'
@@ -33,6 +35,10 @@ spec:
     kind: Gateway
   - group: 'networking.istio.io'
     kind: VirtualService
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding
   
   namespaceResourceWhitelist:
   - group: ''
@@ -42,11 +48,21 @@ spec:
   - group: ''
     kind: Service
   - group: ''
+    kind: ServiceAccount
+  - group: ''
     kind: Deployment
   - group: 'apps'
     kind: Deployment
   - group: 'apps'
     kind: StatefulSet
+  - group: 'apps'
+    kind: ReplicaSet
   - group: 'networking.k8s.io'
     kind: Ingress
+  - group: 'networking.k8s.io'
+    kind: NetworkPolicy
+  - group: 'rbac.authorization.k8s.io'
+    kind: Role
+  - group: 'rbac.authorization.k8s.io'
+    kind: RoleBinding
 
