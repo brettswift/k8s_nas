@@ -18,19 +18,13 @@ spec:
     spec:
       containers:
       - name: jellyfin
-        image: docker.io/linuxserver/jellyfin:latest
+        image: jellyfin/jellyfin:latest
         ports:
         - containerPort: 8096
           name: http
         - containerPort: 7359
           name: discovery
         env:
-        - name: PUID
-          value: "1000"
-        - name: PGID
-          value: "1000"
-        - name: TZ
-          value: "America/Denver"
         - name: JELLYFIN_PublishedServerUrl
           valueFrom:
             configMapKeyRef:
@@ -40,7 +34,7 @@ spec:
         - name: config
           mountPath: /config
         - name: media
-          mountPath: /data
+          mountPath: /media
         resources:
           requests:
             memory: "512Mi"
