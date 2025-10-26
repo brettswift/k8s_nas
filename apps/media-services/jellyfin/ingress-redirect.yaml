@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-slash-redirect
+  namespace: media
+  annotations:
+    nginx.ingress.kubernetes.io/permanent-redirect: https://$host/jellyfin/
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: home.brettswift.com
+    http:
+      paths:
+      - path: /jellyfin
+        pathType: Exact
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: 80
+
+
