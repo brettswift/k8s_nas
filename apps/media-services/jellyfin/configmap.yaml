@@ -20,3 +20,4 @@ data:
   "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces": "true"
   "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "false"
   "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist": "false"
+  "network.xml_NetworkConfiguration_PublishedServerUrl": "https://home.brettswift.com/jellyfin"
