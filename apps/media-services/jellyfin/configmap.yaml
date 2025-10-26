@@ -4,4 +4,19 @@ metadata:
   name: jellyfin-config
   namespace: media
 data:
+  # Environment variables
   JELLYFIN_PublishedServerUrl: "https://home.brettswift.com/jellyfin"
+  
+  # XML configuration overrides (file:path=value format)
+  # Format: "filename:/XPath/To/Element=value"
+  "network.xml:/NetworkConfiguration/BaseUrl": "/jellyfin"
+  "network.xml:/NetworkConfiguration/EnableHttps": "false"
+  "network.xml:/NetworkConfiguration/RequireHttps": "false"
+  "network.xml:/NetworkConfiguration/AutoDiscovery": "true"
+  "network.xml:/NetworkConfiguration/EnableUPnP": "false"
+  "network.xml:/NetworkConfiguration/EnableIPv4": "true"
+  "network.xml:/NetworkConfiguration/EnableIPv6": "false"
+  "network.xml:/NetworkConfiguration/EnableRemoteAccess": "true"
+  "network.xml:/NetworkConfiguration/IgnoreVirtualInterfaces": "true"
+  "network.xml:/NetworkConfiguration/EnablePublishedServerUriByRequest": "false"
+  "network.xml:/NetworkConfiguration/IsRemoteIPFilterBlacklist": "false"

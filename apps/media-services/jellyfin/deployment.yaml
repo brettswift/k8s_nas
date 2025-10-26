@@ -36,21 +36,43 @@ spec:
         - name: media
           mountPath: /media
       initContainers:
-      - name: seed-network-config
-        image: busybox:1.36
-        command:
-        - sh
-        - -c
+      - name: apply-xml-overrides
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
         - |
           set -eu
+          apk add --no-cache xmlstarlet
+          
+          # Copy base configs if they don't exist
           if [ ! -f /config/network.xml ]; then
             cp /seed/network.xml /config/network.xml
           fi
+          
+          # Apply overrides from ConfigMap
+          echo "Applying XML configuration overrides..."
+          for override in /overrides/*; do
+            if [ -f "$override" ]; then
+              key=$(basename "$override")
+              value=$(cat "$override")
+              echo "Processing override: $key = $value"
+              
+              # Parse "file:path=value" format
+              file=$(echo "$key" | cut -d: -f1)
+              xpath=$(echo "$key" | cut -d: -f2)
+              
+              echo "Updating $file with XPath: $xpath = $value"
+              xmlstarlet ed --inplace -u "$xpath" -v "$value" /config/"$file"
+            fi
+          done
+          echo "XML configuration overrides applied"
         volumeMounts:
         - name: config
           mountPath: /config
         - name: network-seed
           mountPath: /seed
+        - name: xml-overrides
+          mountPath: /overrides
         resources:
           requests:
             memory: "512Mi"
@@ -85,6 +107,32 @@ spec:
       - name: network-seed
         configMap:
           name: jellyfin-network-config
+      - name: xml-overrides
+        configMap:
+          name: jellyfin-config
+          items:
+          - key: "network.xml:/NetworkConfiguration/BaseUrl"
+            path: "network.xml:/NetworkConfiguration/BaseUrl"
+          - key: "network.xml:/NetworkConfiguration/EnableHttps"
+            path: "network.xml:/NetworkConfiguration/EnableHttps"
+          - key: "network.xml:/NetworkConfiguration/RequireHttps"
+            path: "network.xml:/NetworkConfiguration/RequireHttps"
+          - key: "network.xml:/NetworkConfiguration/AutoDiscovery"
+            path: "network.xml:/NetworkConfiguration/AutoDiscovery"
+          - key: "network.xml:/NetworkConfiguration/EnableUPnP"
+            path: "network.xml:/NetworkConfiguration/EnableUPnP"
+          - key: "network.xml:/NetworkConfiguration/EnableIPv4"
+            path: "network.xml:/NetworkConfiguration/EnableIPv4"
+          - key: "network.xml:/NetworkConfiguration/EnableIPv6"
+            path: "network.xml:/NetworkConfiguration/EnableIPv6"
+          - key: "network.xml:/NetworkConfiguration/EnableRemoteAccess"
+            path: "network.xml:/NetworkConfiguration/EnableRemoteAccess"
+          - key: "network.xml:/NetworkConfiguration/IgnoreVirtualInterfaces"
+            path: "network.xml:/NetworkConfiguration/IgnoreVirtualInterfaces"
+          - key: "network.xml:/NetworkConfiguration/EnablePublishedServerUriByRequest"
+            path: "network.xml:/NetworkConfiguration/EnablePublishedServerUriByRequest"
+          - key: "network.xml:/NetworkConfiguration/IsRemoteIPFilterBlacklist"
+            path: "network.xml:/NetworkConfiguration/IsRemoteIPFilterBlacklist"
 ---
 apiVersion: v1
 kind: Service
