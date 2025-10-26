@@ -39,6 +39,8 @@ spec:
   - group: 'apps'
     kind: StatefulSet
   - group: 'apps'
+    kind: ReplicaSet
+  - group: 'apps'
     kind: DaemonSet
   - group: 'networking.k8s.io'
     kind: Ingress
