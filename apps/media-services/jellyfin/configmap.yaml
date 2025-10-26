@@ -4,4 +4,4 @@ metadata:
   name: jellyfin-config
   namespace: media
 data:
-  JELLYFIN_PublishedServerUrl: "https://home.brettswift.com"
+  JELLYFIN_PublishedServerUrl: "https://home.brettswift.com/jellyfin"
