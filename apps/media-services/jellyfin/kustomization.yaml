@@ -7,3 +7,6 @@ configMapGenerator:
 - name: jellyfin-network-config
   files:
   - network.xml
+
+generatorOptions:
+  disableNameSuffixHash: true
