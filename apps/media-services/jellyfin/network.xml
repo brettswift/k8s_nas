@@ -22,6 +22,7 @@
     <string>veth</string>
   </VirtualInterfaceNames>
   <EnablePublishedServerUriByRequest>false</EnablePublishedServerUriByRequest>
+  <PublishedServerUrl>https://home.brettswift.com/jellyfin</PublishedServerUrl>
   <PublishedServerUriBySubnet />
   <RemoteIPFilter />
   <IsRemoteIPFilterBlacklist>false</IsRemoteIPFilterBlacklist>
