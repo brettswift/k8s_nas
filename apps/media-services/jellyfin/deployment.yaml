@@ -84,10 +84,7 @@ spec:
           type: Directory
       - name: network-seed
         configMap:
-          name: jellyfin-config
-          items:
-          - key: network.xml
-            path: network.xml
+          name: jellyfin-network-config
 ---
 apiVersion: v1
 kind: Service
