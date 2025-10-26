@@ -7,16 +7,16 @@ data:
   # Environment variables
   JELLYFIN_PublishedServerUrl: "https://home.brettswift.com/jellyfin"
   
-  # XML configuration overrides (file:path=value format)
-  # Format: "filename:/XPath/To/Element=value"
-  "network.xml:/NetworkConfiguration/BaseUrl": "/jellyfin"
-  "network.xml:/NetworkConfiguration/EnableHttps": "false"
-  "network.xml:/NetworkConfiguration/RequireHttps": "false"
-  "network.xml:/NetworkConfiguration/AutoDiscovery": "true"
-  "network.xml:/NetworkConfiguration/EnableUPnP": "false"
-  "network.xml:/NetworkConfiguration/EnableIPv4": "true"
-  "network.xml:/NetworkConfiguration/EnableIPv6": "false"
-  "network.xml:/NetworkConfiguration/EnableRemoteAccess": "true"
-  "network.xml:/NetworkConfiguration/IgnoreVirtualInterfaces": "true"
-  "network.xml:/NetworkConfiguration/EnablePublishedServerUriByRequest": "false"
-  "network.xml:/NetworkConfiguration/IsRemoteIPFilterBlacklist": "false"
+  # XML configuration overrides (file_path=value format)
+  # Format: "filename_xpath=value" (colons replaced with underscores)
+  "network.xml_NetworkConfiguration_BaseUrl": "/jellyfin"
+  "network.xml_NetworkConfiguration_EnableHttps": "false"
+  "network.xml_NetworkConfiguration_RequireHttps": "false"
+  "network.xml_NetworkConfiguration_AutoDiscovery": "true"
+  "network.xml_NetworkConfiguration_EnableUPnP": "false"
+  "network.xml_NetworkConfiguration_EnableIPv4": "true"
+  "network.xml_NetworkConfiguration_EnableIPv6": "false"
+  "network.xml_NetworkConfiguration_EnableRemoteAccess": "true"
+  "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces": "true"
+  "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "false"
+  "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist": "false"
