@@ -2,3 +2,12 @@ resources:
 - configmap.yaml
 - deployment.yaml
 - ingress.yaml
+- ingress-redirect.yaml
+
+configMapGenerator:
+- name: jellyfin-network-config
+  files:
+  - network.xml
+
+generatorOptions:
+  disableNameSuffixHash: true

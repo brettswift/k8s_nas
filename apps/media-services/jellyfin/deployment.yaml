@@ -35,29 +35,46 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /media
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8096
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8096
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+      initContainers:
+      - name: apply-xml-overrides
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -eu
+          apk add --no-cache xmlstarlet
+          
+          # Copy base configs if they don't exist
+          if [ ! -f /config/network.xml ]; then
+            cp /seed/network.xml /config/network.xml
+          fi
+          
+          # Apply overrides from ConfigMap
+          echo "Applying XML configuration overrides..."
+          for override in /overrides/*; do
+            if [ -f "$override" ]; then
+              key=$(basename "$override")
+              value=$(cat "$override")
+              echo "Processing override: $key = $value"
+              
+              # Parse "file_xpath=value" format (underscores instead of colons)
+              # Convert back to proper XPath format
+              file=$(echo "$key" | sed 's/_.*$//')
+              xpath=$(echo "$key" | sed 's/^[^_]*_//' | sed 's/_/\//g')
+              xpath="/$xpath"
+              
+              echo "Updating $file with XPath: $xpath = $value"
+              xmlstarlet ed --inplace -u "$xpath" -v "$value" /config/"$file"
+            fi
+          done
+          echo "XML configuration overrides applied"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: network-seed
+          mountPath: /seed
+        - name: xml-overrides
+          mountPath: /overrides
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -66,6 +83,35 @@ spec:
         hostPath:
           path: /mnt/data
           type: Directory
+      - name: network-seed
+        configMap:
+          name: jellyfin-network-config
+      - name: xml-overrides
+        configMap:
+          name: jellyfin-config
+          items:
+          - key: "network.xml_NetworkConfiguration_BaseUrl"
+            path: "network.xml_NetworkConfiguration_BaseUrl"
+          - key: "network.xml_NetworkConfiguration_EnableHttps"
+            path: "network.xml_NetworkConfiguration_EnableHttps"
+          - key: "network.xml_NetworkConfiguration_RequireHttps"
+            path: "network.xml_NetworkConfiguration_RequireHttps"
+          - key: "network.xml_NetworkConfiguration_AutoDiscovery"
+            path: "network.xml_NetworkConfiguration_AutoDiscovery"
+          - key: "network.xml_NetworkConfiguration_EnableUPnP"
+            path: "network.xml_NetworkConfiguration_EnableUPnP"
+          - key: "network.xml_NetworkConfiguration_EnableIPv4"
+            path: "network.xml_NetworkConfiguration_EnableIPv4"
+          - key: "network.xml_NetworkConfiguration_EnableIPv6"
+            path: "network.xml_NetworkConfiguration_EnableIPv6"
+          - key: "network.xml_NetworkConfiguration_EnableRemoteAccess"
+            path: "network.xml_NetworkConfiguration_EnableRemoteAccess"
+          - key: "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces"
+            path: "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces"
+          - key: "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest"
+            path: "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest"
+          - key: "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist"
+            path: "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist"
 ---
 apiVersion: v1
 kind: Service
