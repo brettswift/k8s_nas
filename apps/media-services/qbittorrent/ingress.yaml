@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qbittorrent-ingress
+  namespace: qbittorrent
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: home.brettswift.com
+    http:
+      paths:
+      - path: /qbittorrent
+        pathType: Prefix
+        backend:
+          service:
+            name: qbittorrent
+            port:
+              number: 8080
+

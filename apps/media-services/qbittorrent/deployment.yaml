@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      containers:
+      - name: qbittorrent
+        image: ghcr.io/linuxserver/qbittorrent:latest
+        ports:
+        - containerPort: 8080
+          name: web
+

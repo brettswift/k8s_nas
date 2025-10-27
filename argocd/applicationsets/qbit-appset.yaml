@@ -1,13 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: starr
+  name: qbit
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "40"
-    argocd.argoproj.io/sync-options: RequireSyncOrder=true
 spec:
   generators:
   - list:
@@ -15,16 +12,11 @@ spec:
       - name: production-cluster
         server: https://kubernetes.default.svc
         environment: production
-        region: server
-        starr-enabled: "true"
   template:
     metadata:
-      name: "starr-{{name}}"
+      name: "qbit-{{name}}"
       finalizers:
         - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "40"
-        argocd.argoproj.io/sync-options: RequireSyncOrder=true
       labels:
         environment: "{{environment}}"
         type: "application"
@@ -33,11 +25,11 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
-        path: apps/media-services/starr
+        targetRevision: dev_qbit
+        path: apps/media-services/qbittorrent
       destination:
         server: "{{server}}"
-        namespace: starr
+        namespace: qbittorrent
       syncPolicy:
         automated:
           prune: true
@@ -50,3 +42,5 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
+
+
