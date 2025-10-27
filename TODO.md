@@ -25,6 +25,43 @@
 - [ ] Deploy qBittorrent for downloads
 - [ ] Deploy Prowlarr for indexer management
 
+## Migration plan: docker-compose services to Kubernetes (NGINX Ingress, path-based)
+- [ ] VPN (gluetun) core
+  - [ ] Create `vpn` namespace and Deployment using `qmcgaw/gluetun` with `NET_ADMIN` and `/dev/net/tun`
+  - [ ] Configure provider=ipvanish; countries per compose; expose necessary ports via env (PORTS), not Service
+  - [ ] Store VPN credentials as Kubernetes Secret (do not commit raw creds); import IP Vanish config from server repo into this repo as templates
+  - [ ] NetworkPolicy to restrict egress only via VPN pod where applicable
+- [ ] qBittorrent (VPN-only)
+  - [ ] New Application (from `apps/media-services/qbittorrent`) with Pod that includes sidecar `gluetun` (shared pod network)
+  - [ ] Ensure qbit only routes through gluetun; open web UI and torrent ports through gluetun firewall (env PORTS)
+  - [ ] PVCs for `/config` and data mounts; Service on 8080; Ingress at `/qbittorrent` (nginx path prefix)
+  - [ ] Health checks for web UI; readiness blocked until gluetun healthy
+- [ ] Sonarr
+  - [ ] Create app with Deployment/Service/Ingress at `/sonarr`; BaseUrl set; PVC for `/config`; mount media path
+- [ ] Radarr
+  - [ ] Create app with Deployment/Service/Ingress at `/radarr`; BaseUrl set; PVC for `/config`; mount media path
+- [ ] Lidarr
+  - [ ] Create app with Deployment/Service/Ingress at `/lidarr`; BaseUrl set; PVC for `/config`; mount media path
+- [ ] Bazarr
+  - [ ] Create app with Deployment/Service/Ingress at `/bazarr`; BaseUrl set; PVC for `/config`; mount media path
+- [ ] Prowlarr
+  - [ ] Create app with Deployment/Service/Ingress at `/prowlarr`; BaseUrl set; PVC for `/config`
+- [ ] FlareSolverr
+  - [ ] Create app with Deployment/Service/Ingress at `/flaresolverr`; strip prefix in ingress if needed
+- [ ] Sabnzbd
+  - [ ] Create app with Deployment/Service/Ingress at `/sabnzbd`; PVC for `/config` and `/data`
+- [ ] Jellyseerr
+  - [ ] Create app with Deployment/Service/Ingress at `/jellyseerr`; rewrite headers/routes as needed; PVC for config
+- [ ] Unpackerr
+  - [ ] Create Deployment; mount downloads path; configure Sonarr/Radarr endpoints via Secret/ConfigMap
+- [ ] Homepage
+  - [ ] Ingress root `/`; preserve X-Forwarded-Prefix; mount config PVC
+
+## ArgoCD structure for starr suite
+- [ ] One ApplicationSet to generate one Application per app (labels: `part-of=starr`)
+- [ ] Each app under `apps/media-services/<app>` with `kustomization.yaml`, `deployment.yaml`, `service.yaml`, `ingress.yaml`
+- [ ] qbittorrent tracks `dev_qbit` branch; others track `main`
+
 ## Home Lab Services
 - [ ] Deploy Home Assistant
 - [ ] Deploy Pi-hole or AdGuard Home for DNS filtering
