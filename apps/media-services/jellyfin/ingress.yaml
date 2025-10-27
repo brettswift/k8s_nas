@@ -17,9 +17,6 @@ metadata:
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       # Ensure trailing slash so relative redirects like 'web/' become /jellyfin/web/
       if ($request_uri = /jellyfin) { return 308 /jellyfin/; }
-      # Rewrite upstream Location headers to include /jellyfin when they are relative
-      proxy_redirect ~^/web/ /jellyfin/web/;
-      proxy_redirect ~^web/ /jellyfin/web/;
 spec:
   ingressClassName: nginx
   tls:
