@@ -40,6 +40,24 @@ else
     echo "Helm already installed: $(helm version --short)"
 fi
 
+# Install NVIDIA Container Toolkit (for GPU support)
+echo "Installing NVIDIA Container Toolkit..."
+if ! command -v nvidia-container-runtime &> /dev/null; then
+    # Add NVIDIA repository
+    curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+    curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+        sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+        sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    
+    # Update package list and install
+    sudo apt update
+    sudo apt install -y nvidia-container-toolkit
+    
+    echo "NVIDIA Container Toolkit installed successfully"
+else
+    echo "NVIDIA Container Toolkit already installed"
+fi
+
 # Add Helm repositories
 echo "Adding Helm repositories..."
 helm repo add istio https://istio-release.storage.googleapis.com/charts
@@ -106,6 +124,7 @@ kubectl wait --namespace istio-system \
 
 echo "=== Kubernetes Plugins Installation Complete ==="
 echo "Installed components:"
+echo "- NVIDIA Container Toolkit (GPU support)"
 echo "- cert-manager"
 echo "- Istio (base, istiod, ingress-gateway)"
 echo "- Helm repositories updated"
