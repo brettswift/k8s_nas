@@ -28,7 +28,7 @@ spec:
           rm vuetorrent.zip
           echo "VueTorrent installed successfully"
         volumeMounts:
-        - name: qbittorrent-config
+        - name: vuetorrent-webui
           mountPath: /vuetorrent
       containers:
       - name: vpn
@@ -88,14 +88,32 @@ spec:
           mountPath: /config
         - name: downloads
           mountPath: /downloads
+        - name: vuetorrent-webui
+          mountPath: /vuetorrent
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
           claimName: qbittorrent-config
+      - name: vuetorrent-webui
+        persistentVolumeClaim:
+          claimName: vuetorrent-webui
       - name: downloads
         hostPath:
           path: /mnt/data/downloads
           type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vuetorrent-webui
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-path
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
