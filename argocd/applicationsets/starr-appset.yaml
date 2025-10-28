@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
+        targetRevision: dev_starr
         path: apps/media-services/starr
       destination:
         server: "{{server}}"
