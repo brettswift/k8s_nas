@@ -43,6 +43,8 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /data
+        - name: downloads
+          mountPath: /downloads
         resources:
           requests:
             memory: "256Mi"
@@ -68,11 +70,16 @@ spec:
           failureThreshold: 3
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: sonarr-config
+        hostPath:
+          path: /mnt/data/configs/sonarr
+          type: Directory
       - name: media
         hostPath:
-          path: /mnt/data
+          path: /mnt/data/media
+          type: Directory
+      - name: downloads
+        hostPath:
+          path: /mnt/data/downloads
           type: Directory
 ---
 apiVersion: v1
