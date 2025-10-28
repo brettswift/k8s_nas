@@ -1,6 +1,5 @@
 resources:
 - namespace.yaml
-- pvcs.yaml
 - common-configmap.yaml
 - sonarr-deployment.yaml
 - sonarr-ingress.yaml
