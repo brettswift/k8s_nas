@@ -66,6 +66,8 @@ spec:
           value: "8080"
         - name: QBITTORRENT_LOG_LEVEL
           value: "Info"
+        - name: DOCKER_MODS
+          value: "ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest"
         volumeMounts:
         - name: qbittorrent-config
           mountPath: /config
