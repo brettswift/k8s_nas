@@ -16,8 +16,6 @@ resources:
 - flaresolverr-deployment.yaml
 - flaresolverr-ingress.yaml
 - vpn-deployment.yaml
-- qbittorrent-deployment.yaml
-- qbittorrent-ingress.yaml
 - sabnzbd-deployment.yaml
 - sabnzbd-ingress.yaml
 - unpackerr-deployment.yaml
