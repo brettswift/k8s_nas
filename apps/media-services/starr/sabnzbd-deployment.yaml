@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sabnzbd
-  namespace: starr
+  namespace: media
   labels:
     app: sabnzbd
 spec:
@@ -89,7 +89,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sabnzbd
-  namespace: starr
+  namespace: media
   labels:
     app: sabnzbd
 spec:
@@ -105,7 +105,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sabnzbd-config
-  namespace: starr
+  namespace: media
 spec:
   accessModes:
     - ReadWriteOnce

@@ -15,7 +15,6 @@ resources:
 - jellyseerr-ingress.yaml
 - flaresolverr-deployment.yaml
 - flaresolverr-ingress.yaml
-- vpn-deployment.yaml
 - sabnzbd-deployment.yaml
 - sabnzbd-ingress.yaml
 - unpackerr-deployment.yaml
