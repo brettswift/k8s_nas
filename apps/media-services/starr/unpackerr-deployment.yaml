@@ -68,7 +68,7 @@ spec:
       volumes:
       - name: downloads
         hostPath:
-          path: /mnt/downloads
+          path: /mnt/data/downloads
           type: Directory
 ---
 apiVersion: v1
