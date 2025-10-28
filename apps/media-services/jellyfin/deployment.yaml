@@ -16,6 +16,7 @@ spec:
       labels:
         app: jellyfin
     spec:
+      runtimeClassName: nvidia
       containers:
       - name: jellyfin
         image: jellyfin/jellyfin:latest
@@ -30,11 +31,28 @@ spec:
             configMapKeyRef:
               name: jellyfin-config
               key: JELLYFIN_PublishedServerUrl
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,video,utility"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+            nvidia.com/gpu: 1
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+            nvidia.com/gpu: 1
+        securityContext:
+          privileged: true
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
           mountPath: /media
+        - name: dev-dri
+          mountPath: /dev/dri
       initContainers:
       - name: apply-xml-overrides
         image: alpine:latest
@@ -82,6 +100,10 @@ spec:
       - name: media
         hostPath:
           path: /mnt/data
+          type: Directory
+      - name: dev-dri
+        hostPath:
+          path: /dev/dri
           type: Directory
       - name: network-seed
         configMap:
