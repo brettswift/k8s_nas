@@ -63,8 +63,6 @@ spec:
           value: ""
         - name: FIREWALL_VPN_INPUT_PORTS
           value: "6881"
-        - name: FIREWALL_OUTBOUND_SUBNETS
-          value: "0.0.0.0/0"
         securityContext:
           capabilities:
             add:
