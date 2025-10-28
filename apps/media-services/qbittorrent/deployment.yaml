@@ -14,9 +14,82 @@ spec:
         app: qbittorrent
     spec:
       containers:
+      - name: vpn
+        image: qmcgaw/gluetun:latest
+        ports:
+        - containerPort: 8080
+          name: qbittorrent-web
+        - containerPort: 6881
+          name: qbittorrent-tcp
+        - containerPort: 6881
+          name: qbittorrent-udp
+          protocol: UDP
+        env:
+        - name: VPN_SERVICE_PROVIDER
+          value: "ipvanish"
+        - name: OPENVPN_USER
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_USER
+        - name: OPENVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_PASSWORD
+        - name: SERVER_COUNTRIES
+          value: "Canada,United States"
+        - name: OPENVPN_ENDPOINT_IP
+          value: ""
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        volumeMounts:
+        - name: qbittorrent-config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
       - name: qbittorrent
         image: ghcr.io/linuxserver/qbittorrent:latest
         ports:
         - containerPort: 8080
           name: web
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "America/Denver"
+        - name: WEBUI_PORT
+          value: "8080"
+        - name: QBITTORRENT_LOG_LEVEL
+          value: "Info"
+        volumeMounts:
+        - name: qbittorrent-config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
+      volumes:
+      - name: qbittorrent-config
+        persistentVolumeClaim:
+          claimName: qbittorrent-config
+      - name: downloads
+        hostPath:
+          path: /mnt/data/downloads
+          type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
 
