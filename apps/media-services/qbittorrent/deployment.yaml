@@ -13,6 +13,23 @@ spec:
       labels:
         app: qbittorrent
     spec:
+      initContainers:
+      - name: vuetorrent-installer
+        image: alpine:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          apk add --no-cache curl unzip
+          mkdir -p /vuetorrent
+          cd /vuetorrent
+          curl -L -o vuetorrent.zip https://github.com/VueTorrent/VueTorrent/releases/download/v2.30.2/vuetorrent.zip
+          unzip vuetorrent.zip
+          rm vuetorrent.zip
+          echo "VueTorrent installed successfully"
+        volumeMounts:
+        - name: qbittorrent-config
+          mountPath: /vuetorrent
       containers:
       - name: vpn
         image: qmcgaw/gluetun:latest
@@ -66,8 +83,6 @@ spec:
           value: "8080"
         - name: QBITTORRENT_LOG_LEVEL
           value: "Info"
-        - name: DOCKER_MODS
-          value: "ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest"
         volumeMounts:
         - name: qbittorrent-config
           mountPath: /config
