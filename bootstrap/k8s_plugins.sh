@@ -53,7 +53,12 @@ if ! command -v nvidia-container-runtime &> /dev/null; then
     sudo apt update
     sudo apt install -y nvidia-container-toolkit
     
-    echo "NVIDIA Container Toolkit installed successfully"
+    # Configure containerd to use NVIDIA runtime
+    echo "Configuring containerd for NVIDIA runtime..."
+    sudo nvidia-ctk runtime configure --runtime=containerd
+    
+    echo "NVIDIA Container Toolkit installed and configured successfully"
+    echo "Note: k3s will need to be restarted to pick up the new runtime configuration"
 else
     echo "NVIDIA Container Toolkit already installed"
 fi

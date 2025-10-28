@@ -22,7 +22,7 @@ spec:
       project: infrastructure
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
+        targetRevision: feat/starr
         path: apps/infrastructure/argocd
       destination:
         server: "{{server}}"
