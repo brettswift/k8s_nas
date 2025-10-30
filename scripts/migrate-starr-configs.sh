@@ -50,3 +50,4 @@ echo "Next steps:"
 echo "1. Update Kubernetes deployments to use the migrated configurations"
 echo "2. Restart the Starr services to pick up the new configurations"
 echo "3. Verify API keys and service connections"
+

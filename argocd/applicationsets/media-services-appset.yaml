@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: media-services
+  name: media-services-starr
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io

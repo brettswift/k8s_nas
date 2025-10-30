@@ -56,3 +56,4 @@ update_deployment "sabnzbd"
 update_deployment "unpackerr"
 
 echo "All deployments updated!"
+
