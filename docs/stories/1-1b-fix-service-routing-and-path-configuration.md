@@ -66,6 +66,7 @@ From [Source: docs/service-routing-issues.md]:
 ### Implementation Approach
 
 **Option 1 (Recommended):** Remove base URL from service configs
+
 - Edit config files to remove or empty `<UrlBase>` settings
 - Let ingress handle all path routing
 - Matches deployment comment: "Rely on ingress strip-prefix"
@@ -142,3 +143,4 @@ From [Source: docs/service-routing-issues.md]:
 
 - `apps/media-services/jellyfin/pv.yaml` - Created static PV with Retain policy, renamed to v2
 - `apps/media-services/jellyfin/deployment.yaml` - Updated PVC to reference PV-v2 by name
+
