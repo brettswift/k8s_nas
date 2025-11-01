@@ -6,16 +6,12 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
       proxy_set_header X-Forwarded-Port $server_port;
       proxy_set_header X-Forwarded-Prefix /sonarr;
-      proxy_set_header X-Forwarded-PathBase /sonarr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      if ($request_uri = /sonarr) { return 308 /sonarr/; }
 spec:
   ingressClassName: nginx
   tls:
@@ -26,7 +22,7 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /sonarr(/|$)(.*)
+      - path: /sonarr
         pathType: Prefix
         backend:
           service:

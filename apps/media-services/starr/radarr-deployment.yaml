@@ -16,6 +16,39 @@ spec:
       labels:
         app: radarr
     spec:
+      initContainers:
+      - name: radarr-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          CONFIG="/config/config.xml"
+          # Ensure config directory exists
+          mkdir -p /config
+          # Create config.xml with UrlBase if it doesn't exist
+          if [ ! -f "$CONFIG" ]; then
+            cat > "$CONFIG" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <Config>
+            <UrlBase>/radarr</UrlBase>
+          </Config>
+          EOF
+          else
+            # Update or add UrlBase setting in existing config
+            if grep -q '<UrlBase>' "$CONFIG"; then
+              # Update existing UrlBase
+              sed -i 's|<UrlBase>.*</UrlBase>|<UrlBase>/radarr</UrlBase>|g' "$CONFIG"
+            else
+              # Add UrlBase if Config tag exists
+              if grep -q '<Config>' "$CONFIG"; then
+                sed -i 's|<Config>|<Config>\n  <UrlBase>/radarr</UrlBase>|g' "$CONFIG"
+              fi
+            fi
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: radarr
         image: docker.io/linuxserver/radarr:latest
@@ -38,7 +71,7 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
-        # No URL base; ingress strips /radarr
+        # UrlBase is configured via init container to /radarr
         volumeMounts:
         - name: config
           mountPath: /config
