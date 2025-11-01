@@ -22,3 +22,4 @@ data:
   
   # Base URLs for external access
   HOSTNAME: "home.brettswift.com"
+  SAB_HOST_WHITELIST: "home.brettswift.com,localhost,127.0.0.1"
