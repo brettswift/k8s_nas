@@ -35,3 +35,5 @@ echo "name|targetRevision|path|namespace|repoURL"
 scan_dir "${REPO_ROOT}/argocd/applicationsets" | sort
 
 
+
+

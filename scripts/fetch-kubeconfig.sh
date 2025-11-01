@@ -36,3 +36,5 @@ echo "  export KUBECONFIG=$OUT_FILE"
 echo "  kubectl get nodes"
 
 
+
+
