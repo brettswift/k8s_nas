@@ -1,6 +1,6 @@
 # Story 1.1b: Fix Service Routing and Path Configuration
 
-Status: ready-for-dev
+Status: completed
 
 ## Story
 
@@ -109,5 +109,33 @@ From [Source: docs/service-routing-issues.md]:
 
 ### Completion Notes List
 
+#### 2025-11-01 - Jellyfin Persistent Storage Fix
+
+1. **Problem Identified:**
+   - Jellyfin PVC was using dynamic `local-path` storage with `Delete` reclaim policy
+   - Deleting the ApplicationSet caused data loss (database, users, configuration)
+   - PV with `Retain` policy got stuck bound to deleted PVC after app deletion
+
+2. **Solution Implemented:**
+   - Created static PersistentVolume `jellyfin-config-pv-v2` with `Retain` reclaim policy
+   - Configured PV to use hostPath: `/mnt/data/configs/jellyfin` (on RAID-protected disk)
+   - Renamed PV from `jellyfin-config-pv` to `jellyfin-config-pv-v2` to avoid binding conflicts with stuck PVs
+   - Updated PVC to explicitly bind to new PV via `volumeName` field
+
+3. **Deployment Status:**
+   - PV created and bound successfully
+   - PVC bound to PV-v2
+   - Jellyfin pod running and accessible
+   - Database restored from `/mnt/data/configs/jellyfin/data/jellyfin.db` (464KB)
+
+4. **Future Considerations:**
+   - If ApplicationSet is deleted and recreated, the PV will persist (Retain policy)
+   - If binding conflicts occur, rename PV to new version (e.g., `jellyfin-config-pv-v3`)
+   - Database persists at `/mnt/data/configs/jellyfin/data/` (RAID-protected)
+
 ### File List
+
+**Modified Files:**
+- `apps/media-services/jellyfin/pv.yaml` - Created static PV with Retain policy, renamed to v2
+- `apps/media-services/jellyfin/deployment.yaml` - Updated PVC to reference PV-v2 by name
 
