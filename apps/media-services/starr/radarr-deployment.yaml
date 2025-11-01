@@ -38,6 +38,8 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
+        - name: URL_BASE
+          value: "/radarr"
         volumeMounts:
         - name: config
           mountPath: /config
