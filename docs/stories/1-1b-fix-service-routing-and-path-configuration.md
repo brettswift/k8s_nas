@@ -48,6 +48,7 @@ so that all services are accessible via ingress without redirect loops or white 
 ### Problem Context
 
 Current issues identified:
+
 - **Sabnzbd**: Redirecting to `/sabnzbd/sabnzbd/wizard` (double path prefix)
 - **Sonarr**: Displaying white page instead of UI content
 
@@ -56,6 +57,7 @@ Root cause: Conflict between service config files having `<UrlBase>/service</Url
 ### Architecture Pattern
 
 From [Source: docs/service-routing-issues.md]:
+
 - Ingress uses regex rewrite: `nginx.ingress.kubernetes.io/rewrite-target: /$2`
 - Path pattern: `/service(/|$)(.*)` captures service path and content
 - Services should serve from root (`/`) with no base URL configured
@@ -69,6 +71,7 @@ From [Source: docs/service-routing-issues.md]:
 - Matches deployment comment: "Rely on ingress strip-prefix"
 
 **Services to check/fix:**
+
 - Sabnzbd: Check `sabnzbd.ini` for `url_base` setting
 - Sonarr: Check `config.xml` for `<UrlBase>` setting
 - Radarr: Check `config.xml` for `<UrlBase>` setting
@@ -136,6 +139,6 @@ From [Source: docs/service-routing-issues.md]:
 ### File List
 
 **Modified Files:**
+
 - `apps/media-services/jellyfin/pv.yaml` - Created static PV with Retain policy, renamed to v2
 - `apps/media-services/jellyfin/deployment.yaml` - Updated PVC to reference PV-v2 by name
-
