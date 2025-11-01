@@ -20,7 +20,7 @@ spec:
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
           name: http
         env:
         - name: PUID
@@ -63,7 +63,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 8081
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 10
@@ -97,8 +97,8 @@ spec:
     app: sabnzbd
   ports:
   - name: http
-    port: 8081
-    targetPort: 8081
+    port: 8080
+    targetPort: 8080
   type: ClusterIP
 ---
 apiVersion: v1
