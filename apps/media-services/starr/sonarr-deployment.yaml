@@ -38,6 +38,8 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
+        - name: SONARR__APP__URLBASE
+          value: "/sonarr"
         volumeMounts:
         - name: config
           mountPath: /config
