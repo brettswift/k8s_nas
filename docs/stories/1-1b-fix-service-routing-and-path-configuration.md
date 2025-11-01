@@ -143,4 +143,3 @@ From [Source: docs/service-routing-issues.md]:
 
 - `apps/media-services/jellyfin/pv.yaml` - Created static PV with Retain policy, renamed to v2
 - `apps/media-services/jellyfin/deployment.yaml` - Updated PVC to reference PV-v2 by name
-
