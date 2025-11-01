@@ -5,3 +5,5 @@ resources:
 - sonarr-ingress.yaml
 - sabnzbd-deployment.yaml
 - sabnzbd-ingress.yaml
+- radarr-deployment.yaml
+- radarr-ingress.yaml

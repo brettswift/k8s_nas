@@ -7,6 +7,7 @@ GUIDANCE_FILE="${REPO_ROOT}/AI_GUIDANCE.md"
 JELLYFIN_URL="https://home.brettswift.com/jellyfin/"
 SONARR_URL="https://home.brettswift.com/sonarr/"
 SAB_URL="https://home.brettswift.com/sabnzbd/"
+RADARR_URL="https://home.brettswift.com/radarr/"
 
 log() {
   printf '%s\n' "$*"
@@ -197,5 +198,44 @@ test_sab_k8s() {
 
 test_sab_k8s || true
 test_sab_http || true
+
+# --- Radarr tests ---
+test_radarr_http() {
+  if ! have_network; then
+    log "SKIP: No network access to home.brettswift.com"
+    return 0
+  fi
+  local http_code
+  http_code=$(curl -skL -o /tmp/radarr.html -w '%{http_code}' "$RADARR_URL") || true
+  if [[ "$http_code" =~ ^2|3 ]]; then
+    if grep -qiE "radarr|doctype|html" /tmp/radarr.html; then
+      log "OK: Radarr HTTP responded with page content"
+      return 0
+    fi
+  fi
+  log "FAIL: Radarr HTTP not serving main page (code=$http_code)"
+  return 1
+}
+
+test_radarr_k8s() {
+  if ! cluster_reachable; then
+    log "SKIP: kubectl not configured or cluster unreachable"
+    return 0
+  fi
+  if ! kubectl -n media get deploy radarr >/dev/null 2>&1; then
+    log "FAIL: radarr deployment missing in namespace media"
+    return 1
+  fi
+  local ready
+  ready=$(kubectl -n media get deploy radarr -o jsonpath='{.status.readyReplicas}' 2>/dev/null || true)
+  if [[ "$ready" != "1" ]]; then
+    log "FAIL: radarr not ready (readyReplicas=$ready)"
+    return 1
+  fi
+  log "OK: radarr deployment ready"
+}
+
+test_radarr_k8s || true
+test_radarr_http || true
 
 
