@@ -62,7 +62,7 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /sabnzbd/ping
+            path: /
             port: 8081
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -70,7 +70,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /sabnzbd/ping
+            path: /
             port: 8081
           initialDelaySeconds: 10
           periodSeconds: 10
