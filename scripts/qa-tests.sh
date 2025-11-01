@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GUIDANCE_FILE="${REPO_ROOT}/AI_GUIDANCE.md"
+JELLYFIN_URL="https://home.brettswift.com/jellyfin/"
 
 log() {
   printf '%s\n' "$*"
@@ -30,7 +31,78 @@ test_ssh_guidance() {
   assert_contains "$GUIDANCE_FILE" "\\bssh\\b" "AI guidance includes SSH instructions"
 }
 
+# --- Jellyfin tests ---
+have_kubectl() {
+  command -v kubectl >/dev/null 2>&1
+}
+
+cluster_reachable() {
+  have_kubectl || return 1
+  kubectl version --short >/dev/null 2>&1 || return 1
+}
+
+have_network() {
+  curl -skI --connect-timeout 3 https://home.brettswift.com >/dev/null 2>&1
+}
+
+test_jellyfin_http() {
+  if ! have_network; then
+    log "SKIP: No network access to home.brettswift.com"
+    return 0
+  fi
+  local http_code
+  http_code=$(curl -skL -o /tmp/jellyfin.html -w '%{http_code}' "$JELLYFIN_URL") || true
+  if [[ "$http_code" =~ ^2|3 ]]; then
+    if grep -qiE "jellyfin|doctype|html" /tmp/jellyfin.html; then
+      log "OK: Jellyfin HTTP responded with page content"
+      return 0
+    fi
+  fi
+  log "FAIL: Jellyfin HTTP not serving main page (code=$http_code)"
+  return 1
+}
+
+test_jellyfin_k8s() {
+  if ! cluster_reachable; then
+    log "SKIP: kubectl not configured or cluster unreachable"
+    return 0
+  fi
+  # Deployment healthy
+  if ! kubectl -n media get deploy jellyfin >/dev/null 2>&1; then
+    log "FAIL: jellyfin deployment missing in namespace media"
+    return 1
+  fi
+  local ready
+  ready=$(kubectl -n media get deploy jellyfin -o jsonpath='{.status.readyReplicas}' 2>/dev/null || true)
+  if [[ "$ready" != "1" ]]; then
+    log "FAIL: jellyfin not ready (readyReplicas=$ready)"
+    return 1
+  fi
+  log "OK: jellyfin deployment ready"
+
+  # ArgoCD Application synced/healthy (best-effort)
+  local app
+  app=$(kubectl -n argocd get applications.argoproj.io -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null | grep -i jellyfin | head -n1 || true)
+  if [[ -z "$app" ]]; then
+    log "SKIP: No ArgoCD Application found matching jellyfin"
+    return 0
+  fi
+  local sync health
+  sync=$(kubectl -n argocd get applications.argoproj.io "$app" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)
+  health=$(kubectl -n argocd get applications.argoproj.io "$app" -o jsonpath='{.status.health.status}' 2>/dev/null || true)
+  if [[ "$sync" == "Synced" && "$health" == "Healthy" ]]; then
+    log "OK: ArgoCD app $app is Synced/Healthy"
+    return 0
+  fi
+  log "FAIL: ArgoCD app $app not Synced/Healthy (sync=$sync health=$health)"
+  return 1
+}
+
 # Call the first test with context
 test_1 "AI guidance updated: no local cluster"
+
+# Optionally run Jellyfin tests
+test_jellyfin_http || true
+test_jellyfin_k8s || true
 
 
