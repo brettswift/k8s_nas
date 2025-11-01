@@ -48,6 +48,16 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: SAB_HOST_WHITELIST
+        - name: SABNZBD_HOST_WHITELIST
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
+        - name: SABNZBD__HOST_WHITELIST_ENTRIES
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
         volumeMounts:
         - name: config
           mountPath: /config
