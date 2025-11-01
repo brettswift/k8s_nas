@@ -16,6 +16,38 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      initContainers:
+      - name: sab-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          WL="${SAB_HOST_WHITELIST:-home.brettswift.com,localhost,127.0.0.1}"
+          INI="/config/sabnzbd.ini"
+          # Ensure file exists
+          [ -f "$INI" ] || { mkdir -p /config; printf "[misc]\n" > "$INI"; }
+          # Normalize: ensure [misc] section exists
+          if ! grep -q '^\[misc\]' "$INI"; then
+            printf "\n[misc]\n" >> "$INI"
+          fi
+          # Update or insert host_whitelist under [misc]
+          awk -v wl="$WL" '
+            BEGIN{ inmisc=0; done=0 }
+            /^\[/ { if(inmisc && !done){ print "host_whitelist = " wl; done=1 } inmisc=0 }
+            /^\[misc\]/ { inmisc=1 }
+            { if(inmisc && $0 ~ /^host_whitelist\s*=/){ print "host_whitelist = " wl; done=1; next } print }
+            END{ if(inmisc && !done){ print "host_whitelist = " wl } }
+          ' "$INI" > "$INI.tmp" && mv "$INI.tmp" "$INI"
+        env:
+        - name: SAB_HOST_WHITELIST
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
