@@ -40,6 +40,8 @@ spec:
               key: TZ
         - name: URL_BASE
           value: "/radarr"
+        - name: RADARR__SERVER__URLBASE
+          value: "/radarr"
         volumeMounts:
         - name: config
           mountPath: /config
