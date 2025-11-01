@@ -38,10 +38,7 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
-        - name: SONARR__APP__URLBASE
-          value: "/sonarr"
-        - name: URL_BASE
-          value: "/sonarr"
+        # Rely on ingress strip-prefix; do not set URL base here
         volumeMounts:
         - name: config
           mountPath: /config
