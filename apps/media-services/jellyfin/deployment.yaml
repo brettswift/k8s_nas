@@ -163,4 +163,4 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: local-storage
-  volumeName: jellyfin-config-pv
+  volumeName: jellyfin-config-pv-v2
