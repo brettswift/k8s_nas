@@ -38,10 +38,7 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
-        - name: URL_BASE
-          value: "/radarr"
-        - name: RADARR__SERVER__URLBASE
-          value: "/radarr"
+        # No URL base; ingress strips /radarr
         volumeMounts:
         - name: config
           mountPath: /config
