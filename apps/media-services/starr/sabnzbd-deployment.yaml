@@ -31,13 +31,17 @@ spec:
           if ! grep -q '^\[misc\]' "$INI"; then
             printf "\n[misc]\n" >> "$INI"
           fi
-          # Update or insert host_whitelist under [misc]
+          # Update or insert host_whitelist and allowed_hosts under [misc]
           awk -v wl="$WL" '
-            BEGIN{ inmisc=0; done=0 }
-            /^\[/ { if(inmisc && !done){ print "host_whitelist = " wl; done=1 } inmisc=0 }
+            BEGIN{ inmisc=0; have_hw=0; have_ah=0 }
+            /^\[/ { if(inmisc){ if(!have_hw){ print "host_whitelist = " wl } if(!have_ah){ print "allowed_hosts = " wl } } inmisc=0 }
             /^\[misc\]/ { inmisc=1 }
-            { if(inmisc && $0 ~ /^host_whitelist\s*=/){ print "host_whitelist = " wl; done=1; next } print }
-            END{ if(inmisc && !done){ print "host_whitelist = " wl } }
+            {
+              if(inmisc && $0 ~ /^host_whitelist\s*=/){ print "host_whitelist = " wl; have_hw=1; next }
+              if(inmisc && $0 ~ /^allowed_hosts\s*=/){ print "allowed_hosts = " wl; have_ah=1; next }
+              print
+            }
+            END{ if(inmisc){ if(!have_hw){ print "host_whitelist = " wl } if(!have_ah){ print "allowed_hosts = " wl } } }
           ' "$INI" > "$INI.tmp" && mv "$INI.tmp" "$INI"
         env:
         - name: SAB_HOST_WHITELIST
