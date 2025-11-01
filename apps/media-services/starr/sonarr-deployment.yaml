@@ -40,6 +40,8 @@ spec:
               key: TZ
         - name: SONARR__APP__URLBASE
           value: "/sonarr"
+        - name: URL_BASE
+          value: "/sonarr"
         volumeMounts:
         - name: config
           mountPath: /config
