@@ -1,6 +1,6 @@
 # Story 1.2: Configure Sonarr-Prowlarr Integration
 
-Status: drafted
+Status: ready-for-dev
 
 ## Story
 
@@ -19,9 +19,12 @@ so that TV show searches automatically use all configured indexers from Prowlarr
 ## Tasks / Subtasks
 
 - [ ] Task 1: Deploy and verify Prowlarr service (AC: #1)
-  - [ ] Verify Prowlarr is deployed in media namespace
-  - [ ] Verify Prowlarr service is accessible via service DNS
-  - [ ] Extract Prowlarr API key from config
+  - [ ] Verify Prowlarr deployment manifest exists and is included in kustomization
+  - [ ] Deploy Prowlarr via ArgoCD (or manual apply if needed)
+  - [ ] Verify Prowlarr pod is running in media namespace
+  - [ ] Verify Prowlarr service is accessible via service DNS (`prowlarr.media.svc.cluster.local:9696`)
+  - [ ] Verify Prowlarr ingress is configured and accessible at `/prowlarr`
+  - [ ] Extract Prowlarr API key from config file (`/mnt/data/configs/prowlarr/config.xml`)
   - [ ] Update `starr-secrets` Secret with PROWLARR_API_KEY
 - [ ] Task 2: Configure Sonarr-Prowlarr connection (AC: #1, #2)
   - [ ] Access Sonarr UI via ingress
@@ -31,7 +34,7 @@ so that TV show searches automatically use all configured indexers from Prowlarr
   - [ ] Configure Sonarr API key (from `starr-secrets`)
   - [ ] Save and test connection
 - [ ] Task 3: Configure Prowlarr-Sonarr application sync (AC: #2, #3)
-  - [ ] Access Prowlarr UI via ingress (when available) or port-forward
+  - [ ] Access Prowlarr UI via ingress at `https://home.brettswift.com/prowlarr` (or port-forward if ingress not ready)
   - [ ] Navigate to Settings → Apps
   - [ ] Add Sonarr application
   - [ ] Configure Sonarr URL: `http://sonarr.media.svc.cluster.local:8989`
@@ -49,9 +52,10 @@ so that TV show searches automatically use all configured indexers from Prowlarr
 
 ### Prerequisites
 
-- Story 1.1: API keys must be configured in `starr-secrets` Secret
-- Story 1.1b: Service routing must be fixed (Sonarr accessible)
-- Prowlarr service must be deployed (may need to be added to kustomization.yaml)
+- ✅ Story 1.1: API keys configured in `starr-secrets` Secret (SONARR_API_KEY exists)
+- ✅ Story 1.1b: Service routing fixed (Sonarr accessible at `/sonarr`)
+- ⚠️ Prowlarr service deployment: Prowlarr manifests exist but service is NOT deployed yet
+- ⚠️ PROWLARR_API_KEY: Not yet in `starr-secrets` Secret (needs extraction)
 
 ### Architecture Context
 
@@ -80,10 +84,11 @@ so that TV show searches automatically use all configured indexers from Prowlarr
 
 ### Files to Review/Modify
 
-- Secret: `starr-secrets` in `media` namespace (update with Prowlarr API key)
-- Prowlarr deployment: `apps/media-services/starr/prowlarr-deployment.yaml`
-- Kustomization: `apps/media-services/starr/kustomization.yaml` (may need to add Prowlarr)
-- Service routing: Ensure Prowlarr ingress is configured correctly
+- **Deployment**: `apps/media-services/starr/prowlarr-deployment.yaml` (verify manifest is correct)
+- **Ingress**: `apps/media-services/starr/prowlarr-ingress.yaml` (verify routing pattern follows standards)
+- **Kustomization**: `apps/media-services/starr/kustomization.yaml` (verify Prowlarr is included)
+- **Secret**: `starr-secrets` in `media` namespace (add PROWLARR_API_KEY after extraction)
+- **Config**: `/mnt/data/configs/prowlarr/config.xml` (extract API key from existing config)
 
 ### Testing Strategy
 
