@@ -5,6 +5,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GUIDANCE_FILE="${REPO_ROOT}/AI_GUIDANCE.md"
 JELLYFIN_URL="https://home.brettswift.com/jellyfin/"
+SONARR_URL="https://home.brettswift.com/sonarr/"
 
 log() {
   printf '%s\n' "$*"
@@ -38,7 +39,7 @@ have_kubectl() {
 
 cluster_reachable() {
   have_kubectl || return 1
-  kubectl version --short >/dev/null 2>&1 || return 1
+  kubectl get ns -o name >/dev/null 2>&1 || return 1
 }
 
 have_network() {
@@ -98,11 +99,63 @@ test_jellyfin_k8s() {
   return 1
 }
 
+# --- Sonarr tests ---
+test_sonarr_http() {
+  if ! have_network; then
+    log "SKIP: No network access to home.brettswift.com"
+    return 0
+  fi
+  local http_code
+  http_code=$(curl -skL -o /tmp/sonarr.html -w '%{http_code}' "$SONARR_URL") || true
+  if [[ "$http_code" =~ ^2|3 ]]; then
+    if grep -qiE "sonarr|doctype|html" /tmp/sonarr.html; then
+      log "OK: Sonarr HTTP responded with page content"
+      return 0
+    fi
+  fi
+  log "FAIL: Sonarr HTTP not serving main page (code=$http_code)"
+  return 1
+}
+
+test_sonarr_k8s() {
+  if ! cluster_reachable; then
+    log "SKIP: kubectl not configured or cluster unreachable"
+    return 0
+  fi
+  if ! kubectl -n media get deploy sonarr >/dev/null 2>&1; then
+    log "FAIL: sonarr deployment missing in namespace media"
+    return 1
+  fi
+  local ready
+  ready=$(kubectl -n media get deploy sonarr -o jsonpath='{.status.readyReplicas}' 2>/dev/null || true)
+  if [[ "$ready" != "1" ]]; then
+    log "FAIL: sonarr not ready (readyReplicas=$ready)"
+    return 1
+  fi
+  log "OK: sonarr deployment ready"
+
+  # ArgoCD application (media-services) status
+  local app="media-services-production-cluster"
+  local sync health
+  sync=$(kubectl -n argocd get applications.argoproj.io "$app" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)
+  health=$(kubectl -n argocd get applications.argoproj.io "$app" -o jsonpath='{.status.health.status}' 2>/dev/null || true)
+  if [[ "$sync" == "Synced" && "$health" == "Healthy" ]]; then
+    log "OK: ArgoCD app $app is Synced/Healthy"
+    return 0
+  fi
+  log "FAIL: ArgoCD app $app not Synced/Healthy (sync=$sync health=$health)"
+  return 1
+}
+
 # Call the first test with context
 test_1 "AI guidance updated: no local cluster"
 
 # Optionally run Jellyfin tests
 test_jellyfin_http || true
 test_jellyfin_k8s || true
+
+# Sonarr tests (will pass after deployment)
+test_sonarr_k8s || true
+test_sonarr_http || true
 
 
