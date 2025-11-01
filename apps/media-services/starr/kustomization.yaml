@@ -3,3 +3,5 @@ resources:
 - common-configmap.yaml
 - sonarr-deployment.yaml
 - sonarr-ingress.yaml
+- sabnzbd-deployment.yaml
+- sabnzbd-ingress.yaml

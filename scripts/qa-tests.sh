@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GUIDANCE_FILE="${REPO_ROOT}/AI_GUIDANCE.md"
 JELLYFIN_URL="https://home.brettswift.com/jellyfin/"
 SONARR_URL="https://home.brettswift.com/sonarr/"
+SAB_URL="https://home.brettswift.com/sabnzbd/"
 
 log() {
   printf '%s\n' "$*"
@@ -157,5 +158,44 @@ test_jellyfin_k8s || true
 # Sonarr tests (will pass after deployment)
 test_sonarr_k8s || true
 test_sonarr_http || true
+
+# --- SABnzbd tests ---
+test_sab_http() {
+  if ! have_network; then
+    log "SKIP: No network access to home.brettswift.com"
+    return 0
+  fi
+  local http_code
+  http_code=$(curl -skL -o /tmp/sab.html -w '%{http_code}' "$SAB_URL") || true
+  if [[ "$http_code" =~ ^2|3 ]]; then
+    if grep -qiE "sabnzbd|doctype|html" /tmp/sab.html; then
+      log "OK: SABnzbd HTTP responded with page content"
+      return 0
+    fi
+  fi
+  log "FAIL: SABnzbd HTTP not serving main page (code=$http_code)"
+  return 1
+}
+
+test_sab_k8s() {
+  if ! cluster_reachable; then
+    log "SKIP: kubectl not configured or cluster unreachable"
+    return 0
+  fi
+  if ! kubectl -n media get deploy sabnzbd >/dev/null 2>&1; then
+    log "FAIL: sabnzbd deployment missing in namespace media"
+    return 1
+  fi
+  local ready
+  ready=$(kubectl -n media get deploy sabnzbd -o jsonpath='{.status.readyReplicas}' 2>/dev/null || true)
+  if [[ "$ready" != "1" ]]; then
+    log "FAIL: sabnzbd not ready (readyReplicas=$ready)"
+    return 1
+  fi
+  log "OK: sabnzbd deployment ready"
+}
+
+test_sab_k8s || true
+test_sab_http || true
 
 
