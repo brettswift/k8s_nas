@@ -39,6 +39,25 @@ Establish complete inter-service communication between all Starr media managemen
 
 ### Story Breakdown
 
+**Story 1.1a: Investigate Current State of Server**
+
+As a system administrator,
+I want to document the current state of deployed services, configurations, and integrations,
+So that I understand what's already working and what needs to be configured before proceeding with API key extraction.
+
+**Acceptance Criteria:**
+1. Inventory of all deployed services in the cluster (namespaces, pods, services)
+2. Documentation of existing service configurations (ConfigMaps, Secrets, PVCs)
+3. Identification of any API keys already configured in services
+4. Documentation of existing integrations (e.g., Sonarr-Prowlarr, download clients)
+5. Identification of services that are running but not fully configured
+6. Documentation of current networking setup (ingress, services, DNS)
+7. Current state documented in `docs/current-state-inventory.md`
+
+**Prerequisites:** None (first story in epic)
+
+---
+
 **Story 1.1: Extract and Configure API Keys for Starr Services**
 
 As a system administrator,
@@ -46,13 +65,34 @@ I want to extract API keys from existing service configurations and configure th
 So that services can communicate with each other securely.
 
 **Acceptance Criteria:**
-1. API keys extracted from existing Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, and Jellyseerr configurations
-2. API keys stored in Kubernetes Secrets in the `media` namespace
-3. API keys referenced in service ConfigMaps or environment variables
-4. Services can authenticate using configured API keys
-5. API key configuration verified via service API calls
+1. **Deployed Services Verified:** All services listed in `apps/media-services/starr/kustomization.yaml` are deployed, running, and accessible
+2. **Service Accessibility:** Each deployed service is accessible via browser at `https://home.brettswift.com/<service>` without 404 errors
+3. **Service Health:** All deployed services return successful HTTP responses (200/301/302, not 404, 500, or connection errors)
+4. **API Keys Extracted:** API keys extracted from all deployed and accessible services (currently: Sonarr, Radarr; Sabnzbd config not accessible)
+5. **API Keys Stored:** API keys stored in Kubernetes Secret `starr-secrets` in the `media` namespace
+6. **Secret Reference:** Secret is properly referenced in service deployments that need it (e.g., Unpackerr)
+7. **API Authentication Verified:** API key authentication verified via service API calls using extracted keys (optional - can be done during integration stories)
+8. **Placeholders Created:** Secret includes placeholder entries for services not yet deployed (Lidarr, Bazarr, Prowlarr, Jellyseerr) or not yet accessible (Sabnzbd)
 
-**Prerequisites:** None (foundational story)
+**Prerequisites:** Story 1.1a (current state investigation)
+
+---
+
+**Story 1.1b: Fix Service Routing and Path Configuration**
+
+As a system administrator,
+I want to fix routing issues with Sabnzbd and Sonarr services and standardize path configurations across all media services,
+So that all services are accessible via ingress without redirect loops or white pages, and follow consistent routing patterns.
+
+**Acceptance Criteria:**
+1. **Sabnzbd Routing Fixed:** Sabnzbd accessible at `https://home.brettswift.com/sabnzbd` without double path (`/sabnzbd/sabnzbd`) issues
+2. **Sonarr Routing Fixed:** Sonarr accessible at `https://home.brettswift.com/sonarr` and displays full UI content (not white page)
+3. **Routing Pattern Standardized:** All media services (Sonarr, Radarr, Sabnzbd, and any others) use consistent ingress routing configuration
+4. **Path Base Configuration:** Service config files use consistent UrlBase/path_base settings that align with ingress rewrite rules
+5. **Verification:** All fixed services return HTTP 200 with actual UI content when accessed via ingress
+6. **Documentation:** Routing patterns documented for future service deployments
+
+**Prerequisites:** Story 1.1 (API keys configured)
 
 ---
 

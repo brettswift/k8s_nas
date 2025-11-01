@@ -16,8 +16,6 @@ metadata:
       proxy_set_header X-Forwarded-PathBase /sabnzbd;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       if ($request_uri = /sabnzbd) { return 308 /sabnzbd/; }
-      # Rewrite upstream Location header to preserve base path
-      more_set_headers "Location: /sabnzbd$upstream_http_location";
 spec:
   ingressClassName: nginx
   tls:

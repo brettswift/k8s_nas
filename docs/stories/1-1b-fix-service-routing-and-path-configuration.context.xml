@@ -1,0 +1,211 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.1b</storyId>
+    <title>Fix Service Routing and Path Configuration</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-1b-fix-service-routing-and-path-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>to fix routing issues with Sabnzbd and Sonarr services and standardize path configurations across all media services</iWant>
+    <soThat>all services are accessible via ingress without redirect loops or white pages, and follow consistent routing patterns</soThat>
+    <tasks>
+- [ ] Task 1: Diagnose and fix Sabnzbd routing issue (AC: #1)
+  - [ ] Investigate Sabnzbd double path issue (`/sabnzbd/sabnzbd/wizard`)
+  - [ ] Check Sabnzbd config file for url_base setting
+  - [ ] Review Sabnzbd ingress configuration for path rewrite issues
+  - [ ] Fix config and/or ingress to resolve double path
+  - [ ] Test Sabnzbd accessibility via ingress
+- [ ] Task 2: Diagnose and fix Sonarr routing issue (AC: #2)
+  - [ ] Investigate Sonarr white page issue
+  - [ ] Check Sonarr config file for UrlBase setting
+  - [ ] Review Sonarr ingress configuration
+  - [ ] Fix config to remove UrlBase conflict with ingress
+  - [ ] Test Sonarr UI displays correctly via ingress
+- [ ] Task 3: Standardize routing patterns across all services (AC: #3, #4)
+  - [ ] Review all media service ingress configurations
+  - [ ] Identify any services with UrlBase/path_base conflicts
+  - [ ] Apply consistent pattern: ingress strips prefix, services serve from root
+  - [ ] Update service config files to remove base URL where needed
+  - [ ] Verify all services follow same routing pattern
+- [ ] Task 4: Verify and document (AC: #5, #6)
+  - [ ] Test all media services return HTTP 200 via ingress
+  - [ ] Verify services display actual UI content (not redirects or white pages)
+  - [ ] Document routing pattern and configuration approach
+  - [ ] Update architecture docs with routing standards
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Sabnzbd Routing Fixed:** Sabnzbd accessible at `https://home.brettswift.com/sabnzbd` without double path (`/sabnzbd/sabnzbd`) issues
+2. **Sonarr Routing Fixed:** Sonarr accessible at `https://home.brettswift.com/sonarr` and displays full UI content (not white page)
+3. **Routing Pattern Standardized:** All media services (Sonarr, Radarr, Sabnzbd, and any others) use consistent ingress routing configuration
+4. **Path Base Configuration:** Service config files use consistent UrlBase/path_base settings that align with ingress rewrite rules
+5. **Verification:** All fixed services return HTTP 200 with actual UI content when accessed via ingress
+6. **Documentation:** Routing patterns documented for future service deployments
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/service-routing-issues.md</path>
+        <title>Service Routing Issues - Path Base URL Conflict</title>
+        <section>Root Cause and Solutions</section>
+        <snippet>Services experiencing 307 redirect loops due to conflict between service config UrlBase settings and ingress path rewrite. Recommended solution: Remove base URL from service configs, let ingress handle path routing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-1b-fix-service-routing-and-path-configuration.md</path>
+        <title>Story 1.1b: Fix Service Routing and Path Configuration</title>
+        <section>Dev Notes</section>
+        <snippet>Root cause: Conflict between service config files having UrlBase and ingress rewriting paths. Implementation approach: Remove base URL from service configs, apply consistent ingress strip-prefix pattern.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>k8s_nas Architecture Documentation</title>
+        <section>API Design - External APIs (Ingress)</section>
+        <snippet>All services exposed via path-based routing. Services use ingress with path prefix patterns. Ingress controller handles SSL and path routing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic and Story Breakdown</title>
+        <section>Story 1.1b</section>
+        <snippet>Story acceptance criteria for fixing Sabnzbd double path and Sonarr white page issues, standardizing routing patterns across all media services.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>apps/media-services/starr/sonarr-ingress.yaml</path>
+        <kind>ingress</kind>
+        <symbol>sonarr-ingress</symbol>
+        <lines>1-35</lines>
+        <reason>Sonarr ingress configuration using regex rewrite pattern `/sonarr(/|$)(.*)` with rewrite-target `/$2`. Contains proxy headers and redirect logic.</reason>
+      </file>
+      <file>
+        <path>apps/media-services/starr/sabnzbd-ingress.yaml</path>
+        <kind>ingress</kind>
+        <symbol>sabnzbd-ingress</symbol>
+        <lines>1-35</lines>
+        <reason>Sabnzbd ingress configuration with similar pattern. Shows ingress rewrite pattern and proxy header configuration. May need review for double path issue.</reason>
+      </file>
+      <file>
+        <path>apps/media-services/starr/radarr-ingress.yaml</path>
+        <kind>ingress</kind>
+        <symbol>radarr-ingress</symbol>
+        <lines>1-35</lines>
+        <reason>Radarr ingress following same pattern. Should be reviewed for consistency with Sonarr and Sabnzbd fixes.</reason>
+      </file>
+      <file>
+        <path>apps/media-services/starr/sabnzbd-deployment.yaml</path>
+        <kind>deployment</kind>
+        <symbol>sabnzbd-deployment</symbol>
+        <lines>19-47</lines>
+        <reason>Sabnzbd initContainer script that configures sabnzbd.ini. Comment notes "url_base is NOT set - rely on ingress strip-prefix". Shows pattern for config file manipulation.</reason>
+      </file>
+      <file>
+        <path>scripts/migrate-starr-configs.sh</path>
+        <kind>script</kind>
+        <symbol>migrate-starr-configs</symbol>
+        <lines>1-52</lines>
+        <reason>Shows how to access service config files. Config files are stored at /mnt/data/configs/{service-name} on the server host path.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <ecosystem>kubernetes</ecosystem>
+      <packages>
+        <package name="networking.k8s.io/v1">Ingress resource API</package>
+        <package name="nginx.ingress.kubernetes.io">NGINX Ingress Controller annotations</package>
+      </packages>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <name>Routing Pattern Standard</name>
+      <description>All media services must use consistent ingress routing: path pattern `/service(/|$)(.*)` with rewrite-target `/$2`. Services should serve from root (`/`) with no base URL configured in service config files.</description>
+    </constraint>
+    <constraint>
+      <name>Config File Location</name>
+      <description>Service config files are stored on persistent volumes accessible via host path `/mnt/data/configs/{service-name}` or PVCs. Sonarr/Radarr use XML config files. Sabnzbd uses INI format.</description>
+    </constraint>
+    <constraint>
+      <name>Service Restart Requirement</name>
+      <description>After modifying service config files, pods may need restart to pick up changes. Use `kubectl rollout restart deployment/{service} -n media` to restart services.</description>
+    </constraint>
+    <constraint>
+      <name>Access Pattern</name>
+      <description>Config files can be accessed via: 1) SSH to server at /mnt/data/configs, 2) Pod exec into container, 3) Port-forward to service and use UI. SSH is most direct for file edits.</description>
+    </constraint>
+    <constraint>
+      <name>Testing Requirement</name>
+      <description>All fixes must be verified via: 1) curl to ingress URL returning HTTP 200, 2) Browser access showing full UI content (not white page or redirect loops), 3) Functional verification of service features.</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>NGINX Ingress Path Rewrite</name>
+      <kind>Ingress annotation</kind>
+      <signature>nginx.ingress.kubernetes.io/rewrite-target: /$2</signature>
+      <path>apps/media-services/starr/*-ingress.yaml</path>
+    </interface>
+    <interface>
+      <name>Ingress Path Pattern</name>
+      <kind>Kubernetes Ingress path rule</kind>
+      <signature>path: /service(/|$)(.*)</signature>
+      <path>apps/media-services/starr/*-ingress.yaml</path>
+    </interface>
+    <interface>
+      <name>Sonarr Config File</name>
+      <kind>XML configuration file</kind>
+      <signature>&lt;UrlBase&gt;/service&lt;/UrlBase&gt;</signature>
+      <path>/mnt/data/configs/sonarr/config.xml (or via PVC)</path>
+    </interface>
+    <interface>
+      <name>Sabnzbd Config File</name>
+      <kind>INI configuration file</kind>
+      <signature>url_base = /service</signature>
+      <path>/mnt/data/configs/sabnzbd/sabnzbd.ini (or via PVC)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing approach: Manual verification via HTTP requests and browser testing. Use curl to verify HTTP status codes (should be 200, not 307 redirect loops). Test via browser to verify full UI content displays correctly. Services should return actual HTML content, not white pages or redirect loops.
+    </standards>
+    <locations>
+      - Manual testing via ingress URLs: https://home.brettswift.com/{service}
+      - Test commands: curl -k https://home.brettswift.com/{service}/
+      - Browser verification: Navigate to service URLs and verify full functionality
+    </locations>
+    <ideas>
+      <test acId="1">
+        <description>Test Sabnzbd accessibility without double path</description>
+        <steps>1. Access https://home.brettswift.com/sabnzbd, 2. Verify no redirect to /sabnzbd/sabnzbd/wizard, 3. Verify HTTP 200 response, 4. Verify Sabnzbd UI displays correctly</steps>
+      </test>
+      <test acId="2">
+        <description>Test Sonarr UI displays full content</description>
+        <steps>1. Access https://home.brettswift.com/sonarr, 2. Verify HTTP 200 response, 3. Verify Sonarr UI HTML content is present (not white page), 4. Verify login page or dashboard displays</steps>
+      </test>
+      <test acId="3">
+        <description>Verify routing pattern consistency</description>
+        <steps>1. Review all ingress files for consistent path patterns, 2. Verify all use same rewrite-target annotation, 3. Check all services follow /service(/|$)(.*) pattern</steps>
+      </test>
+      <test acId="4">
+        <description>Verify config file UrlBase settings</description>
+        <steps>1. Check Sonarr config.xml for empty or missing UrlBase, 2. Check Radarr config.xml for empty or missing UrlBase, 3. Check Sabnzbd sabnzbd.ini for missing url_base setting, 4. Verify all configs align with ingress rewrite</steps>
+      </test>
+      <test acId="5">
+        <description>Verify all services return HTTP 200</description>
+        <steps>1. Test each service via curl returning HTTP 200, 2. Verify actual UI HTML content in response, 3. Verify no redirect loops (307 responses), 4. Verify no white pages (empty responses)</steps>
+      </test>
+      <test acId="6">
+        <description>Document routing patterns</description>
+        <steps>1. Document ingress rewrite pattern in architecture docs, 2. Document config file UrlBase requirements, 3. Create checklist for future service deployments, 4. Update service-routing-issues.md with resolution</steps>
+      </test>
+    </ideas>
+  </tests>
+</story-context>
