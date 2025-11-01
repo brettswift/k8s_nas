@@ -16,6 +16,39 @@ spec:
       labels:
         app: prowlarr
     spec:
+      initContainers:
+      - name: prowlarr-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          CONFIG="/config/config.xml"
+          # Ensure config directory exists
+          mkdir -p /config
+          # Create config.xml with UrlBase if it doesn't exist
+          if [ ! -f "$CONFIG" ]; then
+            cat > "$CONFIG" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <Config>
+            <UrlBase>/prowlarr</UrlBase>
+          </Config>
+          EOF
+          else
+            # Update or add UrlBase setting in existing config
+            if grep -q '<UrlBase>' "$CONFIG"; then
+              # Update existing UrlBase
+              sed -i 's|<UrlBase>.*</UrlBase>|<UrlBase>/prowlarr</UrlBase>|g' "$CONFIG"
+            else
+              # Add UrlBase if Config tag exists
+              if grep -q '<Config>' "$CONFIG"; then
+                sed -i 's|<Config>|<Config>\n  <UrlBase>/prowlarr</UrlBase>|g' "$CONFIG"
+              fi
+            fi
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: prowlarr
         image: docker.io/linuxserver/prowlarr:latest
@@ -48,9 +81,10 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        # UrlBase is configured via init container to /prowlarr
         livenessProbe:
           httpGet:
-            path: /prowlarr/ping
+            path: /ping
             port: 9696
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -58,7 +92,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /prowlarr/ping
+            path: /ping
             port: 9696
           initialDelaySeconds: 10
           periodSeconds: 10
