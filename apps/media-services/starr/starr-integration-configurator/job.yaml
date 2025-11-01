@@ -20,7 +20,6 @@ spec:
         app: starr-integration-configurator
         purpose: configuration
     spec:
-      serviceAccountName: starr-integration-configurator
       restartPolicy: Never
       containers:
       - name: configurator
@@ -348,34 +347,4 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "200m"
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: starr-integration-configurator
-  namespace: media
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: starr-integration-configurator
-  namespace: media
-rules:
-- apiGroups: [""]
-  resources: ["secrets", "configmaps"]
-  verbs: ["get", "list"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: starr-integration-configurator
-  namespace: media
-subjects:
-- kind: ServiceAccount
-  name: starr-integration-configurator
-  namespace: media
-roleRef:
-  kind: Role
-  name: starr-integration-configurator
-  apiGroup: rbac.authorization.k8s.io
 
