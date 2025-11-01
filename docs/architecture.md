@@ -172,6 +172,131 @@ The system has been migrated from a docker-compose setup to a fully Kubernetes-n
 - `RADARR_URL`: `http://radarr.media.svc.cluster.local:7878`
 - `QBITTORRENT_URL`: `http://qbittorrent.qbittorrent.svc.cluster.local:8080`
 
+## Service Routing Standards
+
+### Overview
+
+All services are exposed via path-based routing through NGINX Ingress Controller. Services are configured to respond on their base paths, and ingress passes through the full path without modification.
+
+### Standard Routing Pattern
+
+**Principle:** Services are configured with their base paths (`url_base` or `UrlBase`), and ingress passes through the full request path without stripping.
+
+#### Configuration Requirements
+
+1. **Service Configuration:**
+
+   - Services MUST be configured with their base path in their configuration files
+   - **Sabnzbd**: Set `url_base = /sabnzbd` in `sabnzbd.ini` under `[misc]` section
+   - **Sonarr/Radarr/Other Starr Services**: Set `<UrlBase>/service</UrlBase>` in `config.xml`
+   - Configuration is applied via init containers in deployment manifests
+
+2. **Ingress Configuration:**
+
+   - Path pattern: Simple prefix `/service` (NOT regex `/service(/|$)(.*)`)
+   - `pathType: Prefix`
+   - **DO NOT** use `rewrite-target` annotation (pass through full path)
+   - Remove `use-regex` annotation unless specifically needed
+
+3. **Example Ingress Configuration:**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sabnzbd-ingress
+  namespace: media
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # NO rewrite-target - pass through full path
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: home.brettswift.com
+    http:
+      paths:
+      - path: /sabnzbd        # Simple prefix, not regex
+        pathType: Prefix
+        backend:
+          service:
+            name: sabnzbd
+            port:
+              number: 8080
+```
+
+#### Service Configuration Pattern
+
+Services are configured via init containers that set base paths in their configuration files:
+
+**Sabnzbd Example:**
+
+- Init container modifies `sabnzbd.ini` to set `url_base = /sabnzbd`
+
+**Sonarr/Radarr Example:**
+
+- Init container modifies `config.xml` to set `<UrlBase>/sonarr</UrlBase>` or `<UrlBase>/radarr</UrlBase>`
+
+### Request Flow
+
+1. User requests `https://home.brettswift.com/sabnzbd/wizard`
+2. NGINX Ingress receives request and matches path `/sabnzbd` (Prefix)
+3. Ingress forwards full path `/sabnzbd/wizard` to backend service (NO stripping)
+4. Service receives `/sabnzbd/wizard` and serves content on its configured base path
+5. Response returned correctly
+
+### Exception: Jellyfin
+
+Jellyfin uses a **different routing pattern** and should NOT be modified:
+
+- **Jellyfin Configuration:**
+
+  - BaseUrl is overridden to `/` (root) via ConfigMap
+  - Ingress uses regex pattern `/jellyfin(/|$)(.*)`
+  - Ingress rewrites with `rewrite-target: /$2` (strips prefix)
+  - Service serves from root, ingress handles path routing
+
+**Why Different:** Jellyfin's architecture supports path stripping better than other services, and its configuration is managed via ConfigMap/init container with XML overrides.
+
+### Best Practices
+
+1. **Consistency:** All new services should follow the standard pattern (configure base path, ingress passes through)
+2. **Init Containers:** Use init containers to configure base paths, not manual config file edits
+3. **Testing:** Always verify:
+
+   - Service accessible at `/service` base path
+   - No double paths (e.g., `/service/service/wizard`)
+   - No redirect loops (HTTP 307/308)
+   - Actual UI content displays (not white pages)
+
+4. **Documentation:** When adding new services, document the base path configuration in service-specific documentation
+
+### Troubleshooting
+
+**Common Issues:**
+
+- **Double Path (`/service/service/...`)**: Service config has base path, but ingress is also stripping. Fix: Remove `rewrite-target` from ingress.
+- **White Page / 502 Error**: Service not configured with base path, but receiving requests at base path. Fix: Configure service with base path via init container.
+- **Redirect Loop (307/308)**: Conflict between service config and ingress rewrite. Fix: Follow standard pattern - configure base path, no ingress rewrite.
+
+**Verification Commands:**
+
+```bash
+# Check ingress configuration
+kubectl get ingress <service>-ingress -n <namespace> -o yaml
+
+# Verify service config
+kubectl exec -n <namespace> <pod-name> -- cat /config/<config-file> | grep -i url_base
+
+# Test URL
+curl -k -I https://home.brettswift.com/<service>
+```
+
+### Related Documentation
+
+- Story: [1.1b: Fix Service Routing and Path Configuration](../stories/1-1b-fix-service-routing-and-path-configuration.md)
+- Issue Analysis: [Service Routing Issues](../service-routing-issues.md)
+
 ## API Design
 
 ### External APIs (Ingress)
