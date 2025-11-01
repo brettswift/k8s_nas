@@ -105,6 +105,12 @@ so that TV show searches automatically use all configured indexers from Prowlarr
 
 ## Dev Agent Record
 
+### Git Branch
+
+- **Branch**: `story/1-2-configure-sonarr-prowlarr-integration`
+- **Created**: During story grooming when moved to `ready-for-dev`
+- **Base**: `dev_starr`
+
 ### Context Reference
 
 <!-- Path(s) to story context XML will be added here by context workflow -->
