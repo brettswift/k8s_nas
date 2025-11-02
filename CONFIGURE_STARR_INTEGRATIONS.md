@@ -174,6 +174,34 @@ kubectl exec -n media $(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.
   -- cat /config/sabnzbd.ini | grep "^api_key" | sed 's/.*=\s*//'
 ```
 
+#### Configure SABnzbd Download Folders
+
+**You must configure download folders in SABnzbd before configuring Sonarr/Radarr clients.**
+
+SABnzbd uses its own configured folders - Sonarr/Radarr don't tell it where to download. They only send download requests with categories.
+
+**Folder Configuration:**
+
+1. Access SABnzbd: `https://home.brettswift.com/sabnzbd`
+2. **Config** → **Folders**
+3. Configure:
+   - **Temporary Download Folder:** `/data/usenet/incomplete`
+     - *Host path: `/mnt/data/usenet/incomplete`*
+   - **Completed Download Folder:** `/data/usenet/complete`
+     - *Host path: `/mnt/data/usenet/complete`*
+4. **Save**
+
+**Folder Structure:**
+```
+/mnt/data/
+├── media/              # Final media library
+├── downloads/          # qBittorrent (torrents)
+└── usenet/             # SABnzbd (usenet downloads)
+    ├── incomplete/     # Downloads in progress
+    └── complete/        # Completed downloads
+```
+
+**Note:** SABnzbd has `/data` mounted to `/mnt/data`, so it has access to the `usenet` folder. Sonarr/Radarr have `/downloads` mounted to `/mnt/data/downloads`, so they can't directly access `/mnt/data/usenet`. You'll need to configure path mapping in Sonarr/Radarr (see below).
 
 #### Sonarr → SABnzbd
 
@@ -186,12 +214,24 @@ kubectl exec -n media $(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.
    - **API Key:** [SABnzbd API key]
    - **Category:** `tv` (or `sonarr`)
    - ✅ **Use SSL:** No
+   - **Remote Path Mapping (Advanced):**
+     - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder)
+     - **Local Path:** `/downloads/usenet/complete` (how Sonarr sees it)
+     - *Note: This requires Sonarr to have access to `/mnt/data/usenet`. See path configuration notes below.*
 4. **Test** → **Save**
+
+**Path Configuration Note:** 
+- SABnzbd saves completed downloads to `/data/usenet/complete` (host: `/mnt/data/usenet/complete`)
+- Sonarr needs to access these files to import them
+- Current deployment: Sonarr has `/downloads` → `/mnt/data/downloads` mounted
+- **Option 1:** Mount `/mnt/data` (or `/mnt/data/usenet`) to Sonarr so it can access usenet folder
+- **Option 2:** Use path mapping if volumes are configured to allow access
 
 #### Radarr → SABnzbd
 
-Same steps, but in Radarr:
+Same steps as Sonarr, but in Radarr:
 - **Category:** `movies` (or `radarr`)
+- **Remote Path Mapping:** Same as Sonarr (configure Remote Path: `/data/usenet/complete`, Local Path: `/downloads/usenet/complete`)
 
 ---
 
