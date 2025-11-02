@@ -37,35 +37,20 @@ This creates the secret with empty keys that will be populated later.
 
 ### Extract and Update API Keys
 
-**After services are deployed, extract keys from running services:**
+**View all API keys from the secret (copy and paste this command):**
 
 ```bash
-# Run automated extraction script (extracts from all running pods)
-./scripts/extract-all-api-keys.sh
-```
-
-This script will:
-- Extract API keys from running services (Sonarr, Radarr, Prowlarr, SABnzbd)
-- Update the `starr-secrets` Secret automatically
-- Skip services that aren't deployed yet
-- Preserve existing keys if extraction fails
-
-**Manual extraction** (if script doesn't work or for services not deployed):
-
-```bash
-# Check which keys are set
 for key in SONARR_API_KEY RADARR_API_KEY LIDARR_API_KEY BAZARR_API_KEY PROWLARR_API_KEY SABNZBD_API_KEY JELLYSEERR_API_KEY; do
-  echo -n "$key: "
-  kubectl get secret starr-secrets -n media -o jsonpath="{.data.$key}" 2>/dev/null | base64 -d | wc -c
+  value=$(kubectl get secret starr-secrets -n media -o jsonpath="{.data.$key}" 2>/dev/null | base64 -d 2>/dev/null | grep -oE '[a-f0-9]{32}' | head -1)
+  if [ -n "$value" ]; then
+    echo "$key: $value"
+  else
+    echo "$key: (empty)"
+  fi
 done
-
-# Get individual keys (if set)
-kubectl get secret starr-secrets -n media -o jsonpath='{.data.SONARR_API_KEY}' | base64 -d && echo
-kubectl get secret starr-secrets -n media -o jsonpath='{.data.RADARR_API_KEY}' | base64 -d && echo
-kubectl get secret starr-secrets -n media -o jsonpath='{.data.PROWLARR_API_KEY}' | base64 -d && echo
 ```
 
-**Manual extraction** (if script doesn't work or for services not deployed):
+**Manual extraction** (if keys are empty, get from service UIs):
 - Extract keys from service UIs:
   - Sonarr/Radarr/Lidarr: Settings → General → Security → API Key
   - Prowlarr: Settings → General → Security → API Key
@@ -83,17 +68,16 @@ kubectl get secret starr-secrets -n media -o jsonpath='{.data.PROWLARR_API_KEY}'
 
 ### Service URLs (Internal Kubernetes DNS)
 
-- Sonarr: `http://sonarr.media.svc.cluster.local:8989` (or `http://sonarr:8989`)
-- Radarr: `http://radarr.media.svc.cluster.local:7878` (or `http://radarr:7878`)
-- Lidarr: `http://lidarr.media.svc.cluster.local:8686` (or `http://lidarr:8686`)
-- Prowlarr: `http://prowlarr.media.svc.cluster.local:9696` (or `http://prowlarr:9696`)
-- Bazarr: `http://bazarr.media.svc.cluster.local:6767` (or `http://bazarr:6767`)
-- qBittorrent: `http://qbittorrent.qbittorrent.svc.cluster.local:8080`
-- SABnzbd: `http://sabnzbd.media.svc.cluster.local:8081` (or `http://sabnzbd:8081`)
-- Unpackerr: `http://unpackerr.media.svc.cluster.local:9770` (or `http://unpackerr:9770`)
-- Jellyseerr: `http://jellyseerr.media.svc.cluster.local:5055` (or `http://jellyseerr:5055`)
-
-**Note:** Use short DNS (`http://service:port`) if full DNS fails.
+- Sonarr: `http://sonarr:8989`
+- Radarr: `http://radarr:7878`
+- Lidarr: `http://lidarr:8686`
+- Prowlarr: `http://prowlarr:9696`
+- Bazarr: `http://bazarr:6767`
+- qBittorrent: `http://qbittorrent.qbittorrent.svc.cluster.local:8080` (different namespace)
+- SABnzbd: `http://sabnzbd:8081`
+- Unpackerr: `http://unpackerr:9770`
+- Jellyseerr: `http://jellyseerr:5055`
+- Flaresolverr: `http://flaresolverr:8191`
 
 ---
 
@@ -152,7 +136,7 @@ Same steps, but:
 2. **Add Download Client:** Click **+** → Select **qBittorrent**
 3. **Configure:**
    - **Name:** `qBittorrent`
-   - **Host:** `qbittorrent.qbittorrent.svc.cluster.local`
+   - **Host:** `qbittorrent.qbittorrent.svc.cluster.local` (must use full DNS - different namespace)
    - **Port:** `8080`
    - **Username:** `admin` (default, check qBittorrent UI if changed)
    - **Password:** [Your qBittorrent Web UI password]
@@ -190,10 +174,6 @@ kubectl exec -n media $(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.
   -- cat /config/sabnzbd.ini | grep "^api_key" | sed 's/.*=\s*//'
 ```
 
-**Or use the extraction script:**
-```bash
-./scripts/extract-all-api-keys.sh
-```
 
 #### Sonarr → SABnzbd
 
@@ -201,7 +181,7 @@ kubectl exec -n media $(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.
 2. Select **SABnzbd**
 3. **Configure:**
    - **Name:** `SABnzbd`
-   - **Host:** `sabnzbd.media.svc.cluster.local`
+   - **Host:** `sabnzbd:8081`
    - **Port:** `8081`
    - **API Key:** [SABnzbd API key]
    - **Category:** `tv` (or `sonarr`)
@@ -224,7 +204,7 @@ Same steps, but in Radarr:
 3. **Subtitle Languages:** Select your preferred languages
 4. **Add Subtitle Provider:** Click **+** → Select **Bazarr**
 5. **Configure:**
-   - **Host:** `bazarr.media.svc.cluster.local`
+   - **Host:** `bazarr:6767`
    - **Port:** `6767`
    - **API Key:** [Bazarr API key]
 6. **Test** → **Save**
@@ -389,7 +369,7 @@ Radarr           http://radarr:7878                    /radarr
 Lidarr           http://lidarr:8686                    /lidarr
 Prowlarr         http://prowlarr:9696                  /prowlarr
 Bazarr           http://bazarr:6767                    /bazarr
-qBittorrent      http://qbittorrent...:8080            /qbittorrent
+qBittorrent      http://qbittorrent.qbittorrent.svc.cluster.local:8080  /qbittorrent
 SABnzbd          http://sabnzbd:8081                   /sabnzbd
 Unpackerr        http://unpackerr:9770                 /unpackerr
 Jellyseerr       http://jellyseerr:5055                /jellyseerr
@@ -418,26 +398,14 @@ Flaresolverr     http://flaresolverr:8191              /flaresolverr
 ### Extract All Keys
 
 ```bash
-# Automated extraction from running pods
-./scripts/extract-all-api-keys.sh
-
-# View all secrets with labels (one command)
-echo "=== All API Keys from starr-secrets Secret ===" && \
+# View all API keys (copy and paste this command):
 for key in SONARR_API_KEY RADARR_API_KEY LIDARR_API_KEY BAZARR_API_KEY PROWLARR_API_KEY SABNZBD_API_KEY JELLYSEERR_API_KEY; do
-  value=$(kubectl get secret starr-secrets -n media -o jsonpath="{.data.$key}" 2>/dev/null | base64 -d | head -1 || echo "")
-  # Clean up any extraction output artifacts (take only the actual key)
-  value=$(echo "$value" | grep -E "^[a-f0-9]{32}$" | head -1 || echo "$value")
-  if [ -n "$value" ] && [ "$value" != "(empty)" ]; then
-    echo "$key: '$value'"
+  value=$(kubectl get secret starr-secrets -n media -o jsonpath="{.data.$key}" 2>/dev/null | base64 -d 2>/dev/null | grep -oE '[a-f0-9]{32}' | head -1)
+  if [ -n "$value" ]; then
+    echo "$key: $value"
   else
-    echo "$key: '(empty)'"
+    echo "$key: (empty)"
   fi
-done
-
-# Check which keys are set (quick status)
-for key in SONARR_API_KEY RADARR_API_KEY LIDARR_API_KEY BAZARR_API_KEY PROWLARR_API_KEY SABNZBD_API_KEY JELLYSEERR_API_KEY; do
-  echo -n "$key: "
-  kubectl get secret starr-secrets -n media -o jsonpath="{.data.$key}" 2>/dev/null | base64 -d | wc -c
 done
 ```
 

@@ -136,6 +136,16 @@ spec:
 
 See `BOOTSTRAP.md` for complete production server setup instructions.
 
+## Configuring Service Integrations
+
+After deploying services, configure integrations between Starr media management applications:
+
+- **Sonarr-Prowlarr Integration**: Configure TV show indexer management
+- **Radarr-Prowlarr Integration**: Configure movie indexer management
+- **Download Client Integration**: Connect services to qBittorrent
+
+See **[CONFIGURE_STARR_INTEGRATIONS.md](./CONFIGURE_STARR_INTEGRATIONS.md)** for step-by-step configuration guides.
+
 ## Troubleshooting
 
 - **Port conflicts**: Make sure ports 8080, 30080, 30443 are available

@@ -86,7 +86,7 @@ echo "Next steps:"
 echo "1. Ensure ArgoCD is running: kubectl get pods -n argocd"
 echo "2. Access ArgoCD UI: https://localhost:8080"
 echo "3. Deploy applications via GitOps"
-echo "4. After services deploy, extract API keys: ./scripts/extract-all-api-keys.sh"
+echo "4. After services deploy, extract API keys: See CONFIGURE_STARR_INTEGRATIONS.md for the command"
 echo ""
 if [[ "$INSTALL_ISTIO" == "true" ]]; then
     echo "Istio is installed and ready!"

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GUIDANCE_FILE="${REPO_ROOT}/AI_GUIDANCE.md"
+GUIDANCE_FILE="${REPO_ROOT}/docs/AI_GUIDANCE.md"
 JELLYFIN_URL="https://home.brettswift.com/jellyfin/"
 SONARR_URL="https://home.brettswift.com/sonarr/"
 SAB_URL="https://home.brettswift.com/sabnzbd/"

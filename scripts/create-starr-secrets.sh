@@ -1,7 +1,7 @@
 #!/bin/bash
 # Create or initialize starr-secrets Secret
 # Part of initial setup - creates secret with empty keys if it doesn't exist
-# Keys can be populated later via extract-all-api-keys.sh
+# Keys can be populated later - see CONFIGURE_STARR_INTEGRATIONS.md
 
 set -e
 
@@ -39,7 +39,7 @@ if kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
         fi
     done
     echo ""
-    echo "To update keys, run: ./scripts/extract-all-api-keys.sh"
+    echo "To view keys, see CONFIGURE_STARR_INTEGRATIONS.md for the command"
     exit 0
 fi
 
@@ -60,6 +60,6 @@ echo ""
 echo "Next steps:"
 echo "1. Deploy Starr services via GitOps (ArgoCD)"
 echo "2. Wait for services to initialize and generate API keys"
-echo "3. Extract and populate keys: ./scripts/extract-all-api-keys.sh"
+echo "3. Extract and populate keys: See CONFIGURE_STARR_INTEGRATIONS.md for the command"
 echo ""
 
