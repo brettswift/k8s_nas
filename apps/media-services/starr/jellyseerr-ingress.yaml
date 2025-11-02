@@ -9,14 +9,16 @@ metadata:
     # Strip prefix like Traefik did in docker-compose - Jellyseerr needs paths without /jellyseerr
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
-    # Rewrite Location headers to add /jellyseerr prefix back (like Traefik rewriteHeaders plugin)
+    # Disable auto-generated proxy_redirect, then set custom ones
+    # NGINX Ingress Controller auto-generates proxy_redirect when using rewrite-target
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
       proxy_set_header X-Forwarded-Port $server_port;
       proxy_set_header X-Forwarded-Prefix /jellyseerr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      # Rewrite Location headers in redirects
+      # Disable default proxy_redirect, then set our custom ones
+      proxy_redirect default off;
       proxy_redirect / /jellyseerr/;
       proxy_redirect /setup /jellyseerr/setup;
 spec:
