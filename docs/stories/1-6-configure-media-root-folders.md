@@ -73,11 +73,11 @@ so that downloaded content is organized correctly in the media library and all c
 - [ ] Task 6: Fix SABnzbd remote path mappings in Sonarr and Radarr (AC: #5)
   - [ ] Access Sonarr → **Settings** → **Download Clients** → SABnzbd
   - [ ] Check **Remote Path Mapping**:
-    - **Remote Path:** `/data/usenet/complete/complete` (SABnzbd's actual completed folder - verified in config)
-    - **Local Path:** `/usenet/complete/complete` (how Sonarr sees it after usenet mount is added in Task 1)
-      - *After usenet mount is added: `/usenet` → `/mnt/data/usenet`, so `/usenet/complete/complete` = `/mnt/data/usenet/complete/complete` ✓*
+    - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder - updated to remove nested structure)
+    - **Local Path:** `/usenet/complete` (how Sonarr sees it after usenet mount is added in Task 1)
+      - *After usenet mount is added: `/usenet` → `/mnt/data/usenet`, so `/usenet/complete` = `/mnt/data/usenet/complete` ✓*
   - [ ] Access Radarr → **Settings** → **Download Clients** → SABnzbd
-  - [ ] Apply same fix for Radarr remote path mapping (Remote: `/data/usenet/complete/complete`, Local: `/usenet/complete/complete`)
+  - [ ] Apply same fix for Radarr remote path mapping (Remote: `/data/usenet/complete`, Local: `/usenet/complete`)
   - [ ] Verify console error "places downloads in /data/usenet/complete/complete but this directory does not appear to exist" is cleared
 
 - [ ] Task 7: Verify qBittorrent path mappings (AC: #6)
@@ -224,7 +224,7 @@ Composer (Cursor AI)
 - Task 3: Fix SABnzbd folder configuration (via UI)
 - Task 4: Configure Sonarr root folder `/data/media/series` (via UI)
 - Task 5: Configure Radarr root folder `/data/media/movies` (via UI)
-- Task 6: Fix SABnzbd remote path mappings in Sonarr/Radarr (via UI: Remote `/data/usenet/complete/complete`, Local `/usenet/complete/complete`)
+- Task 6: Fix SABnzbd remote path mappings in Sonarr/Radarr (via UI: Remote `/data/usenet/complete`, Local `/usenet/complete`)
 - Task 7: Verify qBittorrent path mappings (if configured)
 - Task 8: Verify all errors cleared (check System → Status in both services)
 
