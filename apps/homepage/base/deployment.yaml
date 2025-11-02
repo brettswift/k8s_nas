@@ -13,10 +13,6 @@ spec:
     metadata:
       labels:
         app: homepage
-      annotations:
-        # Annotation ensures pod restarts when ConfigMap changes
-        # kustomize will inject the ConfigMap hash into the volume reference
-        config/checksum: ""
     spec:
       serviceAccountName: homepage
       containers:

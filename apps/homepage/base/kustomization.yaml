@@ -20,13 +20,6 @@ configMapGenerator:
   - config/custom.css
   - config/custom.js
 
-# Add ConfigMap name (with hash) to pod template annotation to trigger restart on changes
-# When ConfigMap content changes, hash changes, annotation changes, pod restarts
-patches:
-- patch: |-
-    - op: replace
-      path: /spec/template/metadata/annotations/config~1checksum
-      value: homepage-config
-  target:
-    kind: Deployment
-    name: homepage
+# Note: ConfigMap with hash suffix will cause volume reference to change
+# When ConfigMap content changes, hash changes, volume name changes, pod restarts
+# The annotation in deployment.yaml also helps ensure restart
