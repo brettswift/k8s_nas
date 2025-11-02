@@ -7,9 +7,10 @@ spec:
   generators:
   - list:
       elements:
-      - name: production-cluster
-        server: https://kubernetes.default.svc
-        environment: production
+      # Monitoring disabled - uncomment to enable Grafana/Prometheus
+      # - name: production-cluster
+      #   server: https://kubernetes.default.svc
+      #   environment: production
   template:
     metadata:
       name: 'monitoring-{{name}}'
