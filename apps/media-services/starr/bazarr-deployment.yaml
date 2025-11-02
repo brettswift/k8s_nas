@@ -28,23 +28,24 @@ spec:
           mkdir -p /config/config
           
           # Configure base_url in Bazarr config - ensure single YAML document
+          # Bazarr's YAML parser fails if multiple documents (---) are present
           if [ ! -f "$CONFIG" ] || [ ! -s "$CONFIG" ]; then
             # Create new config with base_url only
             echo "base_url: /bazarr" > "$CONFIG"
           else
-            # Existing config - update or add base_url without creating multiple YAML documents
-            # First, remove any existing base_url line
-            grep -v "^base_url:" "$CONFIG" > "$CONFIG.tmp" || true
+            # Existing config - merge base_url into existing config as single document
+            # Create temp file without base_url and without document separators
+            grep -v "^base_url:" "$CONFIG" | grep -v "^---$" | grep -v "^\s*$" > "$CONFIG.tmp" || echo "" > "$CONFIG.tmp"
             
-            # Remove any leading YAML document separators (---)
-            sed -i '/^---$/d' "$CONFIG.tmp"
-            
-            # Remove trailing YAML document separators
-            sed -i '${/^---$/d}' "$CONFIG.tmp" || true
-            
-            # Add base_url at the top, ensure no document separator
-            echo "base_url: /bazarr" > "$CONFIG"
-            cat "$CONFIG.tmp" >> "$CONFIG"
+            # If temp file has content (not just base_url was present), rebuild config
+            if [ -s "$CONFIG.tmp" ]; then
+              # Write base_url first, then rest of config (no --- separator)
+              echo "base_url: /bazarr" > "$CONFIG"
+              cat "$CONFIG.tmp" >> "$CONFIG"
+            else
+              # Only base_url was in file, or file was empty/just separators
+              echo "base_url: /bazarr" > "$CONFIG"
+            fi
             rm -f "$CONFIG.tmp"
           fi
         volumeMounts:
