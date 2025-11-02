@@ -45,7 +45,7 @@ development_status:
   1-3-configure-radarr-prowlarr-integration: done
   1-4-configure-sonarr-qbittorrent-integration: done
   1-5-configure-radarr-qbittorrent-integration: done
-  1-6-configure-media-root-folders: drafted
+  1-6-configure-media-root-folders: ready-for-dev
   1-7-configure-jellyseerr-service-integration: backlog
   1-8-verify-vpn-integration-and-network-security: backlog
   1-9-end-to-end-integration-testing: backlog

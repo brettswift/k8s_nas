@@ -1,6 +1,6 @@
 # Story 1.6: Configure Media Root Folders
 
-Status: drafted
+Status: ready-for-dev
 
 ## Story
 
@@ -172,7 +172,7 @@ The error shows `/data/usenet/complete/complete` - this suggests:
 
 ### Context Reference
 
-<!-- Path(s) to story context XML will be added here by context workflow -->
+- docs/stories/1-6-configure-media-root-folders.context.xml
 
 ### Agent Model Used
 
