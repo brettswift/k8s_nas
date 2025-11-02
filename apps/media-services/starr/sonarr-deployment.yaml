@@ -79,6 +79,8 @@ spec:
           mountPath: /data
         - name: downloads
           mountPath: /downloads
+        - name: usenet
+          mountPath: /usenet
         resources:
           requests:
             memory: "256Mi"
@@ -109,11 +111,15 @@ spec:
           type: Directory
       - name: media
         hostPath:
-          path: /mnt/data/media
+          path: /mnt/data
           type: Directory
       - name: downloads
         hostPath:
           path: /mnt/data/downloads
+          type: Directory
+      - name: usenet
+        hostPath:
+          path: /mnt/data/usenet
           type: Directory
 ---
 apiVersion: v1
