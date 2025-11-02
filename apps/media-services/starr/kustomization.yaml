@@ -15,4 +15,3 @@ resources:
 - bazarr-ingress.yaml
 - jellyseerr-deployment.yaml
 - jellyseerr-ingress.yaml
-- starr-integration-configurator/job.yaml
