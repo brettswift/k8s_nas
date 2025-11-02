@@ -6,19 +6,18 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    # Strip prefix like Traefik did in docker-compose - Jellyseerr needs paths without /jellyseerr
+    # Jellyseerr doesn't support subfolder deployment - must strip prefix and rewrite redirects
+    # Pattern: Strip /jellyseerr prefix when forwarding to backend, rewrite Location headers back
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
-    # Disable auto-generated proxy_redirect, then set custom ones
-    # NGINX Ingress Controller auto-generates proxy_redirect when using rewrite-target
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
       proxy_set_header X-Forwarded-Port $server_port;
       proxy_set_header X-Forwarded-Prefix /jellyseerr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      # Jellyseerr doesn't support subfolder deployment - rewrite all absolute redirects
-      # to include /jellyseerr prefix (workaround for unsupported feature)
+      # Rewrite Location headers to preserve /jellyseerr in browser URLs
+      # This keeps the path visible in the browser address bar (e.g., /jellyseerr/setup)
       proxy_redirect default off;
       proxy_redirect ~^(https?://[^/]+)?(/.*)$ $1/jellyseerr$2;
 spec:
