@@ -43,7 +43,7 @@ so that users can request content through Jellyseerr and have it automatically a
   - [ ] Navigate to **Settings** → **Services**
   - [ ] Add Sonarr service
     - [ ] Configure service name: `Sonarr`
-    - [ ] Configure server URL: `http://sonarr.media.svc.cluster.local:8989`
+    - [ ] Configure server URL: `http://sonarr:8989`
     - [ ] Configure API key: Extract from `starr-secrets` Secret (SONARR_API_KEY)
     - [ ] Test connection
   - [ ] Verify Sonarr appears in Jellyseerr services list
@@ -53,7 +53,7 @@ so that users can request content through Jellyseerr and have it automatically a
   - [ ] In Jellyseerr **Settings** → **Services**
   - [ ] Add Radarr service
     - [ ] Configure service name: `Radarr`
-    - [ ] Configure server URL: `http://radarr.media.svc.cluster.local:7878`
+    - [ ] Configure server URL: `http://radarr:7878`
     - [ ] Configure API key: Extract from `starr-secrets` Secret (RADARR_API_KEY)
     - [ ] Test connection
   - [ ] Verify Radarr appears in Jellyseerr services list
@@ -63,7 +63,7 @@ so that users can request content through Jellyseerr and have it automatically a
   - [ ] In Jellyseerr **Settings** → **Services**
   - [ ] Add Jellyfin service
     - [ ] Configure service name: `Jellyfin`
-    - [ ] Configure server URL: `http://jellyfin.media.svc.cluster.local:80`
+    - [ ] Configure server URL: `http://jellyfin:80`
     - [ ] Configure API key: Extract from Jellyfin settings or create new API key
     - [ ] Test connection
   - [ ] Verify Jellyfin appears in Jellyseerr services list
@@ -91,11 +91,11 @@ so that users can request content through Jellyseerr and have it automatically a
 
 ### Architecture Context
 
-**Service DNS Names:**
-- Sonarr: `sonarr.media.svc.cluster.local:8989`
-- Radarr: `radarr.media.svc.cluster.local:7878`
-- Jellyfin: `jellyfin.media.svc.cluster.local:80` (service port, actual container port 8096)
-- Jellyseerr: Already deployed at `jellyseerr.media.svc.cluster.local:5055`
+**Service URLs (Use Short Names):**
+- Sonarr: `http://sonarr:8989`
+- Radarr: `http://radarr:7878`
+- Jellyfin: `http://jellyfin:80` (service port, not container port 8096)
+- Jellyseerr: Already deployed at `http://jellyseerr:5055`
 
 **API Keys:**
 - Sonarr API key: Stored in `starr-secrets` Secret as `SONARR_API_KEY`
@@ -170,7 +170,7 @@ Composer (Cursor AI)
 - Service DNS names confirmed: All services have ClusterIP services in `media` namespace
 - API keys extracted: Sonarr and Radarr keys available from `starr-secrets` Secret
 - Jellyfin API key: Needs manual extraction from UI (Settings → API Keys → Create new key)
-- Created comprehensive configuration guide: `docs/stories/1-7-jellyseerr-configuration-guide.md`
+- Integrated Jellyseerr configuration guide into `CONFIGURE_STARR_INTEGRATIONS.md` Part 5
 
 ### Completion Notes List
 
@@ -180,7 +180,9 @@ Composer (Cursor AI)
 
 **Created:**
 - `docs/stories/1-7-configure-jellyseerr-service-integration.md` - Story file
-- `docs/stories/1-7-jellyseerr-configuration-guide.md` - Detailed configuration guide with step-by-step instructions
+
+**Updated:**
+- `CONFIGURE_STARR_INTEGRATIONS.md` - Integrated comprehensive Jellyseerr configuration guide into Part 5
 
 ### Change Log
 
