@@ -3,5 +3,23 @@ resources:
 - serviceaccount.yaml
 - deployment.yaml
 - service.yaml
-- configmap.yaml
 - ingress.yaml
+
+# Generate ConfigMap with hash suffix - changes trigger pod restart
+# Remove configmap.yaml from resources and generate it instead
+configMapGenerator:
+- name: homepage-config
+  files:
+  - config/services.yaml
+  - config/settings.yaml
+  - config/kubernetes.yaml
+  - config/docker.yaml
+  - config/widgets.yaml
+  - config/bookmarks.yaml
+  - config/proxmox.yaml
+  - config/custom.css
+  - config/custom.js
+
+# Note: ConfigMap with hash suffix will cause volume reference to change
+# When ConfigMap content changes, hash changes, volume name changes, pod restarts
+# The annotation in deployment.yaml also helps ensure restart

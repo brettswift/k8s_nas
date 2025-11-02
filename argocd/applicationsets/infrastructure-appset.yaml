@@ -26,7 +26,7 @@ spec:
         path: apps/infrastructure
       destination:
         server: "{{server}}"
-        namespace: default
+        namespace: cert-manager
       syncPolicy:
         automated:
           prune: true

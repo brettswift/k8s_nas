@@ -1,0 +1,8 @@
+enabled: true
+namespace: homepage
+server: https://kubernetes.default.svc
+token: ""
+skipTLSVerify: true
+replicaSets:
+  limit: 3
+  hide: true

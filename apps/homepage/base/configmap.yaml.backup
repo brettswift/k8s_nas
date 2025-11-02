@@ -87,6 +87,8 @@ data:
     server: https://kubernetes.default.svc
     token: ""
     skipTLSVerify: true
+    replicaSets:
+      limit: 3
   docker.yaml: |
     version: "3.8"
     services: {}
