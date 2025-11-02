@@ -17,9 +17,9 @@ data:
   PROWLARR_URL: "http://prowlarr.media.svc.cluster.local:9696"
   JELLYSEERR_URL: "http://jellyseerr.media.svc.cluster.local:5055"
   QBITTORRENT_URL: "http://qbittorrent.qbittorrent.svc.cluster.local:8080"
-  SABNZBD_URL: "http://sabnzbd.media.svc.cluster.local:8081"
+  SABNZBD_URL: "http://sabnzbd.media.svc.cluster.local:8080/sabnzbd"
   FLARESOLVERR_URL: "http://flaresolverr.media.svc.cluster.local:8191"
   
   # Base URLs for external access
   HOSTNAME: "home.brettswift.com"
-  SAB_HOST_WHITELIST: "home.brettswift.com,home.brettswift.com:443,localhost,127.0.0.1"
+  SAB_HOST_WHITELIST: "home.brettswift.com,home.brettswift.com:443,localhost,127.0.0.1,sabnzbd,sabnzbd.media.svc.cluster.local"
