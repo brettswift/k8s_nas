@@ -3,5 +3,32 @@ resources:
 - serviceaccount.yaml
 - deployment.yaml
 - service.yaml
-- configmap.yaml
 - ingress.yaml
+
+# Generate ConfigMap with hash suffix - changes trigger pod restart
+# Remove configmap.yaml from resources and generate it instead
+configMapGenerator:
+- name: homepage-config
+  files:
+  - config/services.yaml
+  - config/settings.yaml
+  - config/kubernetes.yaml
+  - config/docker.yaml
+  - config/widgets.yaml
+  - config/bookmarks.yaml
+  - config/proxmox.yaml
+  - config/custom.css
+  - config/custom.js
+
+# Inject ConfigMap hash into pod template annotation to trigger restart on changes
+replacements:
+- source:
+    kind: ConfigMap
+    name: homepage-config
+    fieldPath: metadata.name
+  targets:
+  - select:
+      kind: Deployment
+      name: homepage
+    fieldPaths:
+    - spec.template.metadata.annotations.[config/checksum]
