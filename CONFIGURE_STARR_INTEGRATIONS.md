@@ -215,10 +215,10 @@ SABnzbd uses its own configured folders - Sonarr/Radarr don't tell it where to d
    - **API Key:** [SABnzbd API key] (use API key from Config → General → Security, not NZB key)
    - **Category:** `tv` (or `sonarr`)
    - ✅ **Use SSL:** No
-   - **Remote Path Mapping (Advanced):**
-     - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder)
-     - **Local Path:** `/downloads/usenet/complete` (how Sonarr sees it)
-     - *Note: This requires Sonarr to have access to `/mnt/data/usenet`. See path configuration notes below.*
+  - **Remote Path Mapping (Advanced):**
+    - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder)
+    - **Local Path:** `/usenet/complete` (how Sonarr sees it after usenet mount is added)
+    - *Note: Requires usenet volume mount in Sonarr deployment (see Path Configuration section below)*
 4. **Test** → **Save**
 
 **Path Configuration - Usenet Folder Access:**
