@@ -79,6 +79,20 @@ else
     echo "⚠️  create-starr-secrets.sh not found, skipping secret creation"
 fi
 
+# Setup wildcard certificate for *.home.brettswift.com (requires AWS credentials)
+echo ""
+echo "Setting up wildcard certificate for *.home.brettswift.com..."
+if [ -f "./scripts/setup-home-wildcard-cert.sh" ]; then
+    if aws sts get-caller-identity &> /dev/null 2>&1; then
+        ./scripts/setup-home-wildcard-cert.sh || echo "⚠️  Certificate setup skipped (may already exist or AWS credentials not configured)"
+    else
+        echo "⚠️  AWS credentials not configured. Skipping certificate setup."
+        echo "    Run 'assume brettswift-mgmt' and then './scripts/setup-home-wildcard-cert.sh' manually"
+    fi
+else
+    echo "⚠️  setup-home-wildcard-cert.sh not found, skipping certificate setup"
+fi
+
 echo ""
 echo "=== Bootstrap Complete ==="
 echo ""

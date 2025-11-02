@@ -3,4 +3,5 @@ resources:
 - argocd/
 - monitoring/
 - nvidia-device-plugin/
+- cert-manager/
 
