@@ -5,3 +5,4 @@ token: ""
 skipTLSVerify: true
 replicaSets:
   limit: 3
+  hide: true
