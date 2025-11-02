@@ -1,6 +1,6 @@
 # Story 1.6: Configure Media Root Folders
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -197,11 +197,53 @@ The error shows `/data/usenet/complete/complete` - this suggests:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Composer (Cursor AI)
 
 ### Debug Log References
 
+- Volume mount analysis: Sonarr/Radarr had `/data` → `/mnt/data/media`, needed `/data` → `/mnt/data` to support `/data/media/*` paths
+- Usenet access: Added `/usenet` mount to both deployments for accessing SABnzbd downloads
+- Directory creation: Cannot create host directories from development environment, created helper script
+
 ### Completion Notes List
 
+**Infrastructure Changes Completed:**
+1. ✅ Added `/usenet` volume mount to Sonarr and Radarr deployments (mounts `/mnt/data/usenet` at `/usenet` in container)
+2. ✅ Fixed `/data` volume mount: Changed from `/mnt/data/media` to `/mnt/data` to correctly map `/data/media/series` → `/mnt/data/media/series`
+3. ✅ Created helper script `scripts/create-media-root-folders.sh` for directory creation on host
+4. ✅ Created verification script `scripts/verify-media-root-config.sh` for validating configuration
+5. ✅ Created UI configuration guide: `docs/stories/1-6-ui-configuration-guide.md`
+
+**Deployment:**
+- Changes committed to feature branch `feat/1-6-configure-media-root-folders`
+- Pushed to `dev_starr` branch for ArgoCD auto-sync
+- ArgoCD application `media-services-production-cluster` showing "Synced" status
+
+**Remaining Manual Tasks (UI Configuration):**
+- Task 2: Create root folder directories on host (run `scripts/create-media-root-folders.sh`)
+- Task 3: Fix SABnzbd folder configuration (via UI)
+- Task 4: Configure Sonarr root folder `/data/media/series` (via UI)
+- Task 5: Configure Radarr root folder `/data/media/movies` (via UI)
+- Task 6: Fix SABnzbd remote path mappings in Sonarr/Radarr (via UI: Remote `/data/usenet/complete`, Local `/usenet/complete`)
+- Task 7: Verify qBittorrent path mappings (if configured)
+- Task 8: Verify all errors cleared (check System → Status in both services)
+
+**Next Steps:**
+1. Wait for ArgoCD to sync and pods to restart with new volume mounts
+2. Run `scripts/create-media-root-folders.sh` on host
+3. Follow UI configuration guide: `docs/stories/1-6-ui-configuration-guide.md`
+4. Run `scripts/verify-media-root-config.sh` to validate
+
 ### File List
+
+**Modified:**
+- `apps/media-services/starr/sonarr-deployment.yaml` - Added usenet mount, fixed /data mount path
+- `apps/media-services/starr/radarr-deployment.yaml` - Added usenet mount, fixed /data mount path
+- `docs/sprint-status.yaml` - Updated story status to in-progress
+- `docs/stories/1-6-configure-media-root-folders.md` - Updated task checkboxes and completion notes
+
+**Created:**
+- `scripts/create-media-root-folders.sh` - Helper script to create root folder directories
+- `scripts/verify-media-root-config.sh` - Verification script for configuration validation
+- `docs/stories/1-6-ui-configuration-guide.md` - Detailed UI configuration instructions
 
