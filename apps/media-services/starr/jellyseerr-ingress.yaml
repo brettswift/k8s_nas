@@ -7,10 +7,10 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      # Rewrite Location header in redirects to include base path
+    nginx.ingress.kubernetes.io/server-snippet: |
       proxy_redirect / /jellyseerr/;
       proxy_redirect /setup /jellyseerr/setup;
+    nginx.ingress.kubernetes.io/configuration-snippet: |
       # Handle various path rewrites for Jellyseerr Next.js app
       rewrite ^/jellyseerr/_next/(.*) /_next/$1 break;
       rewrite ^/jellyseerr/_next/data/(.*) /_next/data/$1 break;
