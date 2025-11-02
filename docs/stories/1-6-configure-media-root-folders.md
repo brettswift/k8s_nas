@@ -224,7 +224,7 @@ Composer (Cursor AI)
 - Task 3: Fix SABnzbd folder configuration (via UI)
 - Task 4: Configure Sonarr root folder `/data/media/series` (via UI)
 - Task 5: Configure Radarr root folder `/data/media/movies` (via UI)
-- Task 6: Fix SABnzbd remote path mappings in Sonarr/Radarr (via UI: Remote `/data/usenet/complete`, Local `/usenet/complete`)
+- Task 6: Fix SABnzbd remote path mappings in Sonarr/Radarr (via UI: Remote `/data/usenet/complete/complete`, Local `/usenet/complete/complete`)
 - Task 7: Verify qBittorrent path mappings (if configured)
 - Task 8: Verify all errors cleared (check System → Status in both services)
 
