@@ -16,6 +16,34 @@ spec:
       labels:
         app: bazarr
     spec:
+      initContainers:
+      - name: bazarr-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          CONFIG="/config/config/config.yaml"
+          # Ensure config directory exists
+          mkdir -p /config/config
+          # Configure base_url in Bazarr config if not present
+          if [ ! -f "$CONFIG" ]; then
+            cat > "$CONFIG" <<EOF
+          base_url: /bazarr
+          EOF
+          else
+            # Check if base_url exists, add or update it
+            if grep -q "^base_url:" "$CONFIG"; then
+              # Update existing base_url
+              sed -i 's|^base_url:.*|base_url: /bazarr|g' "$CONFIG"
+            else
+              # Add base_url at the beginning of the file
+              sed -i '1s|^|base_url: /bazarr\n|' "$CONFIG"
+            fi
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: bazarr
         image: docker.io/linuxserver/bazarr:latest
