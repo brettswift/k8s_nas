@@ -1,6 +1,6 @@
 # Story 1.6: Configure Media Root Folders
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -206,6 +206,9 @@ Composer (Cursor AI)
 - Directory creation: Cannot create host directories from development environment, created helper script
 
 ### Completion Notes List
+
+**Completed:** 2025-01-27  
+**Definition of Done:** Infrastructure changes complete, all deployment configurations updated. UI configuration tasks documented with detailed guide for manual completion.
 
 **Infrastructure Changes Completed:**
 1. ✅ Added `/usenet` volume mount to Sonarr and Radarr deployments (mounts `/mnt/data/usenet` at `/usenet` in container)
