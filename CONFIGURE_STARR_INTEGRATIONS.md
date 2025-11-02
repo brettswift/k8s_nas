@@ -74,7 +74,7 @@ done
 - Prowlarr: `http://prowlarr:9696`
 - Bazarr: `http://bazarr:6767`
 - qBittorrent: `http://qbittorrent.qbittorrent.svc.cluster.local:8080` (different namespace)
-- SABnzbd: `http://sabnzbd.media.svc.cluster.local:8080/sabnzbd` (or `http://sabnzbd:8080/sabnzbd` if hostname whitelist allows)
+- SABnzbd: `http://sabnzbd:8080/sabnzbd` (short name is whitelisted) or `http://sabnzbd.media.svc.cluster.local:8080/sabnzbd`
 - Unpackerr: `http://unpackerr:9770`
 - Jellyseerr: `http://jellyseerr:5055`
 - Flaresolverr: `http://flaresolverr:8191`
@@ -209,7 +209,7 @@ SABnzbd uses its own configured folders - Sonarr/Radarr don't tell it where to d
 2. Select **SABnzbd**
 3. **Configure:**
    - **Name:** `SABnzbd`
-   - **Host:** `sabnzbd.media.svc.cluster.local` (must use full DNS name due to hostname whitelist)
+   - **Host:** `sabnzbd` (short name is in whitelist) or `sabnzbd.media.svc.cluster.local` (full DNS)
    - **Port:** `8080` (not 8081)
    - **URL Base:** `/sabnzbd` (required - SABnzbd is configured with url_base)
    - **API Key:** [SABnzbd API key] (use API key from Config → General → Security, not NZB key)
