@@ -325,21 +325,86 @@ Same steps as Sonarr, but in Radarr:
 
 ## Part 3: Subtitles (Bazarr)
 
-### Configure Sonarr → Bazarr
+**Bazarr manages subtitles for Sonarr and Radarr. It needs to be configured in both directions:**
+1. **Bazarr → Sonarr/Radarr:** Bazarr monitors libraries and searches for subtitles
+2. **Sonarr/Radarr → Bazarr:** Services connect to Bazarr to enable subtitle downloads
 
-1. **Sonarr UI** → **Settings** → **Subtitles**
+### Step 1: Configure Bazarr → Sonarr
+
+1. **Bazarr UI:** `https://home.brettswift.com/bazarr` → **Settings** → **General** → **Sonarr**
+2. **Enable:** ✅ **Enabled**
+3. **Host:** `sonarr` (or `sonarr.media.svc.cluster.local`)
+4. **Port:** `8989`
+5. **URL Base:** `/sonarr` (required - Bazarr uses health check endpoint)
+6. **API Key:** [Sonarr API key]
+7. **Click **Test Connection** → **Save**
+
+### Step 2: Configure Bazarr → Radarr
+
+1. **Bazarr UI** → **Settings** → **General** → **Radarr**
+2. **Enable:** ✅ **Enabled**
+3. **Host:** `radarr` (or `radarr.media.svc.cluster.local`)
+4. **Port:** `7878`
+5. **URL Base:** `/radarr` (required - Bazarr uses health check endpoint)
+6. **API Key:** [Radarr API key]
+7. **Click **Test Connection** → **Save**
+
+### Step 3: Configure Bazarr Media Paths
+
+Bazarr needs access to media files to download subtitles:
+
+1. **Bazarr UI** → **Settings** → **General** → **Paths**
+2. **TV Path:** `/data/media/series` (matches Sonarr root folder)
+3. **Movie Path:** `/data/media/movies` (matches Radarr root folder)
+4. **Save**
+
+**Note:** Bazarr has `/data` mounted to `/mnt/data`, so these paths map correctly to the host.
+
+### Step 4: Get Bazarr API Key
+
+1. **Bazarr UI** → **Settings** → **General** → **Security**
+2. Find **API Key** and copy it
+3. Update the secret (if needed):
+   ```bash
+   kubectl create secret generic starr-secrets -n media \
+     --from-literal=BAZARR_API_KEY="<your-bazarr-api-key>" \
+     --dry-run=client -o yaml | kubectl apply -f -
+   ```
+
+### Step 5: Configure Sonarr → Bazarr
+
+1. **Sonarr UI:** `https://home.brettswift.com/sonarr` → **Settings** → **Subtitles**
+2. **Enable:** ✅ **Use Subtitles**
+3. **Subtitle Languages:** Select your preferred languages (e.g., `en`, `es`)
+4. **Add Subtitle Provider:** Click **+** → Select **Bazarr**
+5. **Configure:**
+   - **Host:** `bazarr` (or `bazarr.media.svc.cluster.local`)
+   - **Port:** `6767`
+   - **URL Base:** `/bazarr` (required - Bazarr serves on `/bazarr` path)
+   - **API Key:** [Bazarr API key]
+6. **Test** → **Save**
+
+### Step 6: Configure Radarr → Bazarr
+
+1. **Radarr UI:** `https://home.brettswift.com/radarr` → **Settings** → **Subtitles**
 2. **Enable:** ✅ **Use Subtitles**
 3. **Subtitle Languages:** Select your preferred languages
 4. **Add Subtitle Provider:** Click **+** → Select **Bazarr**
 5. **Configure:**
-   - **Host:** `bazarr:6767`
+   - **Host:** `bazarr` (or `bazarr.media.svc.cluster.local`)
    - **Port:** `6767`
+   - **URL Base:** `/bazarr` (required - Bazarr serves on `/bazarr` path)
    - **API Key:** [Bazarr API key]
 6. **Test** → **Save**
 
-### Configure Radarr → Bazarr
+### Configure Subtitle Providers in Bazarr
 
-Same steps, but in Radarr.
+After connecting to Sonarr/Radarr, configure subtitle providers:
+
+1. **Bazarr UI** → **Settings** → **Subtitles** → **Providers**
+2. Add subtitle providers (e.g., OpenSubtitles, Subscene)
+3. Configure API keys for providers as needed
+4. **Save**
 
 ---
 
