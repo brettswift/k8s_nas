@@ -15,9 +15,16 @@
 
 ### Step 1: Create Root Folder Directories
 
-Run on the host where `/mnt/data` is mounted:
+**Host:** Run this script on `home-server` (the Kubernetes node where `/mnt/data` is mounted)
 
+**SSH to the host:**
 ```bash
+ssh home-server  # or however you access the host
+```
+
+**Then run the script:**
+```bash
+cd /path/to/k8s_nas/repo  # navigate to repo directory
 ./scripts/create-media-root-folders.sh
 ```
 
@@ -36,13 +43,18 @@ sudo chmod 755 /mnt/data/media/series /mnt/data/media/movies
 
 ### Step 2: Fix SABnzbd Folder Configuration
 
+**Current SABnzbd Configuration:**
+- Temporary Download Folder: `/data/usenet/complete/incomplete`
+- Completed Download Folder: `/data/usenet/complete/complete`
+
+**Note:** The current configuration uses nested paths. This is acceptable, but we need to ensure remote path mappings match this structure.
+
 1. Access SABnzbd UI: `https://home.brettswift.com/sabnzbd`
 2. Navigate to **Config** → **Folders**
-3. Verify/Update:
-   - **Temporary Download Folder:** `/data/usenet/incomplete`
-   - **Completed Download Folder:** `/data/usenet/complete` (NOT `/data/usenet/complete/complete`)
-4. Check **Categories** tab - ensure no category-specific folders are adding extra `/complete` paths
-5. **Save** configuration
+3. Verify current settings match:
+   - **Temporary Download Folder:** `/data/usenet/complete/incomplete`
+   - **Completed Download Folder:** `/data/usenet/complete/complete`
+4. **Save** configuration if any changes were made
 
 ### Step 3: Configure Sonarr Root Folder
 
@@ -68,13 +80,16 @@ sudo chmod 755 /mnt/data/media/series /mnt/data/media/movies
 
 ### Step 5: Fix SABnzbd Remote Path Mappings
 
+**Important:** SABnzbd's actual completed folder is `/data/usenet/complete/complete` (not `/data/usenet/complete`).
+
 #### In Sonarr:
 
 1. Navigate to **Settings** → **Download Clients** → **SABnzbd**
 2. Scroll to **Remote Path Mappings** section
 3. Add or update mapping:
-   - **Remote Path:** `/data/usenet/complete` (how SABnzbd sees it)
-   - **Local Path:** `/usenet/complete` (how Sonarr sees it after new mount)
+   - **Remote Path:** `/data/usenet/complete/complete` (how SABnzbd sees it - the actual completed downloads folder)
+   - **Local Path:** `/usenet/complete/complete` (how Sonarr sees it after new mount)
+   - *Explanation: SABnzbd reports completed downloads in `/data/usenet/complete/complete`, and Sonarr needs to map this to `/usenet/complete/complete` which maps to `/mnt/data/usenet/complete/complete` on the host*
 4. Click **Save**
 5. Verify error "places downloads in /data/usenet/complete/complete but this directory does not appear to exist" is cleared
 
@@ -83,10 +98,11 @@ sudo chmod 755 /mnt/data/media/series /mnt/data/media/movies
 1. Navigate to **Settings** → **Download Clients** → **SABnzbd**
 2. Scroll to **Remote Path Mappings** section
 3. Add or update mapping:
-   - **Remote Path:** `/data/usenet/complete` (how SABnzbd sees it)
-   - **Local Path:** `/usenet/complete` (how Radarr sees it after new mount)
+   - **Remote Path:** `/data/usenet/complete/complete` (how SABnzbd sees it - the actual completed downloads folder)
+   - **Local Path:** `/usenet/complete/complete` (how Radarr sees it after new mount)
+   - *Explanation: Same as Sonarr - maps SABnzbd's completed folder to accessible path*
 4. Click **Save**
-5. Verify error "places downloads in /data/usenet/complete/complete but this directory does not appear to exist" is cleared
+5. Verify error "places downloads in /data/usenet/complete/complete but this directory does not exist" is cleared
 
 ### Step 6: Verify qBittorrent Path Mappings (if configured)
 

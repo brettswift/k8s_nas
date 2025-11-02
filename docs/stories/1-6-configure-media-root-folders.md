@@ -73,11 +73,11 @@ so that downloaded content is organized correctly in the media library and all c
 - [ ] Task 6: Fix SABnzbd remote path mappings in Sonarr and Radarr (AC: #5)
   - [ ] Access Sonarr → **Settings** → **Download Clients** → SABnzbd
   - [ ] Check **Remote Path Mapping**:
-    - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder as SABnzbd sees it)
-    - **Local Path:** `/usenet/complete` (how Sonarr sees it after usenet mount is added in Task 1)
-      - *After usenet mount is added: `/usenet` → `/mnt/data/usenet`, so `/usenet/complete` = `/mnt/data/usenet/complete` ✓*
+    - **Remote Path:** `/data/usenet/complete/complete` (SABnzbd's actual completed folder - verified in config)
+    - **Local Path:** `/usenet/complete/complete` (how Sonarr sees it after usenet mount is added in Task 1)
+      - *After usenet mount is added: `/usenet` → `/mnt/data/usenet`, so `/usenet/complete/complete` = `/mnt/data/usenet/complete/complete` ✓*
   - [ ] Access Radarr → **Settings** → **Download Clients** → SABnzbd
-  - [ ] Apply same fix for Radarr remote path mapping (Remote: `/data/usenet/complete`, Local: `/usenet/complete`)
+  - [ ] Apply same fix for Radarr remote path mapping (Remote: `/data/usenet/complete/complete`, Local: `/usenet/complete/complete`)
   - [ ] Verify console error "places downloads in /data/usenet/complete/complete but this directory does not appear to exist" is cleared
 
 - [ ] Task 7: Verify qBittorrent path mappings (AC: #6)
