@@ -2,36 +2,26 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: jellyseerr-ingress
-  namespace: starr
+  namespace: media
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      # Rewrite headers for proper base path handling
-      more_set_headers "Location: /jellyseerr$uri";
-      # Handle various path rewrites for Jellyseerr
-      rewrite ^/jellyseerr/_next/(.*) /_next/$1 break;
-      rewrite ^/jellyseerr/_next/data/(.*) /_next/data/$1 break;
-      rewrite ^/jellyseerr/api/v1/(.*) /api/v1/$1 break;
-      rewrite ^/jellyseerr/login/plex/loading /login/plex/loading break;
-      rewrite ^/jellyseerr/images/(.*) /images/$1 break;
-      rewrite ^/jellyseerr/favicon /favicon break;
-      rewrite ^/jellyseerr/logo_(.*) /logo_$1 break;
-      rewrite ^/jellyseerr/site.webmanifest /site.webmanifest break;
-      rewrite ^/jellyseerr/sw.js /sw.js break;
-      rewrite ^/jellyseerr/offline.html /offline.html break;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Forwarded-Port $server_port;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - home.brettswift.com
+    - jellyseerr.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
-  - host: home.brettswift.com
+  - host: jellyseerr.home.brettswift.com
     http:
       paths:
-      - path: /jellyseerr
+      - path: /
         pathType: Prefix
         backend:
           service:

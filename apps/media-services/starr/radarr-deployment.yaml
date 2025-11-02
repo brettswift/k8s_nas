@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: radarr
-  namespace: starr
+  namespace: media
   labels:
     app: radarr
 spec:
@@ -16,6 +16,39 @@ spec:
       labels:
         app: radarr
     spec:
+      initContainers:
+      - name: radarr-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          CONFIG="/config/config.xml"
+          # Ensure config directory exists
+          mkdir -p /config
+          # Create config.xml with UrlBase if it doesn't exist
+          if [ ! -f "$CONFIG" ]; then
+            cat > "$CONFIG" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <Config>
+            <UrlBase>/radarr</UrlBase>
+          </Config>
+          EOF
+          else
+            # Update or add UrlBase setting in existing config
+            if grep -q '<UrlBase>' "$CONFIG"; then
+              # Update existing UrlBase
+              sed -i 's|<UrlBase>.*</UrlBase>|<UrlBase>/radarr</UrlBase>|g' "$CONFIG"
+            else
+              # Add UrlBase if Config tag exists
+              if grep -q '<Config>' "$CONFIG"; then
+                sed -i 's|<Config>|<Config>\n  <UrlBase>/radarr</UrlBase>|g' "$CONFIG"
+              fi
+            fi
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: radarr
         image: docker.io/linuxserver/radarr:latest
@@ -38,11 +71,16 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
+        # UrlBase is configured via init container to /radarr
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
           mountPath: /data
+        - name: downloads
+          mountPath: /downloads
+        - name: usenet
+          mountPath: /usenet
         resources:
           requests:
             memory: "256Mi"
@@ -52,7 +90,7 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /radarr/ping
+            path: /ping
             port: 7878
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -60,7 +98,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /radarr/ping
+            path: /ping
             port: 7878
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -68,18 +106,27 @@ spec:
           failureThreshold: 3
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: radarr-config
+        hostPath:
+          path: /mnt/data/configs/radarr
+          type: Directory
       - name: media
         hostPath:
           path: /mnt/data
+          type: Directory
+      - name: downloads
+        hostPath:
+          path: /mnt/data/downloads
+          type: Directory
+      - name: usenet
+        hostPath:
+          path: /mnt/data/usenet
           type: Directory
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: radarr
-  namespace: starr
+  namespace: media
   labels:
     app: radarr
 spec:
@@ -95,7 +142,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: radarr-config
-  namespace: starr
+  namespace: media
 spec:
   accessModes:
     - ReadWriteOnce

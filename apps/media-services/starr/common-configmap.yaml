@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: starr-common-config
-  namespace: starr
+  namespace: media
 data:
   # Common environment variables for all *arr apps
   PUID: "1000"
@@ -10,15 +10,16 @@ data:
   TZ: "America/Denver"
   
   # Service URLs for inter-app communication
-  SONARR_URL: "http://sonarr.starr.svc.cluster.local:8989"
-  RADARR_URL: "http://radarr.starr.svc.cluster.local:7878"
-  LIDARR_URL: "http://lidarr.starr.svc.cluster.local:8686"
-  BAZARR_URL: "http://bazarr.starr.svc.cluster.local:6767"
-  PROWLARR_URL: "http://prowlarr.starr.svc.cluster.local:9696"
-  JELLYSEERR_URL: "http://jellyseerr.starr.svc.cluster.local:5055"
-  QBITTORRENT_URL: "http://qbittorrent.starr.svc.cluster.local:8080"
-  SABNZBD_URL: "http://sabnzbd.starr.svc.cluster.local:8081"
-  FLARESOLVERR_URL: "http://flaresolverr.starr.svc.cluster.local:8191"
+  SONARR_URL: "http://sonarr.media.svc.cluster.local:8989"
+  RADARR_URL: "http://radarr.media.svc.cluster.local:7878"
+  LIDARR_URL: "http://lidarr.media.svc.cluster.local:8686"
+  BAZARR_URL: "http://bazarr.media.svc.cluster.local:6767"
+  PROWLARR_URL: "http://prowlarr.media.svc.cluster.local:9696"
+  JELLYSEERR_URL: "http://jellyseerr.media.svc.cluster.local:5055"
+  QBITTORRENT_URL: "http://qbittorrent.qbittorrent.svc.cluster.local:8080"
+  SABNZBD_URL: "http://sabnzbd.media.svc.cluster.local:8080/sabnzbd"
+  FLARESOLVERR_URL: "http://flaresolverr.media.svc.cluster.local:8191"
   
   # Base URLs for external access
   HOSTNAME: "home.brettswift.com"
+  SAB_HOST_WHITELIST: "home.brettswift.com,home.brettswift.com:443,localhost,127.0.0.1,sabnzbd,sabnzbd.media.svc.cluster.local"

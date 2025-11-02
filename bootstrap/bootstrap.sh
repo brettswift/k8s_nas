@@ -70,12 +70,23 @@ else
     echo "Skipping Istio installation (use --istio to install)"
 fi
 
+# Create starr-secrets Secret (part of initial setup)
+echo ""
+echo "Creating starr-secrets Secret (if needed)..."
+if [ -f "./scripts/create-starr-secrets.sh" ]; then
+    ./scripts/create-starr-secrets.sh || echo "⚠️  Secret creation skipped (may already exist)"
+else
+    echo "⚠️  create-starr-secrets.sh not found, skipping secret creation"
+fi
+
+echo ""
 echo "=== Bootstrap Complete ==="
 echo ""
 echo "Next steps:"
 echo "1. Ensure ArgoCD is running: kubectl get pods -n argocd"
 echo "2. Access ArgoCD UI: https://localhost:8080"
 echo "3. Deploy applications via GitOps"
+echo "4. After services deploy, extract API keys: See CONFIGURE_STARR_INTEGRATIONS.md for the command"
 echo ""
 if [[ "$INSTALL_ISTIO" == "true" ]]; then
     echo "Istio is installed and ready!"

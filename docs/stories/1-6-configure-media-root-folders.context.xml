@@ -1,0 +1,184 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>Configure Media Root Folders</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-01T23:00:45-0600</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-6-configure-media-root-folders.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>configure root folders for Sonarr and Radarr and fix download path mappings</iWant>
+    <soThat>downloaded content is organized correctly in the media library and all console errors are resolved</soThat>
+    <tasks>
+      - Task 1: Create root folder directories on host
+      - Task 2: Fix SABnzbd folder configuration
+      - Task 3: Configure Sonarr root folder
+      - Task 4: Configure Radarr root folder
+      - Task 5: Fix SABnzbd remote path mappings in Sonarr and Radarr
+      - Task 6: Verify qBittorrent path mappings
+      - Task 7: Verify all errors cleared
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Sonarr root folder configured to `/data/media/series` (matches error requirement)
+    2. Radarr root folder configured to `/data/media/movies` (matches error requirement)
+    3. Root folder directories exist on host path (`/mnt/data/media/series` and `/mnt/data/media/movies`)
+    4. Services have write permissions to root folder directories
+    5. SABnzbd download path mapping fixed (remove double `/complete` - should be `/data/usenet/complete` not `/data/usenet/complete/complete`)
+    6. qBittorrent download path mapping configured correctly for both Sonarr and Radarr
+    7. All console errors resolved (missing root folders, remote path mapping errors)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Data Architecture - Storage Strategy</section>
+        <snippet>Host Path Volumes: Media files at `/mnt/data/media`, Downloads at `/mnt/data/downloads`. Volume organization shows media library structure.</snippet>
+      </artifact>
+      <artifact>
+        <path>CONFIGURE_STARR_INTEGRATIONS.md</path>
+        <title>Starr Services Integration Guide</title>
+        <section>SABnzbd Download Folder Configuration</section>
+        <snippet>Documents SABnzbd folder configuration: Temporary `/data/usenet/incomplete`, Completed `/data/usenet/complete`. Explains path mapping requirements between SABnzbd and Sonarr/Radarr.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.6: Configure Media Root Folders</section>
+        <snippet>Original epic definition: Sonarr root folder `/data/media/tv`, Radarr root folder `/data/media/movies`. Note: Story updated to match actual error requirements (`/data/media/series` and `/data/media/movies`).</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>apps/media-services/starr/sonarr-deployment.yaml</path>
+        <kind>deployment</kind>
+        <symbol>sonarr deployment</symbol>
+        <lines>75-117</lines>
+        <reason>Shows volume mounts: `/data` → `/mnt/data/media`, `/downloads` → `/mnt/data/downloads`. Critical for understanding path mappings.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/media-services/starr/radarr-deployment.yaml</path>
+        <kind>deployment</kind>
+        <symbol>radarr deployment</symbol>
+        <lines>75-117</lines>
+        <reason>Same volume mount structure as Sonarr. Both mount `/data` to `/mnt/data/media`.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/media-services/starr/sabnzbd-deployment.yaml</path>
+        <kind>deployment</kind>
+        <symbol>sabnzbd deployment</symbol>
+        <lines>99-133</lines>
+        <reason>SABnzbd mounts `/data` to `/mnt/data` (parent directory), giving it access to both media and usenet folders. Different from Sonarr/Radarr mount structure.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/media-services/starr/common-configmap.yaml</path>
+        <kind>configmap</kind>
+        <symbol>starr-common-config</symbol>
+        <lines>1-26</lines>
+        <reason>Contains common configuration including SAB_HOST_WHITELIST and service URLs. May need updating for path configurations.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <artifact>
+        <ecosystem>kubernetes</ecosystem>
+        <packages>
+          <package>hostPath volumes</package>
+          <package>PersistentVolumeClaims</package>
+        </packages>
+      </artifact>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <type>Volume Mount Structure</type>
+      <description>Sonarr/Radarr have `/data` → `/mnt/data/media` mounted. This means `/data/media/series` would resolve to `/mnt/data/media/media/series` on host. Path structure needs investigation - errors specify `/data/media/series` and `/data/media/movies`, but mount suggests these should be `/data/series` and `/data/movies` OR mount needs to be `/mnt/data`.</description>
+    </constraint>
+    <constraint>
+      <type>Path Mapping Requirement</type>
+      <description>SABnzbd uses `/data` → `/mnt/data`, so it can access `/data/usenet/complete`. Sonarr/Radarr use `/downloads` → `/mnt/data/downloads`, so they cannot directly access `/mnt/data/usenet`. Remote path mapping must bridge this gap.</description>
+    </constraint>
+    <constraint>
+      <type>Permissions</type>
+      <description>All services run as PUID:PGID 1000:1000. Root folders must be owned by this user/group for write access.</description>
+    </constraint>
+    <constraint>
+      <type>Error-Driven Requirements</type>
+      <description>Story must resolve specific console errors: Missing root folders `/data/media/series` and `/data/media/movies`, SABnzbd path error showing `/data/usenet/complete/complete` (double complete).</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Sonarr Media Management API</name>
+      <kind>REST API</kind>
+      <signature>Settings → Media Management → Root Folders (UI Configuration)</signature>
+      <path>Sonarr UI: https://home.brettswift.com/sonarr</path>
+    </interface>
+    <interface>
+      <name>Radarr Media Management API</name>
+      <kind>REST API</kind>
+      <signature>Settings → Media Management → Root Folders (UI Configuration)</signature>
+      <path>Radarr UI: https://home.brettswift.com/radarr</path>
+    </interface>
+    <interface>
+      <name>SABnzbd Folder Configuration</name>
+      <kind>Web UI Configuration</kind>
+      <signature>Config → Folders (Temporary Download Folder, Completed Download Folder)</signature>
+      <path>SABnzbd UI: https://home.brettswift.com/sabnzbd</path>
+    </interface>
+    <interface>
+      <name>Download Client Remote Path Mapping</name>
+      <kind>Configuration Interface</kind>
+      <signature>Settings → Download Clients → [Client] → Remote Path Mapping (Advanced)</signature>
+      <path>Sonarr/Radarr UI download client configuration</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing is primarily manual verification through UI and console error checks. No automated test framework exists for Starr service configuration. Verification involves:
+      1. Checking System → Status pages in Sonarr/Radarr for error clearance
+      2. Verifying directory existence and permissions via kubectl exec
+      3. Testing file movement by triggering test downloads
+      4. Confirming path mappings resolve correctly by checking download client logs
+    </standards>
+    <locations>
+      Manual testing via service UIs and kubectl commands. No automated test files exist for this configuration work.
+    </locations>
+    <ideas>
+      <test id="AC1">
+        <criteria>AC #1: Sonarr root folder configured</criteria>
+        <description>Access Sonarr UI → Settings → Media Management → Root Folders, verify `/data/media/series` appears and is writable. Check System → Status - "Missing root folder" error should be cleared.</description>
+      </test>
+      <test id="AC2">
+        <criteria>AC #2: Radarr root folder configured</criteria>
+        <description>Access Radarr UI → Settings → Media Management → Root Folders, verify `/data/media/movies` appears and is writable. Check System → Status - all root folder errors should be cleared.</description>
+      </test>
+      <test id="AC3">
+        <criteria>AC #3, #4: Root folders exist with permissions</criteria>
+        <description>kubectl exec into Sonarr/Radarr pods, verify `/data/media/series` and `/data/media/movies` exist. Test write access: `touch /data/media/series/test && rm /data/media/series/test`. Verify ownership is 1000:1000.</description>
+      </test>
+      <test id="AC5">
+        <criteria>AC #5: SABnzbd path mapping fixed</criteria>
+        <description>Check SABnzbd Config → Folders, verify Completed folder is `/data/usenet/complete` not `/data/usenet/complete/complete`. Check Sonarr/Radarr download client settings - Remote Path should be `/data/usenet/complete`. Verify System → Status - path mapping error cleared.</description>
+      </test>
+      <test id="AC6">
+        <criteria>AC #6: qBittorrent path mappings verified</criteria>
+        <description>Verify qBittorrent download folder configuration. Check Sonarr/Radarr qBittorrent client settings for correct remote/local path mappings. Ensure completed downloads are accessible.</description>
+      </test>
+      <test id="AC7">
+        <criteria>AC #7: All errors cleared</criteria>
+        <description>Check Sonarr System → Status: No root folder errors, no remote path mapping errors. Check Radarr System → Status: Same. Trigger test download and verify content moves to correct root folder.</description>
+      </test>
+    </ideas>
+  </tests>
+</story-context>
+

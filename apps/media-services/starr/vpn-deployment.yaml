@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vpn
-  namespace: starr
+  namespace: media
   labels:
     app: vpn
 spec:
@@ -88,7 +88,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vpn
-  namespace: starr
+  namespace: media
   labels:
     app: vpn
 spec:
@@ -123,7 +123,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: vpn-secrets
-  namespace: starr
+  namespace: media
 type: Opaque
 data:
   # These will need to be populated with actual base64 encoded values

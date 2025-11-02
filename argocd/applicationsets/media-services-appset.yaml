@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: media-services
+  name: media-services-starr
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -33,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: dev_qbit
+        targetRevision: dev_starr
         path: apps/media-services
       destination:
         server: "{{server}}"

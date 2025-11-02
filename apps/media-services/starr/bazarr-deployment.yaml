@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bazarr
-  namespace: starr
+  namespace: media
   labels:
     app: bazarr
 spec:
@@ -16,6 +16,41 @@ spec:
       labels:
         app: bazarr
     spec:
+      initContainers:
+      - name: bazarr-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          CONFIG="/config/config/config.yaml"
+          # Ensure config directory exists
+          mkdir -p /config/config
+          
+          # Configure base_url in Bazarr config - ensure single YAML document
+          # Bazarr's YAML parser fails if multiple documents (---) are present
+          if [ ! -f "$CONFIG" ] || [ ! -s "$CONFIG" ]; then
+            # Create new config with base_url only
+            echo "base_url: /bazarr" > "$CONFIG"
+          else
+            # Existing config - merge base_url into existing config as single document
+            # Create temp file without base_url and without document separators
+            grep -v "^base_url:" "$CONFIG" | grep -v "^---$" | grep -v "^\s*$" > "$CONFIG.tmp" || echo "" > "$CONFIG.tmp"
+            
+            # If temp file has content (not just base_url was present), rebuild config
+            if [ -s "$CONFIG.tmp" ]; then
+              # Write base_url first, then rest of config (no --- separator)
+              echo "base_url: /bazarr" > "$CONFIG"
+              cat "$CONFIG.tmp" >> "$CONFIG"
+            else
+              # Only base_url was in file, or file was empty/just separators
+              echo "base_url: /bazarr" > "$CONFIG"
+            fi
+            rm -f "$CONFIG.tmp"
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: bazarr
         image: docker.io/linuxserver/bazarr:latest
@@ -79,7 +114,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: bazarr
-  namespace: starr
+  namespace: media
   labels:
     app: bazarr
 spec:
@@ -95,7 +130,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: bazarr-config
-  namespace: starr
+  namespace: media
 spec:
   accessModes:
     - ReadWriteOnce

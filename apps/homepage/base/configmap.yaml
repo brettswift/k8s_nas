@@ -19,7 +19,7 @@ data:
             description: Media server
             icon: jellyfin.png
         - Jellyseerr:
-            href: https://home.brettswift.com/jellyseerr
+            href: https://jellyseerr.home.brettswift.com
             description: Media requests
             icon: jellyseerr.png
         - Sonarr:

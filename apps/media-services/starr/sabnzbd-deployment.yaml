@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sabnzbd
-  namespace: starr
+  namespace: media
   labels:
     app: sabnzbd
 spec:
@@ -16,11 +16,68 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      initContainers:
+      - name: sab-config-init
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          set -eu
+          WL="${SAB_HOST_WHITELIST:-home.brettswift.com,localhost,127.0.0.1}"
+          INI="/config/sabnzbd.ini"
+          # Ensure file exists
+          [ -f "$INI" ] || { mkdir -p /config; printf "[misc]\n" > "$INI"; }
+          # Normalize: ensure [misc] section exists
+          if ! grep -q '^\[misc\]' "$INI"; then
+            printf "\n[misc]\n" >> "$INI"
+          fi
+          # Update or insert host_whitelist, allowed_hosts, and url_base under [misc]
+          # Configure url_base=/sabnzbd so service responds on base path
+          # Also configure folder paths to avoid nested complete/complete structure
+          awk -v wl="$WL" '
+            BEGIN{ inmisc=0; infolders=0; have_hw=0; have_ah=0; have_ub=0; have_cd=0; have_dd=0 }
+            /^\[/ { 
+              if(inmisc){ if(!have_hw){ print "host_whitelist = " wl } if(!have_ah){ print "allowed_hosts = " wl } if(!have_ub){ print "url_base = /sabnzbd" } } 
+              if(infolders){ if(!have_cd){ print "complete_dir = /data/usenet/complete" } if(!have_dd){ print "download_dir = /data/usenet/incomplete" } }
+              inmisc=0; infolders=0
+            }
+            /^\[misc\]/ { inmisc=1 }
+            /^\[folders\]/ { infolders=1 }
+            {
+              if(inmisc && $0 ~ /^url_base\s*=/){ print "url_base = /sabnzbd"; have_ub=1; next }
+              if(inmisc && $0 ~ /^host_whitelist\s*=/){ print "host_whitelist = " wl; have_hw=1; next }
+              if(inmisc && $0 ~ /^allowed_hosts\s*=/){ print "allowed_hosts = " wl; have_ah=1; next }
+              if(infolders && $0 ~ /^complete_dir\s*=/){ print "complete_dir = /data/usenet/complete"; have_cd=1; next }
+              if(infolders && $0 ~ /^download_dir\s*=/){ print "download_dir = /data/usenet/incomplete"; have_dd=1; next }
+              print
+            }
+            END{ 
+              if(inmisc){ if(!have_hw){ print "host_whitelist = " wl } if(!have_ah){ print "allowed_hosts = " wl } if(!have_ub){ print "url_base = /sabnzbd" } } 
+              if(infolders){ if(!have_cd){ print "complete_dir = /data/usenet/complete" } if(!have_dd){ print "download_dir = /data/usenet/incomplete" } }
+            }
+          ' "$INI" > "$INI.tmp" && mv "$INI.tmp" "$INI"
+          
+          # Ensure [folders] section exists
+          if ! grep -q '^\[folders\]' "$INI"; then
+            echo "" >> "$INI"
+            echo "[folders]" >> "$INI"
+            echo "complete_dir = /data/usenet/complete" >> "$INI"
+            echo "download_dir = /data/usenet/incomplete" >> "$INI"
+          fi
+        env:
+        - name: SAB_HOST_WHITELIST
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
           name: http
         env:
         - name: PUID
@@ -42,12 +99,22 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: starr-common-config
-              key: HOSTNAME
+              key: SAB_HOST_WHITELIST
         - name: SABNZBD__HOST_WHITELIST
           valueFrom:
             configMapKeyRef:
               name: starr-common-config
-              key: HOSTNAME
+              key: SAB_HOST_WHITELIST
+        - name: SABNZBD_HOST_WHITELIST
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
+        - name: SABNZBD__HOST_WHITELIST_ENTRIES
+          valueFrom:
+            configMapKeyRef:
+              name: starr-common-config
+              key: SAB_HOST_WHITELIST
         volumeMounts:
         - name: config
           mountPath: /config
@@ -62,16 +129,16 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /sabnzbd/ping
-            port: 8081
+            path: /
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 10
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /sabnzbd/ping
-            port: 8081
+            path: /
+            port: 8080
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
@@ -89,7 +156,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sabnzbd
-  namespace: starr
+  namespace: media
   labels:
     app: sabnzbd
 spec:
@@ -97,15 +164,15 @@ spec:
     app: sabnzbd
   ports:
   - name: http
-    port: 8081
-    targetPort: 8081
+    port: 8080
+    targetPort: 8080
   type: ClusterIP
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sabnzbd-config
-  namespace: starr
+  namespace: media
 spec:
   accessModes:
     - ReadWriteOnce
