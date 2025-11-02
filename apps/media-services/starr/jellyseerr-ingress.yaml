@@ -17,10 +17,10 @@ metadata:
       proxy_set_header X-Forwarded-Port $server_port;
       proxy_set_header X-Forwarded-Prefix /jellyseerr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      # Disable default proxy_redirect, then set our custom ones
+      # Jellyseerr doesn't support subfolder deployment - rewrite all absolute redirects
+      # to include /jellyseerr prefix (workaround for unsupported feature)
       proxy_redirect default off;
-      proxy_redirect / /jellyseerr/;
-      proxy_redirect /setup /jellyseerr/setup;
+      proxy_redirect ~^(https?://[^/]+)?(/.*)$ $1/jellyseerr$2;
 spec:
   ingressClassName: nginx
   tls:
