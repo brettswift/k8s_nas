@@ -32,8 +32,6 @@ spec:
             configMapKeyRef:
               name: starr-common-config
               key: TZ
-        - name: BASE_URL
-          value: "/jellyseerr"
         volumeMounts:
         - name: config
           mountPath: /app/config
