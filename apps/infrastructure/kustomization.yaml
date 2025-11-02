@@ -1,5 +1,4 @@
 resources:
-- nginx-ingress/
 - argocd/
 - monitoring/
 - nvidia-device-plugin/
