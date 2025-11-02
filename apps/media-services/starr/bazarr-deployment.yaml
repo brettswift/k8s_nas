@@ -28,17 +28,30 @@ spec:
           mkdir -p /config/config
           # Configure base_url in Bazarr config if not present
           if [ ! -f "$CONFIG" ]; then
+            # Create new config with base_url
             cat > "$CONFIG" <<EOF
           base_url: /bazarr
           EOF
           else
-            # Check if base_url exists, add or update it
+            # Check if base_url exists, add or update it properly
             if grep -q "^base_url:" "$CONFIG"; then
-              # Update existing base_url
+              # Update existing base_url (preserve YAML structure)
               sed -i 's|^base_url:.*|base_url: /bazarr|g' "$CONFIG"
             else
-              # Add base_url at the beginning of the file
-              sed -i '1s|^|base_url: /bazarr\n|' "$CONFIG"
+              # Remove any YAML document separator at start and add base_url properly
+              # If file starts with ---, remove it temporarily
+              if head -n 1 "$CONFIG" | grep -q "^---$"; then
+                # File starts with ---, remove it, add base_url, then add --- back
+                tail -n +2 "$CONFIG" > "$CONFIG.tmp"
+                echo "base_url: /bazarr" > "$CONFIG"
+                cat "$CONFIG.tmp" >> "$CONFIG"
+                rm "$CONFIG.tmp"
+              else
+                # Add base_url at the beginning of the file
+                echo "base_url: /bazarr" > "$CONFIG.tmp"
+                cat "$CONFIG" >> "$CONFIG.tmp"
+                mv "$CONFIG.tmp" "$CONFIG"
+              fi
             fi
           fi
         volumeMounts:
