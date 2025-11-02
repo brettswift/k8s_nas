@@ -418,9 +418,10 @@ apps/
 
 #### Branch Naming Convention
 
-- **Story branches**: `story/{story-id}-{story-name}`
-  - Example: `story/1-2-configure-sonarr-prowlarr-integration`
-  - Created during story grooming (when story moves to `ready-for-dev`)
+- **Story branches**: `feat/{story-id}-{story-name}`
+  - Example: `feat/1-2-configure-sonarr-prowlarr`
+  - Created off the current deployment branch (currently `dev_starr`)
+  - **This is the MANDATORY process for ALL stories**
 
 #### Main Branches
 
@@ -429,52 +430,57 @@ apps/
 
 #### Workflow
 
-1. **Story Grooming**:
-   - Story is marked `ready-for-dev` in sprint-status.yaml
-   - Scrum Master creates story branch: `git checkout -b story/{story-id}-{story-name}`
-   - Branch is pushed to remote: `git push -u origin story/{story-id}-{story-name}`
+**This is the MANDATORY process for ALL stories.**
+
+1. **Create Feature Branch**:
+   - Create branch off current deployment branch (currently `dev_starr`): `git checkout dev_starr && git pull origin dev_starr`
+   - Create feature branch: `git checkout -b feat/{story-id}-{story-name}`
+   - Push to remote: `git push -u origin feat/{story-id}-{story-name}`
 
 2. **Development**:
-   - Developer works on story branch
-   - All commits go to story branch
+   - Developer works on feature branch
+   - All commits go to feature branch
    - Frequent commits recommended
 
-3. **Immediate Deployment** (for testing):
-   - Push story branch directly to dev_starr: `git push origin story/{branch}:dev_starr`
-   - This triggers ArgoCD to sync from dev_starr
-   - No need to configure ArgoCD on feature branch
-   - **Caution**: Force push overwrites dev_starr - use only when testing
+3. **Mid-Story Deployment** (for testing during development):
+   - Push feature branch directly to dev_starr: `git push origin feat/{branch}:dev_starr`
+   - This triggers ArgoCD to sync from dev_starr without switching ArgoCD tracking branches
+   - **Why?** ArgoCD tracks `dev_starr`, so pushing to it avoids reconfiguring ArgoCD
+   - Use this anytime during development to test changes
 
 4. **Story Completion**:
-   - Story is marked `done` in sprint-status.yaml
-   - Merge story branch to dev_starr: `git checkout dev_starr && git merge story/{story-id}-{story-name}`
+   - Story must be QA'd first
+   - Merge feature branch to dev_starr: `git checkout dev_starr && git pull origin dev_starr`
+   - Merge with --no-ff: `git merge feat/{story-id}-{story-name} --no-ff`
    - Push dev_starr: `git push origin dev_starr`
-   - Delete story branch: `git branch -d story/{story-id}-{story-name}` (and remote: `git push origin --delete story/{story-id}-{story-name}`)
+   - Delete feature branch: `git branch -d feat/{story-id}-{story-name}` (and remote: `git push origin --delete feat/{story-id}-{story-name}`)
+   - **Important:** The `--no-ff` flag creates a merge commit visible in history
 
 #### Branch Lifecycle Example
 
 ```bash
-# 1. Story groomed (SM creates branch)
+# 1. Create feature branch (off current deployment branch dev_starr)
 git checkout dev_starr
-git pull
-git checkout -b story/1-2-configure-sonarr-prowlarr-integration
-git push -u origin story/1-2-configure-sonarr-prowlarr-integration
+git pull origin dev_starr
+git checkout -b feat/1-2-configure-sonarr-prowlarr
+git push -u origin feat/1-2-configure-sonarr-prowlarr
 
 # 2. Development work (Dev commits)
-git commit -m "feat: add Prowlarr to kustomization"
-git commit -m "feat: extract Prowlarr API key"
+git commit -m "feat(story-1.2): add Prowlarr to kustomization"
+git commit -m "feat(story-1.2): extract Prowlarr API key"
 git push
 
-# 3. Immediate deployment for testing (optional)
-git push origin story/1-2-configure-sonarr-prowlarr-integration:dev_starr
+# 3. Mid-story deployment for testing (can do this multiple times)
+git push origin feat/1-2-configure-sonarr-prowlarr:dev_starr
+# ArgoCD automatically syncs from dev_starr
 
-# 4. Story complete (merge to dev_starr)
+# 4. Story complete - QA done, merge to dev_starr
 git checkout dev_starr
-git pull
-git merge story/1-2-configure-sonarr-prowlarr-integration
+git pull origin dev_starr
+git merge feat/1-2-configure-sonarr-prowlarr --no-ff
 git push origin dev_starr
-git branch -d story/1-2-configure-sonarr-prowlarr-integration
-git push origin --delete story/1-2-configure-sonarr-prowlarr-integration
+git branch -d feat/1-2-configure-sonarr-prowlarr
+git push origin --delete feat/1-2-configure-sonarr-prowlarr
 ```
 
 ### Commit Messages
@@ -492,13 +498,13 @@ Use conventional commits with story reference:
 2. ArgoCD automatically syncs from dev_starr
 3. Changes deployed to cluster
 
-**Immediate Testing Flow:**
-1. Push story branch to dev_starr: `git push origin story/{branch}:dev_starr`
-2. ArgoCD syncs immediately
+**Mid-Story Testing Flow:**
+1. Push feature branch to dev_starr: `git push origin feat/{branch}:dev_starr`
+2. ArgoCD syncs immediately from dev_starr
 3. Test changes
-4. Continue development or merge when ready
-5. Create PR to `dev` or `main`
-6. Review and merge
+4. Continue development on feature branch
+5. Repeat step 1 as needed during development
+6. When story is complete and QA'd, merge with `--no-ff` as described above
 
 ## Troubleshooting
 
