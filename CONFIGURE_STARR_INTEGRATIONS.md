@@ -211,7 +211,7 @@ SABnzbd uses its own configured folders - Sonarr/Radarr don't tell it where to d
    - **Name:** `SABnzbd`
    - **Host:** `sabnzbd` (short name is in whitelist) or `sabnzbd.media.svc.cluster.local` (full DNS)
    - **Port:** `8080` (not 8081)
-   - **URL Base:** `/sabnzbd` (required - SABnzbd is configured with url_base)
+   - **URL Base:** `/sabnzbd` ⚠️ **REQUIRED** - Without this, Sonarr will try `http://sabnzbd:8080/api` instead of `http://sabnzbd:8080/sabnzbd/api` and get 403 errors
    - **API Key:** [SABnzbd API key] (use API key from Config → General → Security, not NZB key)
    - **Category:** `tv` (or `sonarr`)
    - ✅ **Use SSL:** No
@@ -391,6 +391,19 @@ Only needed if you have indexers that require CAPTCHA solving.
 2. **Category:** Ensure category matches (e.g., `tv` for Sonarr)
 3. **Paths:** Verify download paths are correct
 4. **qBittorrent:** Check if VPN is working (if using)
+
+### SABnzbd 403 Forbidden Error
+
+**Error:** `Unable to connect to SABnzbd, HTTP request failed: [403:Forbidden]`
+
+**Common Causes:**
+1. **Missing URL Base:** Sonarr is calling `http://sabnzbd:8080/api` instead of `http://sabnzbd:8080/sabnzbd/api`
+   - **Fix:** Set **URL Base** to `/sabnzbd` in Sonarr's SABnzbd client settings
+2. **Hostname not whitelisted:** SABnzbd hostname whitelist doesn't include the hostname being used
+   - **Fix:** Restart SABnzbd pod: `kubectl rollout restart deployment sabnzbd -n media`
+   - Verify whitelist: Check SABnzbd config includes `sabnzbd` and `sabnzbd.media.svc.cluster.local`
+3. **Wrong API Key:** Using NZB key instead of API key
+   - **Fix:** Use the **API Key** from SABnzbd → Config → General → Security (not the NZB key)
 
 ### Subtitles Not Downloading
 
