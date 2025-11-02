@@ -26,33 +26,26 @@ spec:
           CONFIG="/config/config/config.yaml"
           # Ensure config directory exists
           mkdir -p /config/config
-          # Configure base_url in Bazarr config if not present
-          if [ ! -f "$CONFIG" ]; then
-            # Create new config with base_url
-            cat > "$CONFIG" <<EOF
-          base_url: /bazarr
-          EOF
+          
+          # Configure base_url in Bazarr config - ensure single YAML document
+          if [ ! -f "$CONFIG" ] || [ ! -s "$CONFIG" ]; then
+            # Create new config with base_url only
+            echo "base_url: /bazarr" > "$CONFIG"
           else
-            # Check if base_url exists, add or update it properly
-            if grep -q "^base_url:" "$CONFIG"; then
-              # Update existing base_url (preserve YAML structure)
-              sed -i 's|^base_url:.*|base_url: /bazarr|g' "$CONFIG"
-            else
-              # Remove any YAML document separator at start and add base_url properly
-              # If file starts with ---, remove it temporarily
-              if head -n 1 "$CONFIG" | grep -q "^---$"; then
-                # File starts with ---, remove it, add base_url, then add --- back
-                tail -n +2 "$CONFIG" > "$CONFIG.tmp"
-                echo "base_url: /bazarr" > "$CONFIG"
-                cat "$CONFIG.tmp" >> "$CONFIG"
-                rm "$CONFIG.tmp"
-              else
-                # Add base_url at the beginning of the file
-                echo "base_url: /bazarr" > "$CONFIG.tmp"
-                cat "$CONFIG" >> "$CONFIG.tmp"
-                mv "$CONFIG.tmp" "$CONFIG"
-              fi
-            fi
+            # Existing config - update or add base_url without creating multiple YAML documents
+            # First, remove any existing base_url line
+            grep -v "^base_url:" "$CONFIG" > "$CONFIG.tmp" || true
+            
+            # Remove any leading YAML document separators (---)
+            sed -i '/^---$/d' "$CONFIG.tmp"
+            
+            # Remove trailing YAML document separators
+            sed -i '${/^---$/d}' "$CONFIG.tmp" || true
+            
+            # Add base_url at the top, ensure no document separator
+            echo "base_url: /bazarr" > "$CONFIG"
+            cat "$CONFIG.tmp" >> "$CONFIG"
+            rm -f "$CONFIG.tmp"
           fi
         volumeMounts:
         - name: config
