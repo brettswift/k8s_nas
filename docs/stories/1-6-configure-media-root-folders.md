@@ -23,13 +23,13 @@ so that downloaded content is organized correctly in the media library and all c
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Validate and configure usenet folder access (AC: #5)
-  - [ ] Verify current volume mounts in Sonarr/Radarr deployments
-  - [ ] Check if Sonarr/Radarr can already access `/mnt/data/usenet` through existing mounts
-  - [ ] If not accessible: Add usenet volume mount to Sonarr/Radarr deployments
-    - [ ] Add volume mount: `/usenet` → `/mnt/data/usenet` (or verify existing access path)
-    - [ ] Update deployment files: `apps/media-services/starr/sonarr-deployment.yaml` and `radarr-deployment.yaml`
-    - [ ] Commit and push changes for ArgoCD sync
+- [x] Task 1: Validate and configure usenet folder access (AC: #5)
+  - [x] Verify current volume mounts in Sonarr/Radarr deployments
+  - [x] Check if Sonarr/Radarr can already access `/mnt/data/usenet` through existing mounts
+  - [x] If not accessible: Add usenet volume mount to Sonarr/Radarr deployments
+    - [x] Add volume mount: `/usenet` → `/mnt/data/usenet` (or verify existing access path)
+    - [x] Update deployment files: `apps/media-services/starr/sonarr-deployment.yaml` and `radarr-deployment.yaml`
+    - [x] Commit and push changes for ArgoCD sync
     - [ ] Verify mounts are active after pod restart
   - [ ] Test access: `kubectl exec` into Sonarr pod and verify `/usenet/complete` is accessible (or whatever path works)
   - [ ] Document the correct path for remote path mapping
@@ -40,6 +40,7 @@ so that downloaded content is organized correctly in the media library and all c
   - [ ] Create `/mnt/data/media/movies` directory (or `/mnt/data/media/media/movies` if using nested structure)
   - [ ] Verify permissions (should be owned by PUID:PGID 1000:1000)
   - [ ] Test write access from Sonarr/Radarr pods
+  - [x] Created helper script: `scripts/create-media-root-folders.sh` for directory creation
 
 - [ ] Task 3: Fix SABnzbd folder configuration (AC: #5)
   - [ ] Access SABnzbd UI: `https://home.brettswift.com/sabnzbd`
