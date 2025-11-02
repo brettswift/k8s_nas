@@ -13,6 +13,7 @@
 
 | Integration | Direction | Where to Configure |
 |------------|-----------|------------------|
+| Root Folders | Sonarr/Radarr | **Sonarr/Radarr** → Settings → Media Management → Root Folders |
 | Indexers | Prowlarr → Sonarr/Radarr/Lidarr | **Prowlarr** → Settings → Apps |
 | Download Client (Torrent) | Sonarr/Radarr/Lidarr → qBittorrent | **Sonarr/Radarr/Lidarr** → Settings → Download Clients |
 | Download Client (Usenet) | Sonarr/Radarr/Lidarr → SABnzbd | **Sonarr/Radarr/Lidarr** → Settings → Download Clients |
@@ -78,6 +79,61 @@ done
 - Unpackerr: `http://unpackerr:9770`
 - Jellyseerr: `http://jellyseerr:5055`
 - Flaresolverr: `http://flaresolverr:8191`
+
+---
+
+## Part 0: Root Folder Configuration (Required First)
+
+**Before configuring download clients or adding content, you must configure root folders in Sonarr and Radarr.**
+
+Root folders define where each service stores its media library. These must be configured before adding any TV shows or movies.
+
+### Configure Sonarr Root Folder
+
+1. **Sonarr UI:** `https://home.brettswift.com/sonarr` → **Settings** → **Media Management** → **Root Folders**
+2. Click **+ Add** to add new root folder
+3. Enter path: `/data/media/series`
+4. Click **Save**
+5. Verify no errors appear
+6. Check **System** → **Status** - error "Missing root folder: /data/media/series" should be cleared
+
+### Configure Radarr Root Folder
+
+1. **Radarr UI:** `https://home.brettswift.com/radarr` → **Settings** → **Media Management** → **Root Folders**
+2. Click **+ Add** to add new root folder
+3. Enter path: `/data/media/movies`
+4. Click **Save**
+5. Verify no errors appear
+6. Check **System** → **Status** - errors "Missing root folder: /data/media/movies" should be cleared
+
+### Required Directory Structure
+
+**On the host server (`10.0.0.20`):**
+```bash
+# Create root folder directories (run on the server):
+sudo mkdir -p /mnt/data/media/series /mnt/data/media/movies
+sudo chown -R 1000:1000 /mnt/data/media/series /mnt/data/media/movies
+sudo chmod 755 /mnt/data/media/series /mnt/data/media/movies
+```
+
+Or use the provided script:
+```bash
+./scripts/create-media-root-folders.sh
+```
+
+**Expected folder structure:**
+```
+/mnt/data/
+├── media/
+│   ├── series/          # Sonarr root folder → /data/media/series in container
+│   └── movies/          # Radarr root folder → /data/media/movies in container
+├── downloads/           # qBittorrent downloads
+└── usenet/              # SABnzbd downloads
+    ├── incomplete/
+    └── complete/
+```
+
+**Note:** The `/data` volume mount points to `/mnt/data` in the container, so `/data/media/series` in Sonarr maps to `/mnt/data/media/series` on the host.
 
 ---
 
@@ -354,6 +410,12 @@ Only needed if you have indexers that require CAPTCHA solving.
 ---
 
 ## Configuration Checklist
+
+### Root Folders (Required First)
+- [ ] Sonarr root folder configured: `/data/media/series`
+- [ ] Radarr root folder configured: `/data/media/movies`
+- [ ] Root folder directories created on host (`/mnt/data/media/series` and `/mnt/data/media/movies`)
+- [ ] No root folder errors in Sonarr/Radarr System → Status
 
 ### Indexers (Prowlarr)
 - [ ] Prowlarr → Sonarr configured
