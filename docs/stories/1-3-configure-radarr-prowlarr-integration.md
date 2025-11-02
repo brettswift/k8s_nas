@@ -1,6 +1,6 @@
 # Story 1.3: Configure Radarr-Prowlarr Integration
 
-Status: drafted
+Status: done
 
 ## Story
 

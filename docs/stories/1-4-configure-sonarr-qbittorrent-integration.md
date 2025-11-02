@@ -1,6 +1,6 @@
 # Story 1.4: Configure Sonarr-qBittorrent Integration
 
-Status: drafted
+Status: done
 
 ## Story
 
