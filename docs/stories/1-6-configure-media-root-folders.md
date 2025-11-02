@@ -249,4 +249,12 @@ Composer (Cursor AI)
 - `scripts/create-media-root-folders.sh` - Helper script to create root folder directories
 - `scripts/verify-media-root-config.sh` - Verification script for configuration validation
 - `docs/stories/1-6-ui-configuration-guide.md` - Detailed UI configuration instructions
+- `scripts/update-jellyfin-splashscreen.sh` - Script to update Jellyfin splash screen image
+
+**Additional Fixes (during story work):**
+- Updated SABnzbd deployment to fix nested `/complete/complete` path issue (init container now explicitly sets `complete_dir` and `download_dir`)
+- Fixed Bazarr routing (white page issue) by adding base path configuration in init container and fixing ingress routing
+- Increased Jellyfin ingress file upload size limit to 50MB for branding images
+- Added root folder configuration documentation to `CONFIGURE_STARR_INTEGRATIONS.md`
+- Expanded Bazarr configuration guide with complete setup instructions
 
