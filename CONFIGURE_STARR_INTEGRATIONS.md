@@ -13,6 +13,7 @@
 
 | Integration | Direction | Where to Configure |
 |------------|-----------|------------------|
+| Root Folders | Sonarr/Radarr | **Sonarr/Radarr** → Settings → Media Management → Root Folders |
 | Indexers | Prowlarr → Sonarr/Radarr/Lidarr | **Prowlarr** → Settings → Apps |
 | Download Client (Torrent) | Sonarr/Radarr/Lidarr → qBittorrent | **Sonarr/Radarr/Lidarr** → Settings → Download Clients |
 | Download Client (Usenet) | Sonarr/Radarr/Lidarr → SABnzbd | **Sonarr/Radarr/Lidarr** → Settings → Download Clients |
@@ -78,6 +79,61 @@ done
 - Unpackerr: `http://unpackerr:9770`
 - Jellyseerr: `http://jellyseerr:5055`
 - Flaresolverr: `http://flaresolverr:8191`
+
+---
+
+## Part 0: Root Folder Configuration (Required First)
+
+**Before configuring download clients or adding content, you must configure root folders in Sonarr and Radarr.**
+
+Root folders define where each service stores its media library. These must be configured before adding any TV shows or movies.
+
+### Configure Sonarr Root Folder
+
+1. **Sonarr UI:** `https://home.brettswift.com/sonarr` → **Settings** → **Media Management** → **Root Folders**
+2. Click **+ Add** to add new root folder
+3. Enter path: `/data/media/series`
+4. Click **Save**
+5. Verify no errors appear
+6. Check **System** → **Status** - error "Missing root folder: /data/media/series" should be cleared
+
+### Configure Radarr Root Folder
+
+1. **Radarr UI:** `https://home.brettswift.com/radarr` → **Settings** → **Media Management** → **Root Folders**
+2. Click **+ Add** to add new root folder
+3. Enter path: `/data/media/movies`
+4. Click **Save**
+5. Verify no errors appear
+6. Check **System** → **Status** - errors "Missing root folder: /data/media/movies" should be cleared
+
+### Required Directory Structure
+
+**On the host server (`10.0.0.20`):**
+```bash
+# Create root folder directories (run on the server):
+sudo mkdir -p /mnt/data/media/series /mnt/data/media/movies
+sudo chown -R 1000:1000 /mnt/data/media/series /mnt/data/media/movies
+sudo chmod 755 /mnt/data/media/series /mnt/data/media/movies
+```
+
+Or use the provided script:
+```bash
+./scripts/create-media-root-folders.sh
+```
+
+**Expected folder structure:**
+```
+/mnt/data/
+├── media/
+│   ├── series/          # Sonarr root folder → /data/media/series in container
+│   └── movies/          # Radarr root folder → /data/media/movies in container
+├── downloads/           # qBittorrent downloads
+└── usenet/              # SABnzbd downloads
+    ├── incomplete/
+    └── complete/
+```
+
+**Note:** The `/data` volume mount points to `/mnt/data` in the container, so `/data/media/series` in Sonarr maps to `/mnt/data/media/series` on the host.
 
 ---
 
@@ -269,21 +325,86 @@ Same steps as Sonarr, but in Radarr:
 
 ## Part 3: Subtitles (Bazarr)
 
-### Configure Sonarr → Bazarr
+**Bazarr manages subtitles for Sonarr and Radarr. It needs to be configured in both directions:**
+1. **Bazarr → Sonarr/Radarr:** Bazarr monitors libraries and searches for subtitles
+2. **Sonarr/Radarr → Bazarr:** Services connect to Bazarr to enable subtitle downloads
 
-1. **Sonarr UI** → **Settings** → **Subtitles**
+### Step 1: Configure Bazarr → Sonarr
+
+1. **Bazarr UI:** `https://home.brettswift.com/bazarr` → **Settings** → **General** → **Sonarr**
+2. **Enable:** ✅ **Enabled**
+3. **Host:** `sonarr` (or `sonarr.media.svc.cluster.local`)
+4. **Port:** `8989`
+5. **URL Base:** `/sonarr` (required - Bazarr uses health check endpoint)
+6. **API Key:** [Sonarr API key]
+7. **Click **Test Connection** → **Save**
+
+### Step 2: Configure Bazarr → Radarr
+
+1. **Bazarr UI** → **Settings** → **General** → **Radarr**
+2. **Enable:** ✅ **Enabled**
+3. **Host:** `radarr` (or `radarr.media.svc.cluster.local`)
+4. **Port:** `7878`
+5. **URL Base:** `/radarr` (required - Bazarr uses health check endpoint)
+6. **API Key:** [Radarr API key]
+7. **Click **Test Connection** → **Save**
+
+### Step 3: Configure Bazarr Media Paths
+
+Bazarr needs access to media files to download subtitles:
+
+1. **Bazarr UI** → **Settings** → **General** → **Paths**
+2. **TV Path:** `/data/media/series` (matches Sonarr root folder)
+3. **Movie Path:** `/data/media/movies` (matches Radarr root folder)
+4. **Save**
+
+**Note:** Bazarr has `/data` mounted to `/mnt/data`, so these paths map correctly to the host.
+
+### Step 4: Get Bazarr API Key
+
+1. **Bazarr UI** → **Settings** → **General** → **Security**
+2. Find **API Key** and copy it
+3. Update the secret (if needed):
+   ```bash
+   kubectl create secret generic starr-secrets -n media \
+     --from-literal=BAZARR_API_KEY="<your-bazarr-api-key>" \
+     --dry-run=client -o yaml | kubectl apply -f -
+   ```
+
+### Step 5: Configure Sonarr → Bazarr
+
+1. **Sonarr UI:** `https://home.brettswift.com/sonarr` → **Settings** → **Subtitles**
+2. **Enable:** ✅ **Use Subtitles**
+3. **Subtitle Languages:** Select your preferred languages (e.g., `en`, `es`)
+4. **Add Subtitle Provider:** Click **+** → Select **Bazarr**
+5. **Configure:**
+   - **Host:** `bazarr` (or `bazarr.media.svc.cluster.local`)
+   - **Port:** `6767`
+   - **URL Base:** `/bazarr` (required - Bazarr serves on `/bazarr` path)
+   - **API Key:** [Bazarr API key]
+6. **Test** → **Save**
+
+### Step 6: Configure Radarr → Bazarr
+
+1. **Radarr UI:** `https://home.brettswift.com/radarr` → **Settings** → **Subtitles**
 2. **Enable:** ✅ **Use Subtitles**
 3. **Subtitle Languages:** Select your preferred languages
 4. **Add Subtitle Provider:** Click **+** → Select **Bazarr**
 5. **Configure:**
-   - **Host:** `bazarr:6767`
+   - **Host:** `bazarr` (or `bazarr.media.svc.cluster.local`)
    - **Port:** `6767`
+   - **URL Base:** `/bazarr` (required - Bazarr serves on `/bazarr` path)
    - **API Key:** [Bazarr API key]
 6. **Test** → **Save**
 
-### Configure Radarr → Bazarr
+### Configure Subtitle Providers in Bazarr
 
-Same steps, but in Radarr.
+After connecting to Sonarr/Radarr, configure subtitle providers:
+
+1. **Bazarr UI** → **Settings** → **Subtitles** → **Providers**
+2. Add subtitle providers (e.g., OpenSubtitles, Subscene)
+3. Configure API keys for providers as needed
+4. **Save**
 
 ---
 
@@ -307,20 +428,170 @@ Same steps, but in Radarr.
 
 ## Part 5: Content Requests (Jellyseerr)
 
-### Configure Jellyseerr → Sonarr/Radarr
+Jellyseerr enables users to request content via web interface, which automatically creates requests in Sonarr/Radarr.
+
+### Prerequisites
+
+✅ All services verified running:
+- Jellyseerr: `jellyseerr.media.svc.cluster.local:5055`
+- Sonarr: `sonarr.media.svc.cluster.local:8989`
+- Radarr: `radarr.media.svc.cluster.local:7878`
+- Jellyfin: `jellyfin.media.svc.cluster.local:80`
+
+✅ API Keys Available:
+- Sonarr API Key: Extract from `starr-secrets` Secret or Sonarr UI
+- Radarr API Key: Extract from `starr-secrets` Secret or Radarr UI
+- Jellyfin API Key: Create/extract from Jellyfin UI
+
+**Extract API Keys:**
+```bash
+# Sonarr API Key
+kubectl get secret starr-secrets -n media -o jsonpath='{.data.SONARR_API_KEY}' | base64 -d && echo ""
+
+# Radarr API Key
+kubectl get secret starr-secrets -n media -o jsonpath='{.data.RADARR_API_KEY}' | base64 -d && echo ""
+```
+
+### Configure Jellyseerr → Sonarr
 
 1. **Jellyseerr UI:** `https://home.brettswift.com/jellyseerr` → **Settings** → **Services**
 2. **Add Service** → Select **Sonarr**
+3. **Configure:**
    - **Name:** `Sonarr`
-   - **Server URL:** `http://sonarr:8989`
-   - **API Key:** [Sonarr API key]
-3. **Add Service** → Select **Radarr**
-   - **Name:** `Radarr`
-   - **Server URL:** `http://radarr:7878`
-   - **API Key:** [Radarr API key]
+   - **Server URL:** `http://sonarr:8989` ⚠️ Use short service name (not full DNS)
+   - **API Key:** [Sonarr API key from secret or UI]
+   - **Default Server:** ✅ Enable (if this is your primary Sonarr instance)
+   - **Sync Enabled:** ✅ Enable (sync content library)
+   - **Sync Interval:** `0` (manual sync) or `360` (every 6 hours)
 4. **Test** → **Save**
 
-**Note:** Jellyseerr enables users to request content via web interface.
+**Expected Result:**
+- ✅ Connection test successful
+- Sonarr appears in services list
+- Jellyseerr can query Sonarr for TV shows
+
+### Configure Jellyseerr → Radarr
+
+1. **Jellyseerr UI** → **Settings** → **Services** → **Add Service** → Select **Radarr**
+2. **Configure:**
+   - **Name:** `Radarr`
+   - **Server URL:** `http://radarr:7878` ⚠️ Use short service name
+   - **API Key:** [Radarr API key from secret or UI]
+   - **Default Server:** ✅ Enable (if this is your primary Radarr instance)
+   - **Sync Enabled:** ✅ Enable (sync content library)
+   - **Sync Interval:** `0` or `360`
+3. **Test** → **Save**
+
+**Expected Result:**
+- ✅ Connection test successful
+- Radarr appears in services list
+- Jellyseerr can query Radarr for movies
+
+### Configure Jellyseerr → Jellyfin
+
+1. **Jellyseerr UI** → **Settings** → **Services** → **Add Service** → Select **Jellyfin**
+2. **Configure:**
+   - **Name:** `Jellyfin`
+   - **Server URL:** `http://jellyfin:80` ⚠️ Use short service name and service port (not container port 8096)
+   - **API Key:** [Jellyfin API key - create in Jellyfin UI: Settings → API Keys → New API Key]
+   - **Username:** (optional, if not using API key)
+   - **Password:** (optional, if not using API key)
+3. **Test** → **Save**
+
+**Get Jellyfin API Key:**
+1. Access Jellyfin UI: `https://home.brettswift.com/jellyfin`
+2. Navigate to **Settings** (gear icon) → **API Keys**
+3. Click **New API Key**
+4. Enter name: `Jellyseerr`
+5. Click **Create**
+6. **Copy the API key immediately** (it won't be shown again)
+
+**Expected Result:**
+- ✅ Connection test successful
+- Jellyfin appears in services list
+- Jellyseerr can query Jellyfin library for existing content
+- Shows existing movies and TV shows in Jellyseerr
+
+### Test Integration
+
+#### Test Sonarr Integration
+1. In Jellyseerr, navigate to **Discover** or **Requests**
+2. Search for a TV show (e.g., "The Office")
+3. Click **Request** on a show
+4. Verify the request appears in Sonarr:
+   - Access Sonarr UI: `https://home.brettswift.com/sonarr`
+   - Navigate to **Wanted** or **Series** page
+   - Look for the requested show
+
+#### Test Radarr Integration
+1. In Jellyseerr, search for a movie
+2. Click **Request** on a movie
+3. Verify the request appears in Radarr:
+   - Access Radarr UI: `https://home.brettswift.com/radarr`
+   - Navigate to **Movies** page
+   - Look for the requested movie
+
+#### Test Jellyfin Integration
+1. In Jellyseerr, navigate to **Media** or **Library**
+2. Verify existing content from Jellyfin is displayed
+3. Check that content availability is synced correctly
+
+### Troubleshooting
+
+#### Connection Test Fails
+
+**Issue:** "Unable to connect" or "Connection timeout"
+
+**Solutions:**
+1. Verify service is running:
+   ```bash
+   kubectl get pods -n media -l app=sonarr
+   kubectl get pods -n media -l app=radarr
+   kubectl get pods -n media -l app=jellyfin
+   ```
+
+2. Verify service DNS resolves (test from Jellyseerr pod):
+   ```bash
+   kubectl exec -n media $(kubectl get pods -n media -l app=jellyseerr -o jsonpath='{.items[0].metadata.name}') -- nslookup sonarr
+   ```
+
+3. Verify API key is correct:
+   - Re-extract from secret or UI
+   - Check for trailing spaces
+   - Ensure key is complete
+
+4. Verify port number:
+   - Sonarr: `8989`
+   - Radarr: `7878`
+   - Jellyfin: `80` (service port, not 8096)
+
+#### API Key Invalid
+
+**Issue:** "Unauthorized" or "Invalid API key"
+
+**Solutions:**
+1. Re-extract API key from service UI:
+   - Sonarr: Settings → General → Security → API Key
+   - Radarr: Settings → General → Security → API Key
+   - Jellyfin: Settings → API Keys → Copy key
+
+2. Verify key hasn't been regenerated
+3. Create new API key if needed
+
+#### Service Not Found in Jellyseerr
+
+**Issue:** Service doesn't appear in Jellyseerr after configuration
+
+**Solutions:**
+1. Refresh Jellyseerr page
+2. Check service is saved (not just tested)
+3. Verify service is enabled in Jellyseerr settings
+4. Check Jellyseerr logs:
+   ```bash
+   kubectl logs -n media -l app=jellyseerr --tail=50
+   ```
+
+**Note:** Jellyseerr enables users to request content via web interface. Once configured, requests automatically create entries in Sonarr/Radarr for content acquisition.
 
 ---
 
@@ -354,6 +625,12 @@ Only needed if you have indexers that require CAPTCHA solving.
 ---
 
 ## Configuration Checklist
+
+### Root Folders (Required First)
+- [ ] Sonarr root folder configured: `/data/media/series`
+- [ ] Radarr root folder configured: `/data/media/movies`
+- [ ] Root folder directories created on host (`/mnt/data/media/series` and `/mnt/data/media/movies`)
+- [ ] No root folder errors in Sonarr/Radarr System → Status
 
 ### Indexers (Prowlarr)
 - [ ] Prowlarr → Sonarr configured
