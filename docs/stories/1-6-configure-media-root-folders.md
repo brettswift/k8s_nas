@@ -23,14 +23,25 @@ so that downloaded content is organized correctly in the media library and all c
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create root folder directories on host (AC: #3, #4)
+- [ ] Task 1: Validate and configure usenet folder access (AC: #5)
+  - [ ] Verify current volume mounts in Sonarr/Radarr deployments
+  - [ ] Check if Sonarr/Radarr can already access `/mnt/data/usenet` through existing mounts
+  - [ ] If not accessible: Add usenet volume mount to Sonarr/Radarr deployments
+    - [ ] Add volume mount: `/usenet` → `/mnt/data/usenet` (or verify existing access path)
+    - [ ] Update deployment files: `apps/media-services/starr/sonarr-deployment.yaml` and `radarr-deployment.yaml`
+    - [ ] Commit and push changes for ArgoCD sync
+    - [ ] Verify mounts are active after pod restart
+  - [ ] Test access: `kubectl exec` into Sonarr pod and verify `/usenet/complete` is accessible (or whatever path works)
+  - [ ] Document the correct path for remote path mapping
+
+- [ ] Task 2: Create root folder directories on host (AC: #3, #4)
   - [ ] Verify `/mnt/data/media` exists
-  - [ ] Create `/mnt/data/media/series` directory
-  - [ ] Create `/mnt/data/media/movies` directory
+  - [ ] Create `/mnt/data/media/series` directory (or `/mnt/data/media/media/series` if using nested structure)
+  - [ ] Create `/mnt/data/media/movies` directory (or `/mnt/data/media/media/movies` if using nested structure)
   - [ ] Verify permissions (should be owned by PUID:PGID 1000:1000)
   - [ ] Test write access from Sonarr/Radarr pods
 
-- [ ] Task 2: Fix SABnzbd folder configuration (AC: #5)
+- [ ] Task 3: Fix SABnzbd folder configuration (AC: #5)
   - [ ] Access SABnzbd UI: `https://home.brettswift.com/sabnzbd`
   - [ ] Navigate to **Config** → **Folders**
   - [ ] Verify **Completed Download Folder** is set to `/data/usenet/complete` (not `/data/usenet/complete/complete`)
@@ -39,7 +50,7 @@ so that downloaded content is organized correctly in the media library and all c
   - [ ] Fix any category-specific folder settings that might be adding extra paths
   - [ ] Save configuration
 
-- [ ] Task 3: Configure Sonarr root folder (AC: #1)
+- [ ] Task 4: Configure Sonarr root folder (AC: #1)
   - [ ] Access Sonarr UI: `https://home.brettswift.com/sonarr`
   - [ ] Navigate to **Settings** → **Media Management** → **Root Folders**
   - [ ] Remove any existing root folders (if incorrectly configured)
@@ -48,7 +59,7 @@ so that downloaded content is organized correctly in the media library and all c
   - [ ] Save configuration
   - [ ] Verify console error "Missing root folder: /data/media/series" is cleared
 
-- [ ] Task 4: Configure Radarr root folder (AC: #2)
+- [ ] Task 5: Configure Radarr root folder (AC: #2)
   - [ ] Access Radarr UI: `https://home.brettswift.com/radarr`
   - [ ] Navigate to **Settings** → **Media Management** → **Root Folders**
   - [ ] Remove any existing root folders (if incorrectly configured)
@@ -58,23 +69,23 @@ so that downloaded content is organized correctly in the media library and all c
   - [ ] Verify console error "Missing root folder: /data/media/movies" is cleared
   - [ ] Verify collection errors are cleared (Wild Robot Collection, etc.)
 
-- [ ] Task 5: Fix SABnzbd remote path mappings in Sonarr and Radarr (AC: #5)
+- [ ] Task 6: Fix SABnzbd remote path mappings in Sonarr and Radarr (AC: #5)
   - [ ] Access Sonarr → **Settings** → **Download Clients** → SABnzbd
   - [ ] Check **Remote Path Mapping**:
-    - **Remote Path:** `/data/usenet/complete` (should NOT be `/data/usenet/complete/complete`)
-    - **Local Path:** Verify this matches how Sonarr sees the path
-    - If using `/downloads` mount, may need to add `/mnt/data/usenet` mount OR update path mapping
+    - **Remote Path:** `/data/usenet/complete` (SABnzbd's completed folder as SABnzbd sees it)
+    - **Local Path:** `/usenet/complete` (how Sonarr sees it after usenet mount is added in Task 1)
+      - *After usenet mount is added: `/usenet` → `/mnt/data/usenet`, so `/usenet/complete` = `/mnt/data/usenet/complete` ✓*
   - [ ] Access Radarr → **Settings** → **Download Clients** → SABnzbd
-  - [ ] Apply same fix for Radarr remote path mapping
+  - [ ] Apply same fix for Radarr remote path mapping (Remote: `/data/usenet/complete`, Local: `/usenet/complete`)
   - [ ] Verify console error "places downloads in /data/usenet/complete/complete but this directory does not appear to exist" is cleared
 
-- [ ] Task 6: Verify qBittorrent path mappings (AC: #6)
+- [ ] Task 7: Verify qBittorrent path mappings (AC: #6)
   - [ ] Verify qBittorrent download folder configuration
   - [ ] Check Sonarr qBittorrent client settings for correct path mappings
   - [ ] Check Radarr qBittorrent client settings for correct path mappings
   - [ ] Ensure completed downloads are accessible to both services
 
-- [ ] Task 7: Verify all errors cleared (AC: #7)
+- [ ] Task 8: Verify all errors cleared (AC: #7)
   - [ ] Check Sonarr System → Status (no root folder errors)
   - [ ] Check Radarr System → Status (no root folder errors)
   - [ ] Verify no remote path mapping errors
@@ -96,6 +107,15 @@ so that downloaded content is organized correctly in the media library and all c
 - Sonarr/Radarr: `/data` → `/mnt/data/media` (hostPath)
 - Sonarr/Radarr: `/downloads` → `/mnt/data/downloads` (hostPath)
 - SABnzbd: `/data` → `/mnt/data` (hostPath - has access to both media and usenet)
+
+**Usenet Access Strategy:**
+- SABnzbd saves to `/data/usenet/complete` (host: `/mnt/data/usenet/complete`)
+- Sonarr/Radarr need to access `/mnt/data/usenet/complete` to import files
+- **Solution:** Add usenet volume mount to Sonarr/Radarr deployments
+  - Add volume: `usenet` with hostPath `/mnt/data/usenet`
+  - Mount at: `/usenet` in container
+  - This gives Sonarr/Radarr access to `/usenet/complete` = `/mnt/data/usenet/complete`
+- **Validation Required:** Verify if existing mounts already provide access, or if new mount is needed
 
 **Expected Folder Structure on Host:**
 ```

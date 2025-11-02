@@ -221,18 +221,49 @@ SABnzbd uses its own configured folders - Sonarr/Radarr don't tell it where to d
      - *Note: This requires Sonarr to have access to `/mnt/data/usenet`. See path configuration notes below.*
 4. **Test** → **Save**
 
-**Path Configuration Note:** 
-- SABnzbd saves completed downloads to `/data/usenet/complete` (host: `/mnt/data/usenet/complete`)
-- Sonarr needs to access these files to import them
-- Current deployment: Sonarr has `/downloads` → `/mnt/data/downloads` mounted
-- **Option 1:** Mount `/mnt/data` (or `/mnt/data/usenet`) to Sonarr so it can access usenet folder
-- **Option 2:** Use path mapping if volumes are configured to allow access
+**Path Configuration - Usenet Folder Access:**
+
+**Requirement:** Sonarr/Radarr must be able to access SABnzbd's completed downloads folder.
+
+**Current Setup:**
+- SABnzbd saves to `/data/usenet/complete` (host: `/mnt/data/usenet/complete`)
+- Sonarr/Radarr have `/data` → `/mnt/data/media` and `/downloads` → `/mnt/data/downloads` mounted
+- **Usenet folder access:** Sonarr/Radarr need a mount to access `/mnt/data/usenet`
+
+**Solution:** Add usenet volume mount to Sonarr/Radarr deployments
+
+**Deployment Updates Required:**
+1. Edit `apps/media-services/starr/sonarr-deployment.yaml`:
+   - Add volume mount in container spec:
+     ```yaml
+     volumeMounts:
+     - name: usenet
+       mountPath: /usenet
+     ```
+   - Add volume definition:
+     ```yaml
+     volumes:
+     - name: usenet
+       hostPath:
+         path: /mnt/data/usenet
+         type: Directory
+     ```
+2. Apply same changes to `apps/media-services/starr/radarr-deployment.yaml`
+3. Commit and push changes
+4. ArgoCD will sync and restart pods with new mounts
+
+**Remote Path Mapping Configuration:**
+Once usenet mount is added, configure in Sonarr/Radarr:
+- **Remote Path:** `/data/usenet/complete` (how SABnzbd sees it)
+- **Local Path:** `/usenet/complete` (how Sonarr/Radarr see it after mount)
 
 #### Radarr → SABnzbd
 
 Same steps as Sonarr, but in Radarr:
 - **Category:** `movies` (or `radarr`)
-- **Remote Path Mapping:** Same as Sonarr (configure Remote Path: `/data/usenet/complete`, Local Path: `/downloads/usenet/complete`)
+- **Remote Path Mapping:** Same as Sonarr (configure Remote Path: `/data/usenet/complete`, Local Path: `/usenet/complete`)
+
+**Important:** Ensure Sonarr/Radarr deployments have usenet volume mount configured (see Path Configuration section above) before setting up remote path mapping.
 
 ---
 
