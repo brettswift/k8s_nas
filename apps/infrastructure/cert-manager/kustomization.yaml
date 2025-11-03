@@ -2,9 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - clusterissuer.yaml
-  - certificate.yaml
-  # Note: route53-secret.yaml should be created manually or via external-secrets operator
-  # It's included here for reference but contains sensitive data
-  # - route53-secret.yaml
+  # HTTP-01 challenge (no AWS needed, simpler setup)
+  - clusterissuer-http.yaml
+  - certificate-http.yaml
+  # DNS-01 challenge (requires AWS Route53 credentials) - keeping for reference
+  # - clusterissuer.yaml
+  # - certificate.yaml
 

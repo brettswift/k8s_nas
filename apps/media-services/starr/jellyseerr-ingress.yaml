@@ -16,7 +16,7 @@ spec:
   tls:
   - hosts:
     - jellyseerr.home.brettswift.com
-    secretName: home-brettswift-com-wildcard-tls
+    secretName: home-brettswift-com-tls
   rules:
   - host: jellyseerr.home.brettswift.com
     http:

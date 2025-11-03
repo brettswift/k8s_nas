@@ -21,28 +21,34 @@ else
     fi
 fi
 
-# Check if AWS credentials are available
+# Verify AWS credentials are available in environment
+# Prerequisite: Run 'assume brettswift-mgmt' before executing this script
+echo "🔑 Verifying AWS credentials..."
+if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+    echo "❌ AWS credentials not found in environment."
+    echo "   Please run 'assume brettswift-mgmt' first to get temporary credentials."
+    exit 1
+fi
+
+# Verify credentials work
 if ! command -v aws &> /dev/null; then
     echo "❌ AWS CLI not found. Please install AWS CLI first."
     exit 1
 fi
 
-# Check if we can assume the brettswift-mgmt role
-echo "🔑 Checking AWS credentials..."
 if ! aws sts get-caller-identity &> /dev/null; then
-    echo "❌ AWS credentials not configured. Please run 'assume brettswift-mgmt' first."
+    echo "❌ AWS credentials invalid or expired. Please run 'assume brettswift-mgmt' again."
     exit 1
 fi
 
-# Get AWS credentials
-export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
-export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+echo "✅ AWS credentials verified"
 
 # Create secret for Route53 credentials (needed for ClusterIssuer)
-# This is a one-time manual step as it contains sensitive data
+# Uses environment variables set by 'assume brettswift-mgmt'
 echo "🔐 Creating Route53 credentials secret..."
 kubectl create secret generic route53-credentials \
-  --from-literal=secret-access-key=${AWS_SECRET_ACCESS_KEY} \
+  --from-literal=secret-access-key="${AWS_SECRET_ACCESS_KEY}" \
+  ${AWS_SESSION_TOKEN:+--from-literal=session-token="${AWS_SESSION_TOKEN}"} \
   --namespace=cert-manager \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -78,6 +84,7 @@ else
   
   echo "✅ ClusterIssuer patched with access key ID"
 fi
+
 
 echo ""
 echo "✅ Setup complete! Summary:"
