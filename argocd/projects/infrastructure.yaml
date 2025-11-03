@@ -35,6 +35,8 @@ spec:
     kind: VirtualService
   - group: 'cert-manager.io'
     kind: ClusterIssuer
+  - group: 'cert-manager.io'
+    kind: Certificate
   
   namespaceResourceWhitelist:
   - group: ''
@@ -49,6 +51,10 @@ spec:
     kind: Deployment
   - group: 'apps'
     kind: StatefulSet
+  - group: 'apps'
+    kind: DaemonSet
   - group: 'networking.k8s.io'
     kind: Ingress
+  - group: 'cert-manager.io'
+    kind: Certificate
 
