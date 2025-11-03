@@ -6,6 +6,9 @@ resources:
   # HTTP-01 won't work because Let's Encrypt can't reach 10.0.0.20
   - clusterissuer.yaml
   - certificate.yaml
+  # Secret sync automation (copies cert secret to all namespaces with ingresses)
+  - cert-sync-serviceaccount.yaml
+  - cert-sync-cronjob.yaml
   # HTTP-01 challenge (won't work with private IP) - keeping for reference
   # - clusterissuer-http.yaml
   # - certificate-http.yaml
