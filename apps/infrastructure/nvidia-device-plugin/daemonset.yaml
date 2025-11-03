@@ -8,13 +8,13 @@ metadata:
 spec:
   selector:
     matchLabels:
-      name: nvidia-device-plugin
+      name: nvidia-device-plugin-ds
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        name: nvidia-device-plugin
+        name: nvidia-device-plugin-ds
     spec:
       tolerations:
       - key: nvidia.com/gpu
