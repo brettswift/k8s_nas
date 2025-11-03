@@ -1,15 +1,15 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: home-brettswift-com-wildcard
-  namespace: media
+  name: home-brettswift-com-dns
+  namespace: argocd
 spec:
-  secretName: home-brettswift-com-wildcard-tls
+  secretName: home-brettswift-com-tls
   issuerRef:
     name: letsencrypt-dns-home
     kind: ClusterIssuer
   dnsNames:
-    - "*.home.brettswift.com"
     - "home.brettswift.com"
-  renewBefore: 2592000s
+    - "jellyseerr.home.brettswift.com"
+  renewBefore: 2592000s  # 30 days
 
