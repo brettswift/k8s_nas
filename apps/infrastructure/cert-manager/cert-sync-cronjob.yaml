@@ -4,7 +4,7 @@ metadata:
   name: sync-cert-secret
   namespace: argocd
 spec:
-  schedule: "*/5 * * * *"  # Every 5 minutes
+  schedule: "*/15 * * * *"  # Every 15 minutes (sufficient for cert renewals)
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
