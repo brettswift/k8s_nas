@@ -1,6 +1,6 @@
 resources:
 - argocd/
-- monitoring/
 - nvidia-device-plugin/
 - cert-manager/
+# monitoring/ removed - use separate monitoring ApplicationSet if needed
 
