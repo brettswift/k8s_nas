@@ -46,9 +46,9 @@ development_status:
   1-4-configure-sonarr-qbittorrent-integration: done
   1-5-configure-radarr-qbittorrent-integration: done
   1-6-configure-media-root-folders: done
-  1-7-configure-jellyseerr-service-integration: in-progress
-  1-8-verify-vpn-integration-and-network-security: backlog
-  1-9-end-to-end-integration-testing: backlog
+  1-7-configure-jellyseerr-service-integration: done
+  1-8-verify-vpn-integration-and-network-security: done
+  1-9-end-to-end-integration-testing: done
   epic-1-retrospective: optional
 
   # Epic 2: Observability and Monitoring
