@@ -74,6 +74,68 @@ spec:
         - name: config
           mountPath: /config
       containers:
+      - name: vpn
+        image: qmcgaw/gluetun:latest
+        ports:
+        - containerPort: 8080
+          name: sabnzbd-web
+        env:
+        - name: VPN_SERVICE_PROVIDER
+          value: "ipvanish"
+        - name: OPENVPN_USER
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_USER
+        - name: OPENVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_PASSWORD
+        - name: SERVER_COUNTRIES
+          value: "Canada,United States"
+        - name: OPENVPN_ENDPOINT_IP
+          value: ""
+        - name: FIREWALL_VPN_INPUT_PORTS
+          value: ""
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - SYS_MODULE
+          privileged: true
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - ping
+            - -c
+            - "1"
+            - www.google.com
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - ping
+            - -c
+            - "1"
+            - www.google.com
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
