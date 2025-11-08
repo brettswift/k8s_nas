@@ -9,6 +9,17 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
 
+# Markdown settings
+markdown: kramdown
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    theme: github-dark
+
+# Site settings
+show_excerpts: true
+excerpt_separator: "---"
+
 # Exclude files from processing
 exclude:
   - Gemfile
