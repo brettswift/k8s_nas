@@ -1,3 +1,7 @@
+---
+title: Documentation Index
+---
+
 # k8s_nas Project Documentation Index
 
 **Generated:** 2025-11-01  
@@ -23,6 +27,12 @@ k8s_nas is a Kubernetes-based Network Attached Storage (NAS) media server infras
 ## Generated Documentation
 
 ### Core Documentation
+
+- **[Quickstart](./quickstart.md)**  
+  Get started quickly: understand what's deployed, bring up the cluster, and configure services.
+
+- **[Configure Starr Integrations](./configure-starr-integrations.md)**  
+  Complete guide to configuring all integrations between Starr services, download clients, and supporting tools.
 
 - **[Project Overview](./project-overview.md)**  
   High-level project summary, technology stack, and architecture overview.
@@ -53,10 +63,11 @@ k8s_nas is a Kubernetes-based Network Attached Storage (NAS) media server infras
 
 ### For Developers
 
-1. **Read [Development Guide](./development-guide.md)** for local setup
+1. **Read [Quickstart](./quickstart.md)** to get up and running
 2. **Start Local Cluster:** `./start_k8s.sh`
 3. **Access ArgoCD:** `kubectl port-forward svc/argocd-server -n argocd 8080:443`
-4. **Review [Architecture Documentation](./architecture.md)** for system design
+4. **Configure Services:** Follow [Configure Starr Integrations](./configure-starr-integrations.md)
+5. **Review [Architecture Documentation](./architecture.md)** for system design
 
 ### For DevOps/Deployment
 
@@ -184,4 +195,6 @@ When creating a PRD for new features:
 **Last Updated:** 2025-11-01  
 **Documentation Version:** 1.0  
 **Project Status:** Active Development
+
+
 

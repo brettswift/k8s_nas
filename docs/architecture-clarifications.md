@@ -118,3 +118,5 @@ start_k8s.sh
 3. Implement ArgoCD self-management structure
 4. Update homepage routing
 
+
+

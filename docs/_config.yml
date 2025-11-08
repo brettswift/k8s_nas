@@ -1,0 +1,37 @@
+title: k8s_nas Documentation
+description: Kubernetes-based NAS media server infrastructure documentation
+baseurl: "/k8s_nas"
+url: "https://brettswift.github.io"
+
+# Jekyll settings
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Exclude files from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .git
+  - .github
+  - README.md
+  - "*.sh"
+  - "*.yaml"
+  - "*.yml"
+  - experiments/
+  - stories/
+
+# Navigation
+navigation:
+  - title: Quickstart
+    url: /k8s_nas/quickstart
+  - title: Configure Starr Integrations
+    url: /k8s_nas/configure-starr-integrations
+  - title: Architecture
+    url: /k8s_nas/architecture-clarifications
+  - title: Deployment Guide
+    url: /k8s_nas/deployment-guide
+

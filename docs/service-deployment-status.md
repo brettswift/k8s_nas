@@ -134,3 +134,5 @@ Run verification script:
 
 **Key Insight:** Story 1.1 is correctly scoped to **deployed and accessible services only**. Services that aren't deployed yet will have their keys extracted when they're deployed in future work.
 
+
+

@@ -348,3 +348,5 @@ spec:
 4. Implement bootstrap → GitOps transition
 5. Update homepage routing
 
+
+
