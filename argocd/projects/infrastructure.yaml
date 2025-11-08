@@ -23,6 +23,8 @@ spec:
     server: https://kubernetes.default.svc
   - namespace: 'homepage'
     server: https://kubernetes.default.svc
+  - namespace: 'kube-system'
+    server: https://kubernetes.default.svc
   
   clusterResourceWhitelist:
   - group: 'networking.k8s.io'
