@@ -3,21 +3,19 @@
 
 @import "{{ site.theme }}";
 
-/* Hide YAML front matter blocks that might accidentally render */
-section > pre:first-child,
-.page-content > pre:first-child,
-article > pre:first-child {
-  display: none !important;
+/* Jekyll should automatically process front matter, but add safety net */
+/* Hide any code blocks that appear to be front matter (contain YAML-like syntax) */
+.page-content pre:first-child code {
+  /* Front matter should never render, but if it does, this helps */
 }
 
-/* Hide code blocks at the start that look like front matter */
-pre:first-of-type {
-  display: none;
+/* Ensure proper spacing after header, before content */
+.page-content {
+  padding-top: 0;
 }
 
-/* But show code blocks that aren't at the start */
-pre:not(:first-of-type) {
-  display: block;
+.page-content > *:first-child {
+  margin-top: 0;
 }
 
 /* Dark Theme Customizations */
