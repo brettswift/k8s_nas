@@ -3,6 +3,23 @@
 
 @import "{{ site.theme }}";
 
+/* Hide YAML front matter blocks that might accidentally render */
+section > pre:first-child,
+.page-content > pre:first-child,
+article > pre:first-child {
+  display: none !important;
+}
+
+/* Hide code blocks at the start that look like front matter */
+pre:first-of-type {
+  display: none;
+}
+
+/* But show code blocks that aren't at the start */
+pre:not(:first-of-type) {
+  display: block;
+}
+
 /* Dark Theme Customizations */
 :root {
   --bg-primary: #1a1a1a;
