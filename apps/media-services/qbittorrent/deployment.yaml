@@ -48,6 +48,10 @@ spec:
         env:
         - name: VPN_SERVICE_PROVIDER
           value: "ipvanish"
+        - name: OPENVPN_PROTOCOL
+          value: "tcp"
+        - name: OPENVPN_PORT
+          value: "443"
         - name: OPENVPN_USER
           valueFrom:
             secretKeyRef:
@@ -62,6 +66,8 @@ spec:
           value: "Canada,United States"
         - name: OPENVPN_ENDPOINT_IP
           value: ""
+        - name: DOT
+          value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
           value: "6881"
         securityContext:
