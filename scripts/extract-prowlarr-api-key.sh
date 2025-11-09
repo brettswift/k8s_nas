@@ -134,3 +134,4 @@ echo "2. Configure Prowlarr → Sonarr application sync (Task 3)"
 echo "3. Verify integration (Task 4)"
 echo ""
 
+

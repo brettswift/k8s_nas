@@ -127,3 +127,4 @@ else
     echo "Please extract keys manually from service UIs and run the create-secret script."
 fi
 
+
