@@ -50,8 +50,6 @@ spec:
           value: "ipvanish"
         - name: OPENVPN_PROTOCOL
           value: "udp"
-        - name: OPENVPN_ENDPOINT_PORT
-          value: "1194"
         - name: OPENVPN_USER
           valueFrom:
             secretKeyRef:
