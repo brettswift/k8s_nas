@@ -49,9 +49,9 @@ spec:
         - name: VPN_SERVICE_PROVIDER
           value: "ipvanish"
         - name: OPENVPN_PROTOCOL
-          value: "tcp"
-        - name: OPENVPN_PORT
-          value: "443"
+          value: "udp"
+        - name: OPENVPN_ENDPOINT_PORT
+          value: "1194"
         - name: OPENVPN_USER
           valueFrom:
             secretKeyRef:
