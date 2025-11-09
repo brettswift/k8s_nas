@@ -49,10 +49,10 @@ development_status:
   1-7-configure-jellyseerr-service-integration: done
   1-8-verify-vpn-integration-and-network-security: done
   1-9-end-to-end-integration-testing: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: completed
 
   # Epic 2: Observability and Monitoring
-  epic-2: backlog
+  epic-2: contexted
   2-1-configure-prometheus-service-discovery-for-media-services: backlog
   2-2-create-unified-service-health-dashboard-in-grafana: backlog
   2-3-implement-service-health-checks-and-probes: backlog
