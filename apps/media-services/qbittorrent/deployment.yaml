@@ -79,6 +79,8 @@ spec:
           mountPath: /config
         - name: downloads
           mountPath: /downloads
+        - name: media
+          mountPath: /data
       - name: qbittorrent
         image: ghcr.io/linuxserver/qbittorrent:latest
         ports:
@@ -100,6 +102,8 @@ spec:
           mountPath: /config
         - name: downloads
           mountPath: /downloads
+        - name: media
+          mountPath: /data
         - name: vuetorrent-webui
           mountPath: /vuetorrent
       volumes:
@@ -112,6 +116,10 @@ spec:
       - name: downloads
         hostPath:
           path: /mnt/data/downloads
+          type: Directory
+      - name: media
+        hostPath:
+          path: /mnt/data
           type: Directory
 ---
 apiVersion: v1
