@@ -24,6 +24,10 @@ spec:
           name: http
         - containerPort: 7359
           name: discovery
+          protocol: UDP
+        - containerPort: 1900
+          name: upnp
+          protocol: UDP
         env:
         - name: JELLYFIN_PublishedServerUrl
           valueFrom:
@@ -146,10 +150,18 @@ spec:
   - name: http
     port: 80
     targetPort: 8096
+    protocol: TCP
   - name: discovery
     port: 7359
     targetPort: 7359
-  type: ClusterIP
+    protocol: UDP
+    nodePort: 30759
+  - name: upnp
+    port: 1900
+    targetPort: 1900
+    protocol: UDP
+    nodePort: 31900
+  type: NodePort
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
