@@ -158,13 +158,11 @@ spec:
     port: 7359
     targetPort: 7359
     protocol: UDP
-    nodePort: 30759
   - name: upnp
     port: 1900
     targetPort: 1900
     protocol: UDP
-    nodePort: 31900
-  type: NodePort
+  type: ClusterIP
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
