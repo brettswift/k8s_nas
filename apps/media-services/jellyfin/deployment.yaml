@@ -134,6 +134,8 @@ spec:
             path: "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces"
           - key: "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest"
             path: "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest"
+          - key: "network.xml_NetworkConfiguration_LocalNetworkAddresses"
+            path: "network.xml_NetworkConfiguration_LocalNetworkAddresses"
           - key: "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist"
             path: "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist"
 ---
