@@ -18,6 +18,7 @@ data:
   "network.xml_NetworkConfiguration_EnableIPv6": "false"
   "network.xml_NetworkConfiguration_EnableRemoteAccess": "true"
   "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces": "true"
-  "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "false"
+  "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "true"
+  "network.xml_NetworkConfiguration_LocalNetworkAddresses": "192.168.1.182"
   "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist": "false"
   "network.xml_NetworkConfiguration_PublishedServerUrl": "https://home.brettswift.com/jellyfin"
