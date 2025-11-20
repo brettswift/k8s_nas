@@ -13,7 +13,7 @@ data:
   "network.xml_NetworkConfiguration_EnableHttps": "false"
   "network.xml_NetworkConfiguration_RequireHttps": "false"
   "network.xml_NetworkConfiguration_AutoDiscovery": "true"
-  "network.xml_NetworkConfiguration_EnableUPnP": "false"
+  "network.xml_NetworkConfiguration_EnableUPnP": "true"
   "network.xml_NetworkConfiguration_EnableIPv4": "true"
   "network.xml_NetworkConfiguration_EnableIPv6": "false"
   "network.xml_NetworkConfiguration_EnableRemoteAccess": "true"
