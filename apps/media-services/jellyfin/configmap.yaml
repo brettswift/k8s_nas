@@ -9,7 +9,10 @@ data:
   
   # XML configuration overrides (file_path=value format)
   # Format: "filename_xpath=value" (colons replaced with underscores)
-  "network.xml_NetworkConfiguration_BaseUrl": "/"
+  # Jellyfin is served behind an ingress at /jellyfin, so the BaseUrl must match
+  # the path prefix. This is critical for mobile/TV apps so API and playback URLs
+  # are generated correctly.
+  "network.xml_NetworkConfiguration_BaseUrl": "/jellyfin"
   "network.xml_NetworkConfiguration_EnableHttps": "false"
   "network.xml_NetworkConfiguration_RequireHttps": "false"
   "network.xml_NetworkConfiguration_AutoDiscovery": "true"
