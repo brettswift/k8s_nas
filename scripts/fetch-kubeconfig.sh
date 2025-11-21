@@ -39,3 +39,6 @@ echo "  kubectl get nodes"
 
 
 
+
+
+

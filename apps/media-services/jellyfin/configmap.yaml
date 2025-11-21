@@ -18,7 +18,11 @@ data:
   "network.xml_NetworkConfiguration_EnableIPv6": "false"
   "network.xml_NetworkConfiguration_EnableRemoteAccess": "true"
   "network.xml_NetworkConfiguration_IgnoreVirtualInterfaces": "true"
-  "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "true"
-  "network.xml_NetworkConfiguration_LocalNetworkAddresses": "192.168.1.182"
+  # Let Jellyfin decide when to advertise the published server URL, to avoid
+  # forcing local clients (TV/phone) to always use the external FQDN.
+  "network.xml_NetworkConfiguration_EnablePublishedServerUriByRequest": "false"
+  # Allow Jellyfin to auto-detect local network ranges instead of pinning a single IP.
+  # This helps when network topology or IPs change (e.g. new router / ISP).
+  "network.xml_NetworkConfiguration_LocalNetworkAddresses": ""
   "network.xml_NetworkConfiguration_IsRemoteIPFilterBlacklist": "false"
   "network.xml_NetworkConfiguration_PublishedServerUrl": "https://home.brettswift.com/jellyfin"
