@@ -21,9 +21,20 @@ spec:
   tls:
   - hosts:
     - home.brettswift.com
+    - home2.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
   - host: home.brettswift.com
+    http:
+      paths:
+      - path: /jellyfin(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: 80
+  - host: home2.brettswift.com
     http:
       paths:
       - path: /jellyfin(/|$)(.*)
