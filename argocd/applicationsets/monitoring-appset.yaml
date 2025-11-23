@@ -14,7 +14,7 @@ spec:
     metadata:
       name: 'monitoring-{{name}}'
     spec:
-      project: infrastructure
+      project: default
       source:
         repoURL: 'git@github.com:brettswift/k8s_nas.git'
         targetRevision: dev_monitoring
