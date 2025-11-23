@@ -7,18 +7,17 @@ spec:
   generators:
   - list:
       elements:
-      # Monitoring disabled - uncomment to enable Grafana/Prometheus
-      # - name: production-cluster
-      #   server: https://kubernetes.default.svc
-      #   environment: production
+      - name: production-cluster
+        server: https://kubernetes.default.svc
+        environment: production
   template:
     metadata:
       name: 'monitoring-{{name}}'
     spec:
-      project: default
+      project: infrastructure
       source:
         repoURL: 'git@github.com:brettswift/k8s_nas.git'
-        targetRevision: feat/nginx-routing
+        targetRevision: dev_monitoring
         path: apps/infrastructure/monitoring
       destination:
         server: '{{server}}'
