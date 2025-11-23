@@ -48,6 +48,7 @@ spec:
               # Clear pip cache and write new version
               rm -rf "$PIP_CACHE_DIR"
               mkdir -p "$PIP_CACHE_DIR"
+              chmod 777 "$PIP_CACHE_DIR"  # Ensure writable by pip
               echo "$CURRENT_UID" > "$VERSION_FILE"
               echo "Cache cleared and version updated"
             volumeMounts:
