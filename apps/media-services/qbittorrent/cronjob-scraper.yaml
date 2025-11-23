@@ -12,6 +12,47 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+          - name: cache-version-check
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              CACHE_DIR="/cache"
+              VERSION_FILE="$CACHE_DIR/.version"
+              PIP_CACHE_DIR="$CACHE_DIR/pip"
+              
+              # Get current ConfigMap UID (changes when ConfigMap is updated)
+              CURRENT_UID=$(kubectl get configmap -n qbittorrent qbittorrent-scripts -o jsonpath='{.metadata.uid}' 2>/dev/null || echo "")
+              
+              # Fallback: use resourceVersion if UID not available
+              if [ -z "$CURRENT_UID" ]; then
+                CURRENT_UID=$(kubectl get configmap -n qbittorrent qbittorrent-scripts -o jsonpath='{.metadata.resourceVersion}' 2>/dev/null || echo "$(date +%s)")
+              fi
+              
+              # Check if version changed
+              if [ -f "$VERSION_FILE" ]; then
+                STORED_UID=$(cat "$VERSION_FILE")
+                if [ "$STORED_UID" = "$CURRENT_UID" ]; then
+                  echo "Cache version matches (UID: ${CURRENT_UID:0:8}), keeping existing pip cache"
+                  exit 0
+                else
+                  echo "ConfigMap changed (old: ${STORED_UID:0:8}, new: ${CURRENT_UID:0:8}), clearing pip cache"
+                fi
+              else
+                echo "No version file found, initializing cache (UID: ${CURRENT_UID:0:8})"
+              fi
+              
+              # Clear pip cache and write new version
+              rm -rf "$PIP_CACHE_DIR"
+              mkdir -p "$PIP_CACHE_DIR"
+              echo "$CURRENT_UID" > "$VERSION_FILE"
+              echo "Cache cleared and version updated"
+            volumeMounts:
+            - name: pip-cache
+              mountPath: /cache
           containers:
           - name: scraper
             # Use standard Python image - installs packages on each run (GitOps-friendly)
@@ -21,7 +62,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              pip install --no-cache-dir --quiet requests
+              pip install --quiet requests --cache-dir /cache/pip
               python3 /scripts/torrent-scraper.py
             env:
             - name: SCRAPE_URL
@@ -61,6 +102,8 @@ spec:
               readOnly: true
             - name: qbittorrent-config
               mountPath: /config
+            - name: pip-cache
+              mountPath: /cache
           volumes:
           - name: qbittorrent-scripts
             configMap:
@@ -69,5 +112,9 @@ spec:
           - name: qbittorrent-config
             persistentVolumeClaim:
               claimName: qbittorrent-config
+          - name: pip-cache
+            persistentVolumeClaim:
+              claimName: scraper-pip-cache
+          serviceAccountName: default
           restartPolicy: OnFailure
 
