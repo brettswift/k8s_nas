@@ -1,0 +1,11 @@
+FROM python:3.11-alpine
+
+# Install requests (only dependency needed)
+RUN pip install --no-cache-dir requests
+
+# Create scripts directory
+WORKDIR /scripts
+
+# Script will be mounted from ConfigMap
+# This image just provides the Python runtime with dependencies pre-installed
+

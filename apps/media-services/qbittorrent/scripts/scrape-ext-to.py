@@ -11,13 +11,17 @@ USAGE:
     python3 scrape-ext-to.py
 
 ENVIRONMENT VARIABLES:
-    SCRAPE_URL      - API URL to query (default: https://apibay.org/q.php?q=user:smcgill1969)
-    QBT_URL         - qBittorrent Web API URL (default: http://127.0.0.1:8080)
-    CHECK_INTERVAL  - Seconds between checks (default: 3600 = 1 hour)
-    STATE_FILE      - Path to JSON file tracking seen torrents (default: /config/scraper-state.json)
-    LOG_FILE        - Path to log file (default: /config/scraper.log)
-    TEST_MODE       - Set to "true" for dry-run mode (default: false)
-    CRON_MODE       - Set to "true" to run once and exit (for CronJob) (default: false)
+    SCRAPE_URL          - API URL to query (default: https://apibay.org/q.php?q=user:smcgill1969)
+    QBT_URL             - qBittorrent Web API URL (default: http://127.0.0.1:8080)
+    CHECK_INTERVAL      - Seconds between checks (default: 3600 = 1 hour)
+    STATE_FILE          - Path to JSON file tracking seen torrents (default: /config/scraper-state.json)
+    LOG_FILE            - Path to log file (default: /config/scraper.log)
+    TEST_MODE           - Set to "true" for dry-run mode (default: false)
+    CRON_MODE           - Set to "true" to run once and exit (for CronJob) (default: false)
+    CATEGORY            - Category to assign to added torrents (default: formula1)
+    SAVE_PATH           - Save/download path for torrents (default: /data/media/formula1)
+    MAX_AGE_DAYS        - Only add torrents added within last N days (default: 7)
+    SEQUENTIAL_DOWNLOAD - Enable sequential download (default: true)
 
 FILTERING:
     Only adds torrents matching: Formula.1.*4K-HLG or Formula.1.*UHD (case-insensitive)
@@ -56,6 +60,10 @@ STATE_FILE = Path(os.getenv("STATE_FILE", "/config/scraper-state.json"))
 LOG_FILE = Path(os.getenv("LOG_FILE", "/config/scraper.log"))
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 CRON_MODE = os.getenv("CRON_MODE", "false").lower() == "true"
+CATEGORY = os.getenv("CATEGORY", "formula1")
+SAVE_PATH = os.getenv("SAVE_PATH", "/data/media/formula1")
+MAX_AGE_DAYS = int(os.getenv("MAX_AGE_DAYS", "7"))  # Only add torrents from last week
+SEQUENTIAL_DOWNLOAD = os.getenv("SEQUENTIAL_DOWNLOAD", "true").lower() == "true"
 
 # Setup logging to both file and stdout
 def setup_logging(log_file):
@@ -120,22 +128,32 @@ def get_torrent_links(api_url):
         
         logger.info(f"Found {len(torrents)} total torrents")
         
-        # Filter for Formula.1 UHD/4K-HLG torrents
+        # Calculate cutoff time (now - MAX_AGE_DAYS)
+        current_time = int(time.time())
+        cutoff_time = current_time - (MAX_AGE_DAYS * 24 * 60 * 60)
+        
+        # Filter for Formula.1 UHD/4K-HLG torrents added within last week
         formula1_torrents = []
         for torrent in torrents:
             name = torrent.get('name', '')
             info_hash = torrent.get('info_hash', '')
+            added_timestamp = int(torrent.get('added', 0))
             
             # Match Formula.1.*4K-HLG or Formula.1.*UHD
             if re.search(r'Formula\.1.*4K-HLG|Formula\.1.*UHD', name, re.IGNORECASE):
-                # Create magnet link from info_hash
-                magnet_link = f"magnet:?xt=urn:btih:{info_hash}"
-                formula1_torrents.append((magnet_link, name))
+                # Check if added within last week
+                if added_timestamp >= cutoff_time:
+                    # Create magnet link from info_hash
+                    magnet_link = f"magnet:?xt=urn:btih:{info_hash}"
+                    formula1_torrents.append((magnet_link, name, info_hash, added_timestamp))
+                else:
+                    logger.debug(f"Skipping {name} - added {MAX_AGE_DAYS + 1}+ days ago")
         
         if TEST_MODE:
-            logger.info(f"[TEST MODE] Found {len(formula1_torrents)} Formula.1 UHD/4K-HLG torrents:")
-            for magnet, name in formula1_torrents[:10]:
-                logger.info(f"  - {name}")
+            logger.info(f"[TEST MODE] Found {len(formula1_torrents)} Formula.1 UHD/4K-HLG torrents (added within last {MAX_AGE_DAYS} days):")
+            for magnet, name, info_hash, added_ts in formula1_torrents[:10]:
+                added_date = time.strftime('%Y-%m-%d', time.gmtime(added_ts))
+                logger.info(f"  - {name} (added: {added_date})")
         
         return formula1_torrents
     except json.JSONDecodeError as e:
@@ -167,36 +185,8 @@ def save_state_to_file(state, state_file):
         logger.warning(f"Failed to save state: {e}", exc_info=True)
         return False
 
-def login_to_qbit():
-    """Login to qBittorrent API (required if not using localhost bypass)"""
-    if not QBT_USERNAME or not QBT_PASSWORD:
-        # If no credentials, assume localhost bypass is enabled
-        return True
-    
-    try:
-        response = requests.post(
-            f"{QBT_URL}/api/v2/auth/login",
-            data={"username": QBT_USERNAME, "password": QBT_PASSWORD},
-            timeout=10
-        )
-        if response.status_code == 200 and response.text == "Ok.":
-            logger.debug("Successfully logged in to qBittorrent")
-            return True
-        else:
-            logger.warning(f"qBittorrent login failed: {response.status_code} - {response.text}")
-            return False
-    except Exception as e:
-        logger.error(f"Error logging in to qBittorrent: {e}", exc_info=True)
-        return False
-
 def add_torrent_to_qbit(magnet_link):
     """Add torrent to qBittorrent via Web API"""
-    # Login if credentials are provided (for non-localhost access)
-    if QBT_USERNAME and QBT_PASSWORD:
-        if not login_to_qbit():
-            logger.error("Failed to login to qBittorrent, cannot add torrent")
-            return False
-    
     try:
         response = requests.post(
             f"{QBT_URL}/api/v2/torrents/add",
@@ -211,10 +201,47 @@ def add_torrent_to_qbit(magnet_link):
         logger.error(f"Error adding torrent to qBittorrent: {e}", exc_info=True)
         return False
 
-def process_torrent(magnet_link, torrent_name, state, state_file):
-    """Process a single torrent: add to qBittorrent and update state"""
+def configure_torrent(info_hash):
+    """Configure torrent: set category, location, and sequential download"""
+    try:
+        # Set location (save/download path)
+        response = requests.post(
+            f"{QBT_URL}/api/v2/torrents/setLocation",
+            data={"hashes": info_hash, "location": SAVE_PATH},
+            timeout=10
+        )
+        if response.status_code != 200:
+            logger.warning(f"Failed to set location: {response.status_code}")
+        
+        # Set category
+        response = requests.post(
+            f"{QBT_URL}/api/v2/torrents/setCategory",
+            data={"hashes": info_hash, "category": CATEGORY},
+            timeout=10
+        )
+        if response.status_code != 200:
+            logger.warning(f"Failed to set category: {response.status_code}")
+        
+        # Enable sequential download if configured
+        if SEQUENTIAL_DOWNLOAD:
+            response = requests.post(
+                f"{QBT_URL}/api/v2/torrents/toggleSequentialDownload",
+                data={"hashes": info_hash},
+                timeout=10
+            )
+            if response.status_code != 200:
+                logger.warning(f"Failed to enable sequential download: {response.status_code}")
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error configuring torrent: {e}", exc_info=True)
+        return False
+
+def process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
+    """Process a single torrent: add to qBittorrent, configure it, and update state"""
     if TEST_MODE:
         logger.info(f"[TEST MODE] Would add: {torrent_name} ({magnet_link[:60]}...)")
+        logger.info(f"  Would configure: category={CATEGORY}, path={SAVE_PATH}, sequential={SEQUENTIAL_DOWNLOAD}")
         return True
     
     logger.info(f"Adding new torrent: {torrent_name} ({magnet_link[:60]}...)")
@@ -225,6 +252,14 @@ def process_torrent(magnet_link, torrent_name, state, state_file):
         return False
     
     logger.info(f"Successfully added torrent: {torrent_name}")
+    
+    # Configure torrent (category, location, sequential download)
+    # Small delay to ensure torrent is registered in qBittorrent
+    time.sleep(1)
+    if configure_torrent(info_hash):
+        logger.info(f"Configured torrent: category={CATEGORY}, path={SAVE_PATH}, sequential={SEQUENTIAL_DOWNLOAD}")
+    else:
+        logger.warning(f"Failed to configure torrent (may still work): {torrent_name}")
     
     # Update state and save immediately
     add_torrent_to_state(magnet_link, state)
@@ -237,14 +272,14 @@ def process_torrents(torrent_links, state, state_file):
     """Process all torrents, skipping ones we've already seen"""
     new_count = 0
     
-    for magnet_link, torrent_name in torrent_links:
+    for magnet_link, torrent_name, info_hash, added_timestamp in torrent_links:
         # Skip if already seen
         if is_torrent_seen(magnet_link, state):
             logger.debug(f"Skipping already seen torrent: {torrent_name}")
             continue
         
         # Process the torrent
-        if process_torrent(magnet_link, torrent_name, state, state_file):
+        if process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
             new_count += 1
             # Small delay between adds (only in production mode)
             if not TEST_MODE:
@@ -276,9 +311,10 @@ def main():
             continue
         
         # Display found torrents
-        logger.info(f"Found {len(torrent_links)} Formula.1 UHD torrent(s):")
-        for magnet_link, torrent_name in torrent_links:
-            logger.info(f"  - {torrent_name}")
+        logger.info(f"Found {len(torrent_links)} Formula.1 UHD torrent(s) (added within last {MAX_AGE_DAYS} days):")
+        for magnet_link, torrent_name, info_hash, added_ts in torrent_links:
+            added_date = time.strftime('%Y-%m-%d', time.gmtime(added_ts))
+            logger.info(f"  - {torrent_name} (added: {added_date})")
             if TEST_MODE:
                 logger.debug(f"    Magnet: {magnet_link[:60]}...")
         

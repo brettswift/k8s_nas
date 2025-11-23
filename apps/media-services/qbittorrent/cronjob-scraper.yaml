@@ -14,29 +14,38 @@ spec:
         spec:
           containers:
           - name: scraper
-            image: python:3.11-alpine
+            # Custom image with requests pre-installed (no pip install on every run)
+            # Build on server with: cd apps/media-services/qbittorrent && ./build-scraper-image.sh
+            # Image is tagged with git commit hash for cache invalidation on new deployments
+            image: qbittorrent-scraper:latest
+            imagePullPolicy: Never  # Use local image (k3s will use Docker images on host)
             command:
-            - /bin/sh
-            - -c
-            - |
-              pip install --no-cache-dir requests
-              python3 /scripts/scrape-ext-to.py
+            - python3
+            - /scripts/scrape-ext-to.py
             env:
             - name: SCRAPE_URL
               value: "https://apibay.org/q.php?q=user:smcgill1969"
             - name: QBT_URL
               # Use service name since we're in a separate pod
-              # Note: Configure qBittorrent to bypass auth for cluster subnet (10.42.0.0/16)
-              # In qBittorrent UI: Tools → Options → Web UI → Bypass authentication for clients in whitelisted IP subnets
-              # Add: 10.42.0.0/16
+              # Note: Configure qBittorrent to bypass auth for cluster subnet (10.0.0.0/8 covers 10.42.0.0/16)
               value: "http://qbittorrent.qbittorrent.svc.cluster.local:8080"
             - name: CHECK_INTERVAL
               value: "3600"  # 1 hour (not used in cron mode, but kept for compatibility)
             - name: STATE_FILE
               value: "/config/scraper-state.json"
+            - name: LOG_FILE
+              value: "/config/scraper.log"
             - name: TEST_MODE
               value: "false"
             - name: CRON_MODE
+              value: "true"
+            - name: CATEGORY
+              value: "formula1"
+            - name: SAVE_PATH
+              value: "/data/media/formula1"
+            - name: MAX_AGE_DAYS
+              value: "7"  # Only add torrents added within last week
+            - name: SEQUENTIAL_DOWNLOAD
               value: "true"
             resources:
               requests:
