@@ -14,14 +14,15 @@ spec:
         spec:
           containers:
           - name: scraper
-            # Custom image with requests pre-installed (no pip install on every run)
-            # Build on server with: cd apps/media-services/qbittorrent && ./build-scraper-image.sh
-            # Image is tagged with git commit hash for cache invalidation on new deployments
-            image: qbittorrent-scraper:latest
-            imagePullPolicy: Never  # Use local image (k3s will use Docker images on host)
+            # Use standard Python image - installs packages on each run (GitOps-friendly)
+            # No custom image needed - works without Docker registry or manual builds
+            image: python:3.11-alpine
             command:
-            - python3
-            - /scripts/torrent-scraper.py
+            - /bin/sh
+            - -c
+            - |
+              pip install --no-cache-dir --quiet requests
+              python3 /scripts/torrent-scraper.py
             env:
             - name: SCRAPE_URL
               value: "https://apibay.org/q.php?q=user:smcgill1969"
