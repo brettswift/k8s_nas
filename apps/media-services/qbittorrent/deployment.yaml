@@ -34,6 +34,17 @@ spec:
         volumeMounts:
         - name: vuetorrent-webui
           mountPath: /vuetorrent
+      - name: script-setup
+        image: alpine:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          chmod +x /scripts/on-torrent-added.sh
+          echo "Script permissions set"
+        volumeMounts:
+        - name: qbittorrent-scripts
+          mountPath: /scripts
       containers:
       - name: vpn
         image: qmcgaw/gluetun:latest
@@ -106,6 +117,9 @@ spec:
           mountPath: /data
         - name: vuetorrent-webui
           mountPath: /vuetorrent
+        - name: qbittorrent-scripts
+          mountPath: /scripts
+          readOnly: true
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
@@ -121,6 +135,10 @@ spec:
         hostPath:
           path: /mnt/data
           type: Directory
+      - name: qbittorrent-scripts
+        configMap:
+          name: qbittorrent-scripts
+          defaultMode: 0755
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

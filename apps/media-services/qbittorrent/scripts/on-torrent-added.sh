@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# qBittorrent hook script: Auto-categorize Formula 1 torrents
+# Called by qBittorrent with: %N (torrent name) and %I (info hash)
+
+set -euo pipefail
+
+TORRENT_NAME="${1:-}"
+TORRENT_HASH="${2:-}"
+
+if [ -z "$TORRENT_NAME" ] || [ -z "$TORRENT_HASH" ]; then
+  echo "Usage: $0 <torrent_name> <info_hash>" >&2
+  exit 1
+fi
+
+# Match formula1 / forumla1 / formula.1 / forumula.1 etc. (case-insensitive)
+shopt -s nocasematch
+if [[ "$TORRENT_NAME" =~ formula1|forumla1|formula\.1|forumula\.1 ]]; then
+  QBT_URL="http://127.0.0.1:8080"
+  
+  # Set category to "formula1" (no auth needed with localhost bypass enabled)
+  curl -s \
+    --data-urlencode "hashes=$TORRENT_HASH" \
+    --data-urlencode "category=formula1" \
+    "$QBT_URL/api/v2/torrents/setCategory" >/dev/null
+  
+  echo "Auto-categorized '$TORRENT_NAME' as formula1"
+fi
+
