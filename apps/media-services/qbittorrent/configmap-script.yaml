@@ -46,4 +46,200 @@ data:
       
       echo "Auto-categorized '$TORRENT_NAME' as formula1 and set download/save path to $SAVE_PATH"
     fi
+  scrape-ext-to.py: |
+    #!/usr/bin/env python3
+    """
+    Scraper for ext.to user uploads page
+    Fetches Formula.1 UHD (4K-HLG) torrents and adds them to qBittorrent
+    
+    USAGE:
+        # Test mode (dry run, prints what it finds without adding):
+        TEST_MODE=true python3 scrape-ext-to.py
+        
+        # Production mode (runs continuously, adds torrents):
+        python3 scrape-ext-to.py
+    
+    ENVIRONMENT VARIABLES:
+        SCRAPE_URL      - URL to scrape (default: https://ext.to/user/smcgill1969/uploads/)
+        QBT_URL         - qBittorrent Web API URL (default: http://127.0.0.1:8080)
+        CHECK_INTERVAL  - Seconds between checks (default: 900 = 15 minutes)
+        STATE_FILE      - Path to JSON file tracking seen torrents (default: /config/scraper-state.json)
+        TEST_MODE       - Set to "true" for dry-run mode (default: false)
+    
+    FILTERING:
+        Only adds torrents matching: Formula.1.*4K-HLG or Formula.1.*UHD (case-insensitive)
+        Examples that match:
+            - Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG
+            - Formula.1.2025x21.Brazil.Race.SkyF1UHD.4K-HLG
+        Examples that DON'T match:
+            - Formula.1.2025x22.USA.Race.SkyF1HD.SD
+            - Formula.1.2025x22.USA.Race.SkyF1HD.1080p
+            - MotoGP.2025x22.Spain.Race.TNTSportsHD.4K
+    
+    CLOUDFLARE:
+        Uses cloudscraper library to bypass Cloudflare protection automatically.
+        If Cloudflare blocking persists, may need to adjust User-Agent or add delays.
+    
+    STATE TRACKING:
+        Tracks seen torrent URLs in STATE_FILE (JSON format) to avoid duplicates.
+        State persists across pod restarts if STATE_FILE is on a PVC (like /config).
+    """
+    
+    import os
+    import re
+    import time
+    import json
+    import cloudscraper
+    from pathlib import Path
+    from urllib.parse import urljoin, urlparse
+    from bs4 import BeautifulSoup
+    
+    # Configuration
+    SCRAPE_URL = os.getenv("SCRAPE_URL", "https://ext.to/user/smcgill1969/uploads/")
+    QBT_URL = os.getenv("QBT_URL", "http://127.0.0.1:8080")
+    CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "900"))  # 15 minutes
+    STATE_FILE = Path(os.getenv("STATE_FILE", "/config/scraper-state.json"))
+    TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
+    
+    # Load state (track torrent hashes/URLs we've already added)
+    if STATE_FILE.exists():
+        with open(STATE_FILE, 'r') as f:
+            state = json.load(f)
+    else:
+        state = {"seen_torrents": [], "seen_hashes": []}
+    
+    def get_torrent_links(session, url):
+        """Fetch page and extract torrent links, handling Cloudflare"""
+        try:
+            # cloudscraper handles Cloudflare challenges automatically
+            response = session.get(url, timeout=60)
+            response.raise_for_status()
+            
+            # Check if we still got Cloudflare challenge page (cloudscraper should handle it, but just in case)
+            if 'Just a moment' in response.text or 'challenge-platform' in response.text:
+                print("Warning: Cloudflare protection still active - may need manual intervention")
+                return []
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Find all links that might be torrents
+            torrent_links = []
+            all_links = []
+            
+            for link in soup.find_all('a', href=True):
+                href = link.get('href', '')
+                text = link.get_text(strip=True)
+                
+                # In test mode, collect all Formula.1 links for debugging
+                if TEST_MODE and re.search(r'Formula\.1', text, re.IGNORECASE):
+                    all_links.append((href, text))
+                
+                # Look for Formula.1 UHD (4K-HLG) torrents
+                if re.search(r'Formula\.1.*4K-HLG|Formula\.1.*UHD', text, re.IGNORECASE):
+                    # Check if it's a torrent link or leads to a torrent page
+                    if href.endswith('.torrent') or 'magnet:' in href:
+                        full_url = urljoin(url, href)
+                        torrent_links.append((full_url, text))
+                    elif '/torrent/' in href or '/download/' in href or '/t/' in href:
+                        # Might be a page with the actual torrent link
+                        full_url = urljoin(url, href)
+                        torrent_links.append((full_url, text))
+            
+            if TEST_MODE and all_links:
+                print(f"\n[TEST MODE] Found {len(all_links)} Formula.1 links (all variants):")
+                for href, text in all_links[:10]:  # Show first 10
+                    print(f"  - {text[:80]} -> {href[:60]}")
+            
+            return torrent_links
+        except Exception as e:
+            print(f"Error fetching page: {e}")
+            return []
+    
+    def add_torrent_to_qbit(torrent_url):
+        """Add torrent to qBittorrent via Web API"""
+        try:
+            import requests
+            response = requests.post(
+                f"{QBT_URL}/api/v2/torrents/add",
+                data={"urls": torrent_url},
+                timeout=10
+            )
+            return response.status_code == 200
+        except Exception as e:
+            print(f"Error adding torrent: {e}")
+            return False
+    
+    def main():
+        mode_str = "[TEST MODE - DRY RUN]" if TEST_MODE else ""
+        print(f"Starting ext.to scraper {mode_str}")
+        print(f"URL: {SCRAPE_URL}")
+        print(f"Filter: Formula.1 UHD (4K-HLG) only")
+        
+        # cloudscraper creates a session that can bypass Cloudflare
+        session = cloudscraper.create_scraper()
+        
+        while True:
+            print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}: Checking for new torrents...")
+            
+            torrent_links = get_torrent_links(session, SCRAPE_URL)
+            
+            if not torrent_links:
+                print("No Formula.1 UHD torrents found (or Cloudflare blocking)")
+                if TEST_MODE:
+                    print("[TEST MODE] Exiting after one check")
+                    break
+                time.sleep(CHECK_INTERVAL)
+                continue
+            
+            print(f"\nFound {len(torrent_links)} Formula.1 UHD torrent(s):")
+            for torrent_url, torrent_name in torrent_links:
+                print(f"  - {torrent_name}")
+                print(f"    URL: {torrent_url}")
+            
+            new_count = 0
+            for torrent_url, torrent_name in torrent_links:
+                # Skip if we've seen this URL before
+                if torrent_url in state["seen_torrents"]:
+                    print(f"  [SKIP] Already seen: {torrent_name}")
+                    continue
+                
+                if TEST_MODE:
+                    print(f"\n[TEST MODE] Would add: {torrent_name}")
+                    print(f"  URL: {torrent_url}")
+                    new_count += 1
+                else:
+                    print(f"\nAdding new torrent: {torrent_name}")
+                    print(f"  URL: {torrent_url}")
+                    
+                    if add_torrent_to_qbit(torrent_url):
+                        state["seen_torrents"].append(torrent_url)
+                        new_count += 1
+                        print("  ✓ Added successfully")
+                    else:
+                        print("  ✗ Failed to add")
+                    
+                    # Small delay between adds
+                    time.sleep(2)
+            
+            # Save state (even in test mode, to see what would be tracked)
+            if not TEST_MODE:
+                STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+                with open(STATE_FILE, 'w') as f:
+                    json.dump(state, f, indent=2)
+            
+            if new_count == 0:
+                print("\nNo new torrents found")
+            else:
+                action = "Would add" if TEST_MODE else "Added"
+                print(f"\n{action} {new_count} new torrent(s)")
+            
+            if TEST_MODE:
+                print("\n[TEST MODE] Exiting after one check")
+                break
+            
+            print(f"Sleeping for {CHECK_INTERVAL}s...")
+            time.sleep(CHECK_INTERVAL)
+    
+    if __name__ == "__main__":
+        main()
 
