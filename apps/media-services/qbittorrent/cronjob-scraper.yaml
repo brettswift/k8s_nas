@@ -21,7 +21,7 @@ spec:
             imagePullPolicy: Never  # Use local image (k3s will use Docker images on host)
             command:
             - python3
-            - /scripts/scrape-ext-to.py
+            - /scripts/torrent-scraper.py
             env:
             - name: SCRAPE_URL
               value: "https://apibay.org/q.php?q=user:smcgill1969"
@@ -34,7 +34,7 @@ spec:
             - name: STATE_FILE
               value: "/config/scraper-state.json"
             - name: LOG_FILE
-              value: "/config/scraper.log"
+              value: "/var/log/scraper.log"
             - name: TEST_MODE
               value: "false"
             - name: CRON_MODE

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Test script for ext.to scraper
+# Test script for torrent scraper
 # Runs the scraper in Docker to keep host clean
 # Builds and caches a Docker image for faster subsequent runs
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_FILE="${SCRIPT_DIR}/scrape-ext-to.py"
-IMAGE_NAME="ext-to-scraper-test:latest"
+SCRIPT_FILE="${SCRIPT_DIR}/torrent-scraper.py"
+IMAGE_NAME="torrent-scraper-test:latest"
 TEMP_DOCKERFILE=$(mktemp)
 
 if [ ! -f "$SCRIPT_FILE" ]; then
-    echo "Error: scrape-ext-to.py not found at $SCRIPT_FILE" >&2
+    echo "Error: torrent-scraper.py not found at $SCRIPT_FILE" >&2
     exit 1
 fi
 
@@ -44,19 +44,21 @@ fi
 rm -f "$TEMP_DOCKERFILE"
 
 echo ""
-echo "Running ext.to scraper in Docker (TEST MODE)..."
+echo "Running torrent scraper in Docker (TEST MODE)..."
 echo "Script: $SCRIPT_FILE"
 echo ""
 echo ""
 
 # Run using cached image
 docker run --rm -it \
-  -v "${SCRIPT_FILE}:/scripts/scrape-ext-to.py:ro" \
+  -v "${SCRIPT_FILE}:/scripts/torrent-scraper.py:ro" \
+  -v "$(mktemp -d):/var/log" \
   -e TEST_MODE=true \
   -e SCRAPE_URL="${SCRAPE_URL:-https://apibay.org/q.php?q=user:smcgill1969}" \
   -e QBT_URL="${QBT_URL:-http://127.0.0.1:8080}" \
   -e CHECK_INTERVAL="${CHECK_INTERVAL:-900}" \
   -e STATE_FILE="/tmp/scraper-state.json" \
+  -e LOG_FILE="/var/log/scraper.log" \
   "$IMAGE_NAME" \
-  python3 /scripts/scrape-ext-to.py
+  python3 /scripts/torrent-scraper.py
 

@@ -5,17 +5,17 @@ Fetches Formula.1 UHD (4K-HLG) torrents and adds them to qBittorrent
 
 USAGE:
     # Test mode (dry run, prints what it finds without adding):
-    TEST_MODE=true python3 scrape-ext-to.py
+    TEST_MODE=true python3 torrent-scraper.py
     
     # Production mode (runs continuously, adds torrents):
-    python3 scrape-ext-to.py
+    python3 torrent-scraper.py
 
 ENVIRONMENT VARIABLES:
     SCRAPE_URL          - API URL to query (default: https://apibay.org/q.php?q=user:smcgill1969)
     QBT_URL             - qBittorrent Web API URL (default: http://127.0.0.1:8080)
     CHECK_INTERVAL      - Seconds between checks (default: 3600 = 1 hour)
     STATE_FILE          - Path to JSON file tracking seen torrents (default: /config/scraper-state.json)
-    LOG_FILE            - Path to log file (default: /config/scraper.log)
+    LOG_FILE            - Path to log file (default: /var/log/scraper.log)
     TEST_MODE           - Set to "true" for dry-run mode (default: false)
     CRON_MODE           - Set to "true" to run once and exit (for CronJob) (default: false)
     CATEGORY            - Category to assign to added torrents (default: formula1)
@@ -57,7 +57,7 @@ SCRAPE_URL = os.getenv("SCRAPE_URL", "https://apibay.org/q.php?q=user:smcgill196
 QBT_URL = os.getenv("QBT_URL", "http://127.0.0.1:8080")
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "3600"))  # 1 hour
 STATE_FILE = Path(os.getenv("STATE_FILE", "/config/scraper-state.json"))
-LOG_FILE = Path(os.getenv("LOG_FILE", "/config/scraper.log"))
+LOG_FILE = Path(os.getenv("LOG_FILE", "/var/log/scraper.log"))
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 CRON_MODE = os.getenv("CRON_MODE", "false").lower() == "true"
 CATEGORY = os.getenv("CATEGORY", "formula1")
@@ -203,39 +203,56 @@ def add_torrent_to_qbit(magnet_link):
 
 def configure_torrent(info_hash):
     """Configure torrent: set category, location, and sequential download"""
-    try:
-        # Set location (save/download path)
-        response = requests.post(
-            f"{QBT_URL}/api/v2/torrents/setLocation",
-            data={"hashes": info_hash, "location": SAVE_PATH},
-            timeout=10
-        )
-        if response.status_code != 200:
-            logger.warning(f"Failed to set location: {response.status_code}")
-        
-        # Set category
-        response = requests.post(
-            f"{QBT_URL}/api/v2/torrents/setCategory",
-            data={"hashes": info_hash, "category": CATEGORY},
-            timeout=10
-        )
-        if response.status_code != 200:
-            logger.warning(f"Failed to set category: {response.status_code}")
-        
-        # Enable sequential download if configured
-        if SEQUENTIAL_DOWNLOAD:
+    # Retry configuration (torrent might not be immediately available after add)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if attempt > 0:
+                time.sleep(2)  # Wait before retry
+            
+            # Set location (save/download path)
             response = requests.post(
-                f"{QBT_URL}/api/v2/torrents/toggleSequentialDownload",
-                data={"hashes": info_hash},
+                f"{QBT_URL}/api/v2/torrents/setLocation",
+                data={"hashes": info_hash, "location": SAVE_PATH},
                 timeout=10
             )
             if response.status_code != 200:
-                logger.warning(f"Failed to enable sequential download: {response.status_code}")
-        
-        return True
-    except Exception as e:
-        logger.error(f"Error configuring torrent: {e}", exc_info=True)
-        return False
+                if attempt < max_retries - 1:
+                    continue
+                logger.warning(f"Failed to set location: {response.status_code}")
+            
+            # Set category
+            response = requests.post(
+                f"{QBT_URL}/api/v2/torrents/setCategory",
+                data={"hashes": info_hash, "category": CATEGORY},
+                timeout=10
+            )
+            if response.status_code != 200:
+                if attempt < max_retries - 1:
+                    continue
+                logger.warning(f"Failed to set category: {response.status_code}")
+            
+            # Enable sequential download if configured
+            if SEQUENTIAL_DOWNLOAD:
+                response = requests.post(
+                    f"{QBT_URL}/api/v2/torrents/toggleSequentialDownload",
+                    data={"hashes": info_hash},
+                    timeout=10
+                )
+                if response.status_code != 200:
+                    if attempt < max_retries - 1:
+                        continue
+                    logger.warning(f"Failed to enable sequential download: {response.status_code}")
+            
+            return True
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.debug(f"Configuration attempt {attempt + 1} failed, retrying: {e}")
+                continue
+            logger.error(f"Error configuring torrent after {max_retries} attempts: {e}", exc_info=True)
+            return False
+    
+    return False
 
 def process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
     """Process a single torrent: add to qBittorrent, configure it, and update state"""
@@ -255,7 +272,7 @@ def process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
     
     # Configure torrent (category, location, sequential download)
     # Small delay to ensure torrent is registered in qBittorrent
-    time.sleep(1)
+    time.sleep(2)
     if configure_torrent(info_hash):
         logger.info(f"Configured torrent: category={CATEGORY}, path={SAVE_PATH}, sequential={SEQUENTIAL_DOWNLOAD}")
     else:

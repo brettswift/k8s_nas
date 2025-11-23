@@ -41,7 +41,7 @@ spec:
         - -c
         - |
           chmod +x /scripts/on-torrent-added.sh
-          chmod +x /scripts/scrape-ext-to.py
+          chmod +x /scripts/torrent-scraper.py
           echo "Script permissions set"
         volumeMounts:
         - name: qbittorrent-scripts
