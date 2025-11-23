@@ -17,6 +17,7 @@ ENVIRONMENT VARIABLES:
     STATE_FILE      - Path to JSON file tracking seen torrents (default: /config/scraper-state.json)
     LOG_FILE        - Path to log file (default: /config/scraper.log)
     TEST_MODE       - Set to "true" for dry-run mode (default: false)
+    CRON_MODE       - Set to "true" to run once and exit (for CronJob) (default: false)
 
 FILTERING:
     Only adds torrents matching: Formula.1.*4K-HLG or Formula.1.*UHD (case-insensitive)
@@ -54,6 +55,7 @@ CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "3600"))  # 1 hour
 STATE_FILE = Path(os.getenv("STATE_FILE", "/config/scraper-state.json"))
 LOG_FILE = Path(os.getenv("LOG_FILE", "/config/scraper.log"))
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
+CRON_MODE = os.getenv("CRON_MODE", "false").lower() == "true"
 
 # Setup logging to both file and stdout
 def setup_logging(log_file):
@@ -165,8 +167,36 @@ def save_state_to_file(state, state_file):
         logger.warning(f"Failed to save state: {e}", exc_info=True)
         return False
 
+def login_to_qbit():
+    """Login to qBittorrent API (required if not using localhost bypass)"""
+    if not QBT_USERNAME or not QBT_PASSWORD:
+        # If no credentials, assume localhost bypass is enabled
+        return True
+    
+    try:
+        response = requests.post(
+            f"{QBT_URL}/api/v2/auth/login",
+            data={"username": QBT_USERNAME, "password": QBT_PASSWORD},
+            timeout=10
+        )
+        if response.status_code == 200 and response.text == "Ok.":
+            logger.debug("Successfully logged in to qBittorrent")
+            return True
+        else:
+            logger.warning(f"qBittorrent login failed: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Error logging in to qBittorrent: {e}", exc_info=True)
+        return False
+
 def add_torrent_to_qbit(magnet_link):
     """Add torrent to qBittorrent via Web API"""
+    # Login if credentials are provided (for non-localhost access)
+    if QBT_USERNAME and QBT_PASSWORD:
+        if not login_to_qbit():
+            logger.error("Failed to login to qBittorrent, cannot add torrent")
+            return False
+    
     try:
         response = requests.post(
             f"{QBT_URL}/api/v2/torrents/add",
@@ -262,12 +292,16 @@ def main():
             action = "Would add" if TEST_MODE else "Added"
             logger.info(f"{action} {new_count} new torrent(s)")
         
-        # Exit in test mode
+        # Exit in test mode or cron mode (run once)
         if TEST_MODE:
             logger.info("[TEST MODE] Exiting after one check")
             break
         
-        # Wait before next check
+        if CRON_MODE:
+            logger.info("[CRON MODE] Exiting after one check")
+            break
+        
+        # Wait before next check (only in sidecar mode)
         logger.info(f"Sleeping for {CHECK_INTERVAL}s...")
         time.sleep(CHECK_INTERVAL)
 

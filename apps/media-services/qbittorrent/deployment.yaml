@@ -121,36 +121,6 @@ spec:
         - name: qbittorrent-scripts
           mountPath: /scripts
           readOnly: true
-      - name: ext-to-scraper
-        image: python:3.11-alpine
-        command:
-        - /bin/sh
-        - -c
-        - |
-          pip install --no-cache-dir requests
-          exec python3 /scripts/scrape-ext-to.py
-        env:
-        - name: SCRAPE_URL
-          value: "https://apibay.org/q.php?q=user:smcgill1969"
-        - name: QBT_URL
-          value: "http://127.0.0.1:8080"
-        - name: CHECK_INTERVAL
-          value: "3600"  # 1 hour
-        - name: STATE_FILE
-          value: "/config/scraper-state.json"
-        resources:
-          requests:
-            cpu: "50m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-        volumeMounts:
-        - name: qbittorrent-scripts
-          mountPath: /scripts
-          readOnly: true
-        - name: qbittorrent-config
-          mountPath: /config
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
