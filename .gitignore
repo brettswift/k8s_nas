@@ -37,4 +37,17 @@ vendor/
 # Environment files
 .env
 .env.local
-*.local 
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,121 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: qbittorrent-scraper
+  namespace: qbittorrent
+spec:
+  # Run every hour at minute 0
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name: cache-version-check
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              CACHE_DIR="/cache"
+              VERSION_FILE="$CACHE_DIR/.version"
+              PIP_CACHE_DIR="$CACHE_DIR/pip"
+              
+              # Get current ConfigMap UID (changes when ConfigMap is updated)
+              CURRENT_UID=$(kubectl get configmap -n qbittorrent qbittorrent-scripts -o jsonpath='{.metadata.uid}' 2>/dev/null || echo "")
+              
+              # Fallback: use resourceVersion if UID not available
+              if [ -z "$CURRENT_UID" ]; then
+                CURRENT_UID=$(kubectl get configmap -n qbittorrent qbittorrent-scripts -o jsonpath='{.metadata.resourceVersion}' 2>/dev/null || echo "$(date +%s)")
+              fi
+              
+              # Check if version changed
+              if [ -f "$VERSION_FILE" ]; then
+                STORED_UID=$(cat "$VERSION_FILE")
+                if [ "$STORED_UID" = "$CURRENT_UID" ]; then
+                  echo "Cache version matches (UID: ${CURRENT_UID:0:8}), keeping existing pip cache"
+                  exit 0
+                else
+                  echo "ConfigMap changed (old: ${STORED_UID:0:8}, new: ${CURRENT_UID:0:8}), clearing pip cache"
+                fi
+              else
+                echo "No version file found, initializing cache (UID: ${CURRENT_UID:0:8})"
+              fi
+              
+              # Clear pip cache and write new version
+              rm -rf "$PIP_CACHE_DIR"
+              mkdir -p "$PIP_CACHE_DIR"
+              chmod 777 "$PIP_CACHE_DIR"  # Ensure writable by pip
+              echo "$CURRENT_UID" > "$VERSION_FILE"
+              echo "Cache cleared and version updated"
+            volumeMounts:
+            - name: pip-cache
+              mountPath: /cache
+          containers:
+          - name: scraper
+            # Use standard Python image - installs packages on each run (GitOps-friendly)
+            # No custom image needed - works without Docker registry or manual builds
+            image: python:3.11-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              pip install --quiet requests --cache-dir /cache/pip
+              python3 /scripts/torrent-scraper.py
+            env:
+            - name: SCRAPE_URL
+              value: "https://apibay.org/q.php?q=user:smcgill1969"
+            - name: QBT_URL
+              # Use service name since we're in a separate pod
+              # Note: Configure qBittorrent to bypass auth for cluster subnet (10.0.0.0/8 covers 10.42.0.0/16)
+              value: "http://qbittorrent.qbittorrent.svc.cluster.local:8080"
+            - name: CHECK_INTERVAL
+              value: "3600"  # 1 hour (not used in cron mode, but kept for compatibility)
+            - name: STATE_FILE
+              value: "/config/scraper-state.json"
+            - name: LOG_FILE
+              value: "/var/log/scraper.log"
+            - name: TEST_MODE
+              value: "false"
+            - name: CRON_MODE
+              value: "true"
+            - name: CATEGORY
+              value: "formula1"
+            - name: SAVE_PATH
+              value: "/data/media/formula1"
+            - name: MAX_AGE_DAYS
+              value: "7"  # Only add torrents added within last week
+            - name: SEQUENTIAL_DOWNLOAD
+              value: "true"
+            resources:
+              requests:
+                cpu: "50m"
+                memory: "128Mi"
+              limits:
+                cpu: "200m"
+                memory: "256Mi"
+            volumeMounts:
+            - name: qbittorrent-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: qbittorrent-config
+              mountPath: /config
+            - name: pip-cache
+              mountPath: /cache
+          volumes:
+          - name: qbittorrent-scripts
+            configMap:
+              name: qbittorrent-scripts
+              defaultMode: 0755
+          - name: qbittorrent-config
+            persistentVolumeClaim:
+              claimName: qbittorrent-config
+          - name: pip-cache
+            persistentVolumeClaim:
+              claimName: scraper-pip-cache
+          serviceAccountName: default
+          restartPolicy: OnFailure
+

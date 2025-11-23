@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# qBittorrent hook script: Auto-categorize Formula 1 torrents
+#
+# To configure in qBittorrent Web UI:
+# 1. Go to Tools → Options → Downloads
+# 2. Check "Run external program on torrent added"
+# 3. Paste this into the text field:
+#    /scripts/on-torrent-added.sh "%N" "%I"
+#
+# Called by qBittorrent with: %N (torrent name) and %I (info hash)
+
+set -euo pipefail
+
+TORRENT_NAME="${1:-}"
+TORRENT_HASH="${2:-}"
+
+if [ -z "$TORRENT_NAME" ] || [ -z "$TORRENT_HASH" ]; then
+  echo "Usage: $0 <torrent_name> <info_hash>" >&2
+  exit 1
+fi
+
+# Match formula1 / forumla1 / formula.1 / forumula.1 etc. (case-insensitive)
+shopt -s nocasematch
+if [[ "$TORRENT_NAME" =~ formula1|forumla1|formula\.1|forumula\.1 ]]; then
+  QBT_URL="http://127.0.0.1:8080"
+  SAVE_PATH="/data/media/formula1"
+  
+  # Set download/save location first (so files download directly to final location)
+  curl -s \
+    --data-urlencode "hashes=$TORRENT_HASH" \
+    --data-urlencode "location=$SAVE_PATH" \
+    "$QBT_URL/api/v2/torrents/setLocation" >/dev/null
+  
+  # Set category to "formula1" (no auth needed with localhost bypass enabled)
+  curl -s \
+    --data-urlencode "hashes=$TORRENT_HASH" \
+    --data-urlencode "category=formula1" \
+    "$QBT_URL/api/v2/torrents/setCategory" >/dev/null
+  
+  echo "Auto-categorized '$TORRENT_NAME' as formula1 and set download/save path to $SAVE_PATH"
+fi
+
