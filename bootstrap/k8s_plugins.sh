@@ -65,12 +65,34 @@ fi
 
 # Add Helm repositories
 echo "Adding Helm repositories..."
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo add cert-manager https://charts.jetstack.io
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 
-# Note: NGINX Ingress Controller removed - using Istio for ingress instead
+# Install NGINX Ingress Controller
+echo "Installing NGINX Ingress Controller..."
+if ! kubectl get namespace ingress-nginx &> /dev/null; then
+    kubectl create namespace ingress-nginx
+fi
+
+if ! helm list -n ingress-nginx | grep -q ingress-nginx; then
+    helm install ingress-nginx ingress-nginx/ingress-nginx \
+        --namespace ingress-nginx \
+        --set controller.hostNetwork=true \
+        --set controller.service.type=ClusterIP \
+        --set controller.admissionWebhooks.enabled=false
+else
+    echo "NGINX Ingress Controller already installed"
+fi
+
+# Wait for NGINX Ingress Controller to be ready
+echo "Waiting for NGINX Ingress Controller to be ready..."
+kubectl wait --namespace ingress-nginx \
+    --for=condition=ready pod \
+    --selector=app.kubernetes.io/component=controller \
+    --timeout=300s
 
 # Install cert-manager
 echo "Installing cert-manager..."
@@ -130,8 +152,7 @@ kubectl wait --namespace istio-system \
 echo "=== Kubernetes Plugins Installation Complete ==="
 echo "Installed components:"
 echo "- NVIDIA Container Toolkit (GPU support)"
+echo "- NGINX Ingress Controller"
 echo "- cert-manager"
 echo "- Istio (base, istiod, ingress-gateway)"
 echo "- Helm repositories updated"
-echo ""
-echo "Note: NGINX Ingress Controller removed - using Istio for ingress"

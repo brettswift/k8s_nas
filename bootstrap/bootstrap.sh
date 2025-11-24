@@ -4,6 +4,10 @@ set -euo pipefail
 # Bootstrap script for k8s_nas project
 # Installs required plugins and optional components
 
+# Ensure we're in the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
 echo "=== k8s_nas Bootstrap Script ==="
 
 # Parse command line arguments
@@ -93,14 +97,26 @@ else
     echo "⚠️  setup-home-wildcard-cert.sh not found, skipping certificate setup"
 fi
 
+# Configure ArgoCD Git repository access
+echo ""
+echo "Configuring ArgoCD Git repository access..."
+if [ -f "./bootstrap/configure-argocd-git.sh" ]; then
+    ./bootstrap/configure-argocd-git.sh || echo "⚠️  Git repository setup skipped (may need manual configuration)"
+else
+    echo "⚠️  configure-argocd-git.sh not found, skipping Git repository setup"
+    echo "    See BOOTSTRAP.md section 5 for manual setup instructions"
+fi
+
 echo ""
 echo "=== Bootstrap Complete ==="
 echo ""
 echo "Next steps:"
 echo "1. Ensure ArgoCD is running: kubectl get pods -n argocd"
-echo "2. Access ArgoCD UI: https://localhost:8080"
-echo "3. Deploy applications via GitOps"
-echo "4. After services deploy, extract API keys: See CONFIGURE_STARR_INTEGRATIONS.md for the command"
+echo "2. Configure Git repository credentials (if not done above)"
+echo "3. Apply root application: kubectl apply -f root-application.yaml"
+echo "4. Access ArgoCD UI: https://localhost:8080"
+echo "5. Deploy applications via GitOps"
+echo "6. After services deploy, extract API keys: See CONFIGURE_STARR_INTEGRATIONS.md for the command"
 echo ""
 if [[ "$INSTALL_ISTIO" == "true" ]]; then
     echo "Istio is installed and ready!"

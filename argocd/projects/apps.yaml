@@ -8,6 +8,7 @@ spec:
   
   sourceRepos:
   - 'https://github.com/brettswift/k8s_nas.git'
+  - 'git@github.com:brettswift/k8s_nas.git'
   
   destinations:
   - namespace: '*'

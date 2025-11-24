@@ -139,12 +139,22 @@ echo "ArgoCD admin password: $ARGOCD_PASSWORD"
 echo "Waiting for ingress to be ready..."
 sleep 5
 
-# Set up ArgoCD projects
+# Set up ArgoCD projects (ensure we're in the right directory)
 echo "Setting up ArgoCD projects..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 kubectl apply -f argocd/projects/
 
+# Configure ArgoCD Git repository access
+echo "Configuring ArgoCD Git repository access..."
+if [ -f "./bootstrap/configure-argocd-git.sh" ]; then
+    ./bootstrap/configure-argocd-git.sh || echo "⚠️  Git repository setup skipped (may need manual configuration)"
+else
+    echo "⚠️  configure-argocd-git.sh not found, skipping Git repository setup"
+fi
+
 # Set up ApplicationSets pattern for GitOps
-echo "Setting up ApplicationSets pattern..."
+echo "Setting up ApplicationSets pattern for GitOps..."
 kubectl apply -f root-application.yaml
 
 # Wait for the applications to be synced
