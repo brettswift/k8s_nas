@@ -5,70 +5,89 @@ metadata:
   namespace: argocd
 spec:
   description: "Infrastructure project for core services"
-  
-  sourceRepos:
-  - 'https://github.com/brettswift/k8s_nas.git'
-  - 'git@github.com:brettswift/k8s_nas.git'
-  
-  destinations:
-  - namespace: 'ingress-nginx'
-    server: https://kubernetes.default.svc
-  - namespace: 'cert-manager'
-    server: https://kubernetes.default.svc
-  - namespace: 'monitoring'
-    server: https://kubernetes.default.svc
-  - namespace: 'istio-system'
-    server: https://kubernetes.default.svc
-  - namespace: 'argocd'
-    server: https://kubernetes.default.svc
-  - namespace: 'homepage'
-    server: https://kubernetes.default.svc
-  - namespace: 'kube-system'
-    server: https://kubernetes.default.svc
-  
-  clusterResourceWhitelist:
-  - group: 'networking.k8s.io'
-    kind: Ingress
-  - group: 'networking.k8s.io'
-    kind: NetworkPolicy
-  - group: 'networking.istio.io'
-    kind: Gateway
-  - group: 'networking.istio.io'
-    kind: VirtualService
-  - group: 'cert-manager.io'
-    kind: ClusterIssuer
-  - group: 'cert-manager.io'
-    kind: Certificate
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRole
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRoleBinding
-  
-  namespaceResourceWhitelist:
-  - group: ''
-    kind: ConfigMap
-  - group: ''
-    kind: Secret
-  - group: ''
-    kind: Service
-  - group: ''
-    kind: ServiceAccount
-  - group: ''
-    kind: Deployment
-  - group: 'apps'
-    kind: Deployment
-  - group: 'apps'
-    kind: StatefulSet
-  - group: 'apps'
-    kind: DaemonSet
-  - group: 'networking.k8s.io'
-    kind: Ingress
-  - group: 'cert-manager.io'
-    kind: Certificate
-  - group: 'batch'
-    kind: CronJob
-  - group: 'rbac.authorization.k8s.io'
-    kind: Role
-  - group: 'rbac.authorization.k8s.io'
-    kind: RoleBinding
 
+  sourceRepos:
+    - 'https://github.com/brettswift/k8s_nas.git'
+    - 'git@github.com:brettswift/k8s_nas.git'
+
+  destinations:
+    - namespace: 'ingress-nginx'
+      server: https://kubernetes.default.svc
+    - namespace: 'cert-manager'
+      server: https://kubernetes.default.svc
+    - namespace: 'monitoring'
+      server: https://kubernetes.default.svc
+    - namespace: 'istio-system'
+      server: https://kubernetes.default.svc
+    - namespace: 'argocd'
+      server: https://kubernetes.default.svc
+    - namespace: 'homepage'
+      server: https://kubernetes.default.svc
+    - namespace: 'kube-system'
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'networking.k8s.io'
+      kind: NetworkPolicy
+    - group: 'networking.istio.io'
+      kind: Gateway
+    - group: 'networking.istio.io'
+      kind: VirtualService
+    - group: 'cert-manager.io'
+      kind: ClusterIssuer
+    - group: 'cert-manager.io'
+      kind: Certificate
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRole
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRoleBinding
+    # Traefik CRDs
+    - group: 'traefik.io'
+      kind: IngressRoute
+    - group: 'traefik.io'
+      kind: Middleware
+    - group: 'traefik.io'
+      kind: TLSStore
+    - group: 'traefik.io'
+      kind: TLSOption
+    - group: 'traefik.io'
+      kind: ServersTransport
+
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: ''
+      kind: Deployment
+    - group: 'apps'
+      kind: Deployment
+    - group: 'apps'
+      kind: StatefulSet
+    - group: 'apps'
+      kind: DaemonSet
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'cert-manager.io'
+      kind: Certificate
+    - group: 'batch'
+      kind: CronJob
+    - group: 'rbac.authorization.k8s.io'
+      kind: Role
+    - group: 'rbac.authorization.k8s.io'
+      kind: RoleBinding
+    # Traefik CRDs (namespaced)
+    - group: 'traefik.io'
+      kind: IngressRoute
+    - group: 'traefik.io'
+      kind: Middleware
+    - group: 'traefik.io'
+      kind: TLSStore
+    - group: 'traefik.io'
+      kind: TLSOption

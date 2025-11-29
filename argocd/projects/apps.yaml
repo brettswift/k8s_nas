@@ -5,53 +5,65 @@ metadata:
   namespace: argocd
 spec:
   description: "Applications project for user workloads"
-  
+
   sourceRepos:
-  - 'https://github.com/brettswift/k8s_nas.git'
-  - 'git@github.com:brettswift/k8s_nas.git'
-  
+    - 'https://github.com/brettswift/k8s_nas.git'
+    - 'git@github.com:brettswift/k8s_nas.git'
+
   destinations:
-  - namespace: '*'
-    server: https://kubernetes.default.svc
-  
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+
   clusterResourceWhitelist:
-  - group: ''
-    kind: Namespace
-  - group: 'networking.k8s.io'
-    kind: Ingress
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRole
-  - group: 'rbac.authorization.k8s.io'
-    kind: ClusterRoleBinding
-  
+    - group: ''
+      kind: Namespace
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRole
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRoleBinding
+    # Traefik CRDs
+    - group: 'traefik.io'
+      kind: IngressRoute
+    - group: 'traefik.io'
+      kind: Middleware
+
   namespaceResourceWhitelist:
-  - group: ''
-    kind: ConfigMap
-  - group: ''
-    kind: Secret
-  - group: ''
-    kind: Service
-  - group: ''
-    kind: ServiceAccount
-  - group: ''
-    kind: Deployment
-  - group: ''
-    kind: Pod
-  - group: 'apps'
-    kind: Deployment
-  - group: 'apps'
-    kind: StatefulSet
-  - group: 'apps'
-    kind: ReplicaSet
-  - group: 'apps'
-    kind: DaemonSet
-  - group: 'networking.k8s.io'
-    kind: Ingress
-  - group: 'networking.istio.io'
-    kind: Gateway
-  - group: 'networking.istio.io'
-    kind: VirtualService
-  - group: 'batch'
-    kind: Job
-  - group: 'batch'
-    kind: CronJob
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: ''
+      kind: Deployment
+    - group: ''
+      kind: Pod
+    - group: ''
+      kind: PersistentVolumeClaim
+    - group: 'apps'
+      kind: Deployment
+    - group: 'apps'
+      kind: StatefulSet
+    - group: 'apps'
+      kind: ReplicaSet
+    - group: 'apps'
+      kind: DaemonSet
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'networking.istio.io'
+      kind: Gateway
+    - group: 'networking.istio.io'
+      kind: VirtualService
+    - group: 'batch'
+      kind: Job
+    - group: 'batch'
+      kind: CronJob
+    # Traefik CRDs (namespaced)
+    - group: 'traefik.io'
+      kind: IngressRoute
+    - group: 'traefik.io'
+      kind: Middleware
