@@ -1,3 +1,5 @@
+# Jellyfin Ingress - base path is /jellyfin (configured in Jellyfin)
+# Do NOT rewrite path - Jellyfin expects /jellyfin/* requests
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -6,8 +8,6 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   tls:
@@ -18,7 +18,7 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /jellyfin(/|$)(.*)
+      - path: /jellyfin
         pathType: Prefix
         backend:
           service:
