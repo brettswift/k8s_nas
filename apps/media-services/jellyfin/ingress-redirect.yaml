@@ -4,7 +4,7 @@ metadata:
   name: jellyfin-slash-redirect
   namespace: media
   annotations:
-    nginx.ingress.kubernetes.io/permanent-redirect: https://$host/jellyfin/
+    nginx.ingress.kubernetes.io/permanent-redirect: https://home.brettswift.com/jellyfin/
 spec:
   ingressClassName: nginx
   tls:
