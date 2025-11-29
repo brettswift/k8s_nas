@@ -13,4 +13,4 @@ spec:
   dnsNames:
     - "home.brettswift.com"
     - "jellyseerr.home.brettswift.com"
-  renewBefore: 2592000s  # 30 days
+  renewBefore: 720h0m0s  # 30 days (cert-manager normalizes to this format)
