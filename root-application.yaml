@@ -7,13 +7,13 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-    description: "Root application for k8s_nas ApplicationSets pattern"
+    description: "Root application for k8s_nas - manages all other applications"
 spec:
   project: default
   source:
     repoURL: git@github.com:brettswift/k8s_nas.git
     path: argocd/applicationsets
-    targetRevision: main
+    targetRevision: new-argo
     directory:
       recurse: true
   destination:

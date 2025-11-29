@@ -42,3 +42,6 @@ echo ""
 echo "Verify with:"
 echo "  kubectl get secret $SECRET_NAME -n $TARGET_NS"
 
+
+
+

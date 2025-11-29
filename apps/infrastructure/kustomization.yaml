@@ -1,6 +1,6 @@
 resources:
-- nvidia-device-plugin/
-- cert-manager/
-# argocd/ removed - managed by argocd-infrastructure-appset separately
-# monitoring/ removed - use separate monitoring ApplicationSet if needed
-
+  - nvidia-device-plugin/
+  - cert-manager/
+  - traefik/
+# argocd/ removed - managed by argocd-config Application separately
+# monitoring/ removed - managed by monitoring Application separately

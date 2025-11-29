@@ -1,53 +1,33 @@
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
   name: homepage
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: homepage
+    category: dashboard
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "25"
-    argocd.argoproj.io/sync-options: RequireSyncOrder=true
 spec:
-  generators:
-  - list:
-      elements:
-      - name: production-cluster
-        server: https://kubernetes.default.svc
-        environment: production
-        region: server
-        homepage-enabled: "true"
-  template:
-    metadata:
-      name: "homepage-{{name}}"
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "25"
-        argocd.argoproj.io/sync-options: RequireSyncOrder=true
-      labels:
-        environment: "{{environment}}"
-        type: "application"
-        category: "dashboard"
-    spec:
-      project: apps
-      source:
-        repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: main
-        path: apps/homepage/base
-      destination:
-        server: "{{server}}"
-        namespace: homepage
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-        - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
-
+  project: apps
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: new-argo
+    path: apps/homepage/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homepage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

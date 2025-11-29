@@ -1,2 +1,3 @@
 resources:
-- ingress.yaml
+  - ingress.yaml
+  - argocd-cmd-params-cm.yaml

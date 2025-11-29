@@ -1,52 +1,33 @@
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
   name: jellyfin
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: jellyfin
+    category: media
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "35"
-    argocd.argoproj.io/sync-options: RequireSyncOrder=true
 spec:
-  generators:
-  - list:
-      elements:
-      - name: production-cluster
-        server: https://kubernetes.default.svc
-        environment: production
-        region: server
-        jellyfin-enabled: "true"
-  template:
-    metadata:
-      name: "jellyfin-{{name}}"
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "35"
-        argocd.argoproj.io/sync-options: RequireSyncOrder=true
-      labels:
-        environment: "{{environment}}"
-        type: "application"
-        category: "media"
-    spec:
-      project: apps
-      source:
-        repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: dev_starr
-        path: apps/media-services/jellyfin
-      destination:
-        server: "{{server}}"
-        namespace: media
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-        - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
+  project: apps
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: new-argo
+    path: apps/media-services/jellyfin
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

@@ -1,46 +1,33 @@
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: qbit
+  name: qbittorrent
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: qbittorrent
+    category: media
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
 spec:
-  generators:
-  - list:
-      elements:
-      - name: production-cluster
-        server: https://kubernetes.default.svc
-        environment: production
-  template:
-    metadata:
-      name: "qbit-{{name}}"
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      labels:
-        environment: "{{environment}}"
-        type: "application"
-        category: "media"
-    spec:
-      project: apps
-      source:
-        repoURL: git@github.com:brettswift/k8s_nas.git
-        targetRevision: dev_qbit
-        path: apps/media-services/qbittorrent
-      destination:
-        server: "{{server}}"
-        namespace: qbittorrent
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-        - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
-
-
+  project: apps
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: new-argo
+    path: apps/media-services/qbittorrent
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: qbittorrent
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

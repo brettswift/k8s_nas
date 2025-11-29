@@ -12,6 +12,7 @@ spec:
     - dns01:
         route53:
           region: us-west-2
+          hostedZoneID: Z1A5BHLIT8EGDS
           # accessKeyID must be set manually - this is a placeholder
           # The setup script will patch this with the actual value
           accessKeyID: ""

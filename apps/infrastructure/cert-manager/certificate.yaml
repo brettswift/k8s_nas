@@ -1,8 +1,10 @@
+# Certificate for home.brettswift.com
+# Stored in kube-system so Traefik can use it as default TLS cert
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: home-brettswift-com-dns
-  namespace: argocd
+  namespace: kube-system
 spec:
   secretName: home-brettswift-com-tls
   issuerRef:
@@ -12,4 +14,3 @@ spec:
     - "home.brettswift.com"
     - "jellyseerr.home.brettswift.com"
   renewBefore: 2592000s  # 30 days
-

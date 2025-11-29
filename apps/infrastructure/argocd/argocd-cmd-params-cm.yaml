@@ -1,0 +1,14 @@
+# ArgoCD server configuration for subpath routing
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  # Run server without TLS (Traefik handles TLS termination)
+  server.insecure: "true"
+  # Base href for UI assets
+  server.basehref: "/argocd/"
+  # Root path for routing
+  server.rootpath: "/argocd"
+

@@ -79,6 +79,75 @@ This file tracks the successful steps required to bootstrap the k3s cluster afte
   - Add to `namespaceResourceWhitelist`: ServiceAccount, CronJob, Role, RoleBinding
   - Add to `clusterResourceWhitelist`: ClusterRole, ClusterRoleBinding
 
-- Update apps project to allow SSH Git URL (add to `argocd/projects/apps.yaml`):
-  - Add `'git@github.com:brettswift/k8s_nas.git'` to `sourceRepos` list
+- Update apps project to allow SSH Git URL:
+  ```bash
+  kubectl get appproject apps -n argocd -o json | \
+    jq '.spec.sourceRepos = ["https://github.com/brettswift/k8s_nas.git", "git@github.com:brettswift/k8s_nas.git"]' | \
+    kubectl apply -f -
+  ```
+  Or manually edit `argocd/projects/apps.yaml` to add `'git@github.com:brettswift/k8s_nas.git'` to `sourceRepos` list
+
+## Certificate Setup
+
+- Apply ClusterIssuer and Certificate resources (HTTP challenge for quick setup):
+  ```bash
+  # Create HTTP-based ClusterIssuer
+  cat <<'EOF' | kubectl apply -f -
+  apiVersion: cert-manager.io/v1
+  kind: ClusterIssuer
+  metadata:
+    name: letsencrypt-http
+  spec:
+    acme:
+      server: https://acme-v02.api.letsencrypt.org/directory
+      email: brettswift@gmail.com
+      privateKeySecretRef:
+        name: letsencrypt-http
+      solvers:
+      - http01:
+          ingress:
+            class: nginx
+  EOF
+  
+  # Create Certificate
+  cat <<'EOF' | kubectl apply -f -
+  apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    name: home-brettswift-com-http
+    namespace: argocd
+  spec:
+    secretName: home-brettswift-com-tls
+    issuerRef:
+      name: letsencrypt-http
+      kind: ClusterIssuer
+    dnsNames:
+      - "home.brettswift.com"
+      - "jellyseerr.home.brettswift.com"
+    renewBefore: 2592000s
+  EOF
+  ```
+  Note: HTTP challenge requires the domain to be publicly accessible on port 80/443
+
+- For DNS challenge (requires AWS credentials):
+  ```bash
+  # First create Route53 credentials secret
+  kubectl -n cert-manager create secret generic route53-credentials \
+    --from-literal=secret-access-key="${AWS_SECRET_ACCESS_KEY}" \
+    ${AWS_SESSION_TOKEN:+--from-literal=session-token="${AWS_SESSION_TOKEN}"}
+  
+  # Apply DNS-based ClusterIssuer and Certificate
+  kubectl apply -f apps/infrastructure/cert-manager/clusterissuer.yaml
+  kubectl apply -f apps/infrastructure/cert-manager/certificate.yaml
+  
+  # Patch ClusterIssuer with AWS access key ID
+  kubectl patch clusterissuer letsencrypt-dns-home --type=merge \
+    -p="{\"spec\":{\"acme\":{\"solvers\":[{\"dns01\":{\"route53\":{\"accessKeyID\":\"${AWS_ACCESS_KEY_ID}\"}}}]}}}"
+  ```
+
+- Monitor certificate issuance:
+  ```bash
+  kubectl get certificate -n argocd -w
+  kubectl describe certificate home-brettswift-com-http -n argocd
+  ```
 
