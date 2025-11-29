@@ -17,9 +17,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
+  ignoreDifferences:
+    # Ignore accessKeyID since it's injected manually (not stored in Git)
+    - group: cert-manager.io
+      kind: ClusterIssuer
+      name: letsencrypt-dns-home
+      jsonPointers:
+        - /spec/acme/solvers/0/dns01/route53/accessKeyID
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

@@ -2,6 +2,9 @@ apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-dns-home
+  annotations:
+    # Tell ArgoCD to ignore the accessKeyID field since it's set manually
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
@@ -9,14 +12,14 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-dns-home
     solvers:
-    - dns01:
-        route53:
-          region: us-west-2
-          hostedZoneID: Z1A5BHLIT8EGDS
-          # accessKeyID must be set manually - this is a placeholder
-          # The setup script will patch this with the actual value
-          accessKeyID: ""
-          secretAccessKeySecretRef:
-            name: route53-credentials
-            key: secret-access-key
-
+      - dns01:
+          route53:
+            region: us-west-2
+            hostedZoneID: Z1A5BHLIT8EGDS
+            # accessKeyID is injected manually after bootstrap
+            # Run: kubectl patch clusterissuer letsencrypt-dns-home --type merge \
+            #   -p '{"spec":{"acme":{"solvers":[{"dns01":{"route53":{"accessKeyID":"YOUR_KEY"}}}]}}}'
+            accessKeyID: ""
+            secretAccessKeySecretRef:
+              name: route53-credentials
+              key: secret-access-key
