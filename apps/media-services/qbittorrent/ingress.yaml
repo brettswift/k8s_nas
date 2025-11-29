@@ -1,5 +1,6 @@
-# qBittorrent Ingress - base path is /qbittorrent (configured in qBittorrent)
-# Do NOT rewrite path - qBittorrent expects /qbittorrent/* requests
+# qBittorrent Ingress
+# Uses rewrite-target to strip /qbittorrent prefix
+# qBittorrent serves from root path
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,6 +9,10 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-redirect-from: "/"
+    nginx.ingress.kubernetes.io/proxy-redirect-to: "/qbittorrent/"
 spec:
   ingressClassName: nginx
   tls:
@@ -18,8 +23,8 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /qbittorrent
-        pathType: Prefix
+      - path: /qbittorrent(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: qbittorrent

@@ -4,26 +4,9 @@ metadata:
   name: qbittorrent-init-scripts
   namespace: qbittorrent
 data:
-  10-set-webui-rootfolder.sh: |
+  # Note: qBittorrent's WebUI\RootFolder setting doesn't persist reliably
+  # with linuxserver image. Using nginx rewrite-target instead.
+  # This script is kept for potential future use.
+  99-placeholder.sh: |
     #!/bin/bash
-    CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
-    
-    # Wait for config file to exist
-    for i in {1..30}; do
-      if [ -f "$CONFIG_FILE" ]; then
-        break
-      fi
-      sleep 1
-    done
-    
-    if [ -f "$CONFIG_FILE" ]; then
-      if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
-        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
-        echo "Added WebUI RootFolder=/qbittorrent/"
-      else
-        echo "WebUI RootFolder already configured"
-      fi
-    else
-      echo "Config file not found after waiting"
-    fi
-
+    echo "qBittorrent init - using nginx rewrite-target for /qbittorrent path"
