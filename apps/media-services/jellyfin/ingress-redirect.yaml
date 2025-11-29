@@ -7,6 +7,10 @@ metadata:
     nginx.ingress.kubernetes.io/permanent-redirect: https://$host/jellyfin/
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - home.brettswift.com
+    secretName: home-brettswift-com-tls
   rules:
   - host: home.brettswift.com
     http:
