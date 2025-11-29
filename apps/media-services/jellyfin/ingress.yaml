@@ -1,6 +1,7 @@
 # Jellyfin Ingress
 # Jellyfin BaseUrl is set to /jellyfin (for URL generation)
 # But Jellyfin serves content from root, so we need to strip /jellyfin
+# app-root redirects /jellyfin to /jellyfin/ for proper relative redirects
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
