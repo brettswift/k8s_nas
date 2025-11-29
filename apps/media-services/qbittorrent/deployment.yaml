@@ -34,29 +34,6 @@ spec:
         volumeMounts:
         - name: vuetorrent-webui
           mountPath: /vuetorrent
-      - name: config-patcher
-        image: alpine:latest
-        command:
-        - /bin/sh
-        - -c
-        - |
-          CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
-          mkdir -p /config/qBittorrent
-          # Add WebUI\RootFolder if not present (for subpath /qbittorrent)
-          if [ -f "$CONFIG_FILE" ]; then
-            if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
-              # Add under [Preferences] section
-              sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
-              echo "Added WebUI\\RootFolder=/qbittorrent/ to config"
-            else
-              echo "WebUI\\RootFolder already configured"
-            fi
-          else
-            echo "Config file doesn't exist yet, will be created on first run"
-          fi
-        volumeMounts:
-        - name: qbittorrent-config
-          mountPath: /config
       containers:
       - name: vpn
         image: qmcgaw/gluetun:latest
@@ -129,7 +106,13 @@ spec:
           mountPath: /data
         - name: vuetorrent-webui
           mountPath: /vuetorrent
+        - name: custom-init-scripts
+          mountPath: /custom-cont-init.d
       volumes:
+      - name: custom-init-scripts
+        configMap:
+          name: qbittorrent-init-scripts
+          defaultMode: 0755
       - name: qbittorrent-config
         persistentVolumeClaim:
           claimName: qbittorrent-config

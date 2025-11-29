@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-init-scripts
+  namespace: qbittorrent
+data:
+  10-set-webui-rootfolder.sh: |
+    #!/bin/bash
+    CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+    
+    # Wait for config file to exist
+    for i in {1..30}; do
+      if [ -f "$CONFIG_FILE" ]; then
+        break
+      fi
+      sleep 1
+    done
+    
+    if [ -f "$CONFIG_FILE" ]; then
+      if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
+        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
+        echo "Added WebUI RootFolder=/qbittorrent/"
+      else
+        echo "WebUI RootFolder already configured"
+      fi
+    else
+      echo "Config file not found after waiting"
+    fi
+

@@ -9,7 +9,7 @@ data:
   
   # XML configuration overrides (file_path=value format)
   # Format: "filename_xpath=value" (colons replaced with underscores)
-  "network.xml_NetworkConfiguration_BaseUrl": "/"
+  "network.xml_NetworkConfiguration_BaseUrl": "/jellyfin"
   "network.xml_NetworkConfiguration_EnableHttps": "false"
   "network.xml_NetworkConfiguration_RequireHttps": "false"
   "network.xml_NetworkConfiguration_AutoDiscovery": "true"
