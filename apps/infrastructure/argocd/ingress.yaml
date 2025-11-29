@@ -1,18 +1,27 @@
-# ArgoCD IngressRoute for Traefik
-# Note: ArgoCD is configured with server.rootpath=/argocd so we do NOT strip the prefix
-# TLS uses the default certificate from TLSStore
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+# ArgoCD Ingress for nginx
+# Note: ArgoCD is configured with server.rootpath=/argocd
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: argocd-ingressroute
+  name: argocd-ingress
   namespace: argocd
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`home.brettswift.com`) && PathPrefix(`/argocd`)
-      kind: Rule
-      services:
-        - name: argocd-server
-          port: 80
-  tls: {}  # Uses default TLSStore certificate
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - home.brettswift.com
+    secretName: home-brettswift-com-tls
+  rules:
+  - host: home.brettswift.com
+    http:
+      paths:
+      - path: /argocd
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              number: 80
