@@ -29,7 +29,7 @@ spec:
     http:
       paths:
       - path: /qbittorrent(/|$)(.*)
-        pathType: ImplementationSpecific
+        pathType: Prefix
         backend:
           service:
             name: qbittorrent
