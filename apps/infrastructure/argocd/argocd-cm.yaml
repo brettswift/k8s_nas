@@ -4,6 +4,9 @@ kind: ConfigMap
 metadata:
   name: argocd-cm
   namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/name: argocd-cm
 data:
   # Enable admin account
   admin.enabled: "true"
