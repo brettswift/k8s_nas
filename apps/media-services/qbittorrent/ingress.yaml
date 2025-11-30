@@ -16,8 +16,6 @@ metadata:
       proxy_set_header X-Forwarded-Prefix /qbittorrent;
       proxy_set_header X-Forwarded-PathBase /qbittorrent;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      # Ensure trailing slash so relative redirects work properly
-      if ($request_uri = /qbittorrent) { return 308 /qbittorrent/; }
 spec:
   ingressClassName: nginx
   tls:
