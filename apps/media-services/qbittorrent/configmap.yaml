@@ -4,50 +4,6 @@ metadata:
   name: qbittorrent-init-scripts
   namespace: qbittorrent
 data:
-  05-set-webui-password.sh: |
-    #!/bin/bash
-    set -eu
-    CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
-    
-    # Wait for qBittorrent to create the config file
-    echo "Waiting for qBittorrent config file..."
-    for i in {1..60}; do
-      if [ -f "$CONFIG_FILE" ]; then
-        echo "Config file found"
-        break
-      fi
-      sleep 1
-    done
-    
-    if [ -f "$CONFIG_FILE" ]; then
-      # Set WebUI password from environment variable
-      if [ -n "${WEBUI_PASSWORD:-}" ]; then
-        # Check if Preferences section exists
-        if ! grep -q "^\[Preferences\]" "$CONFIG_FILE"; then
-          echo "[Preferences]" >> "$CONFIG_FILE"
-        fi
-        
-        # Set or update WebUI password
-        if grep -q "^WebUI\\Password=" "$CONFIG_FILE"; then
-          # Update existing password
-          sed -i "s|^WebUI\\\\Password=.*|WebUI\\\\Password=${WEBUI_PASSWORD}|" "$CONFIG_FILE"
-          echo "Updated WebUI password"
-        else
-          # Add password after Preferences section
-          sed -i "/^\[Preferences\]/a WebUI\\\\Password=${WEBUI_PASSWORD}" "$CONFIG_FILE"
-          echo "Added WebUI password"
-        fi
-        
-        # Ensure WebUI is enabled
-        if ! grep -q "^WebUI\\Enabled=" "$CONFIG_FILE"; then
-          sed -i "/^\[Preferences\]/a WebUI\\\\Enabled=true" "$CONFIG_FILE"
-        else
-          sed -i "s|^WebUI\\\\Enabled=.*|WebUI\\\\Enabled=true|" "$CONFIG_FILE"
-        fi
-      fi
-    else
-      echo "Config file not found after waiting"
-    fi
   10-set-webui-rootfolder.sh: |
     #!/bin/bash
     CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
