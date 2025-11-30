@@ -5,30 +5,32 @@ metadata:
   namespace: qbittorrent
 data:
   10-set-webui-rootfolder.sh: |
-    #!/bin/bash
+    #!/usr/bin/with-contenv bash
     CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
     
-    # Wait for qBittorrent to create the config file
-    echo "Waiting for qBittorrent config file..."
-    for i in {1..60}; do
-      if [ -f "$CONFIG_FILE" ]; then
-        echo "Config file found, setting RootFolder..."
-        break
-      fi
-      sleep 1
-    done
+    echo "[qBittorrent Init] Setting WebUI RootFolder..."
     
+    # Create config directory if it doesn't exist
+    mkdir -p /config/qBittorrent
+    
+    # If config file exists, update it
     if [ -f "$CONFIG_FILE" ]; then
-      # Check if RootFolder is already set
-      if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
-        # Add RootFolder under [Preferences] section
-        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
-        echo "Added WebUI RootFolder=/qbittorrent/"
+      echo "[qBittorrent Init] Config file found, updating RootFolder..."
+      # Remove existing RootFolder if present
+      sed -i '/WebUI\\RootFolder/d' "$CONFIG_FILE"
+      # Add RootFolder under [Preferences] section
+      if grep -q "\[Preferences\]" "$CONFIG_FILE"; then
+        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent' "$CONFIG_FILE"
       else
-        # Update existing RootFolder
-        sed -i 's|WebUI\\RootFolder=.*|WebUI\\RootFolder=/qbittorrent/|' "$CONFIG_FILE"
-        echo "Updated WebUI RootFolder=/qbittorrent/"
+        echo -e "\n[Preferences]\nWebUI\\RootFolder=/qbittorrent" >> "$CONFIG_FILE"
       fi
+      echo "[qBittorrent Init] WebUI RootFolder set to /qbittorrent"
     else
-      echo "Config file not found after waiting"
+      echo "[qBittorrent Init] Config file not found yet, will be created on first run"
+      # Create initial config with RootFolder
+      cat > "$CONFIG_FILE" << EOF
+[Preferences]
+WebUI\\RootFolder=/qbittorrent
+EOF
+      echo "[qBittorrent Init] Created initial config with RootFolder=/qbittorrent"
     fi
