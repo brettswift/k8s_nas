@@ -38,7 +38,7 @@
         icon: prowlarr.png
 - Download:
     - qBittorrent:
-        href: https://home.brettswift.com/qbittorrent
+        href: https://qbittorrent.home.brettswift.com
         description: BitTorrent client
         icon: qbittorrent.png
     - Sabnzbd:

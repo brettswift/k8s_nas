@@ -1,5 +1,5 @@
-# NGINX Ingress for qBittorrent with sub_filter to rewrite HTML responses
-# This rewrites relative paths in HTML/CSS/JS to include /qbittorrent prefix
+# NGINX Ingress for qBittorrent using subdomain
+# Using subdomain avoids path rewriting issues
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,29 +8,17 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/priority: "2000"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      sub_filter 'href="css/' 'href="/qbittorrent/css/';
-      sub_filter 'href="images/' 'href="/qbittorrent/images/';
-      sub_filter 'href="scripts/' 'href="/qbittorrent/scripts/';
-      sub_filter 'src="css/' 'src="/qbittorrent/css/';
-      sub_filter 'src="images/' 'src="/qbittorrent/images/';
-      sub_filter 'src="scripts/' 'src="/qbittorrent/scripts/';
-      sub_filter 'action="' 'action="/qbittorrent';
-      sub_filter_once off;
-      sub_filter_types text/html text/css text/javascript application/javascript;
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - home.brettswift.com
+    - qbittorrent.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
-  - host: home.brettswift.com
+  - host: qbittorrent.home.brettswift.com
     http:
       paths:
-      - path: /qbittorrent
+      - path: /
         pathType: Prefix
         backend:
           service:
