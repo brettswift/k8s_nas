@@ -14,4 +14,4 @@ data:
   accounts.admin: login, apiKey
   # Base href for UI (must match ingress path)
   server.basehref: "/argocd/"
-
+  exec.enabled: "true"
