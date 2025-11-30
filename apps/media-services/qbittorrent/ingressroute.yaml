@@ -16,7 +16,9 @@ spec:
           port: 8080
       middlewares:
         - name: qbittorrent-stripprefix
+          namespace: qbittorrent
         - name: qbittorrent-redirect
+          namespace: qbittorrent
   tls:
     secretName: home-brettswift-com-tls
     namespace: kube-system
