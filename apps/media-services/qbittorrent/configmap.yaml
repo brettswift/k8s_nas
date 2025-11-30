@@ -28,9 +28,9 @@ data:
     else
       echo "[qBittorrent Init] Config file not found yet, will be created on first run"
       # Create initial config with RootFolder
-      cat > "$CONFIG_FILE" << EOF
-[Preferences]
-WebUI\\RootFolder=/qbittorrent
-EOF
+      cat > "$CONFIG_FILE" << 'EOFCONFIG'
+    [Preferences]
+    WebUI\RootFolder=/qbittorrent
+    EOFCONFIG
       echo "[qBittorrent Init] Created initial config with RootFolder=/qbittorrent"
     fi
