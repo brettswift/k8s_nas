@@ -9,8 +9,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/proxy-redirect-from: "/"
     nginx.ingress.kubernetes.io/proxy-redirect-to: "/qbittorrent/"
     nginx.ingress.kubernetes.io/priority: "100"
@@ -31,8 +30,8 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /qbittorrent(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /qbittorrent
+        pathType: Prefix
         backend:
           service:
             name: qbittorrent
