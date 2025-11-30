@@ -8,11 +8,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/priority: "1"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      if ($request_uri ~ ^/qbittorrent) {
-        return 404;
-      }
+    nginx.ingress.kubernetes.io/priority: "1000"
 spec:
   ingressClassName: nginx
   tls:
