@@ -113,6 +113,59 @@ spec:
           mountPath: /vuetorrent
         - name: custom-init-scripts
           mountPath: /custom-cont-init.d
+      initContainers:
+      - name: set-webui-password
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -eu
+          CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+          PASSWORD="${WEBUI_PASSWORD:-adminadmin}"
+          
+          # Wait for config directory to exist
+          for i in {1..30}; do
+            if [ -d "$(dirname "$CONFIG_FILE")" ]; then
+              break
+            fi
+            sleep 1
+          done
+          
+          # Create config file if it doesn't exist
+          if [ ! -f "$CONFIG_FILE" ]; then
+            mkdir -p "$(dirname "$CONFIG_FILE")"
+            echo "[Preferences]" > "$CONFIG_FILE"
+          fi
+          
+          # Ensure Preferences section exists
+          if ! grep -q "^\[Preferences\]" "$CONFIG_FILE"; then
+            echo "[Preferences]" >> "$CONFIG_FILE"
+          fi
+          
+          # Set WebUI password (qBittorrent stores it as plain text in config)
+          if grep -q "^WebUI\\\\Password=" "$CONFIG_FILE"; then
+            sed -i "s|^WebUI\\\\Password=.*|WebUI\\\\Password=${PASSWORD}|" "$CONFIG_FILE"
+          else
+            sed -i "/^\[Preferences\]/a WebUI\\\\Password=${PASSWORD}" "$CONFIG_FILE"
+          fi
+          
+          # Enable WebUI
+          if ! grep -q "^WebUI\\\\Enabled=" "$CONFIG_FILE"; then
+            sed -i "/^\[Preferences\]/a WebUI\\\\Enabled=true" "$CONFIG_FILE"
+          else
+            sed -i "s|^WebUI\\\\Enabled=.*|WebUI\\\\Enabled=true|" "$CONFIG_FILE"
+          fi
+          
+          echo "WebUI password configured"
+        env:
+        - name: WEBUI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qbittorrent-secrets
+              key: WEBUI_PASSWORD
+        volumeMounts:
+        - name: qbittorrent-config
+          mountPath: /config
       volumes:
       - name: custom-init-scripts
         configMap:
