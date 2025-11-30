@@ -20,11 +20,6 @@ metadata:
       proxy_set_header X-Forwarded-Prefix /qbittorrent;
       proxy_set_header X-Forwarded-PathBase /qbittorrent;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      sub_filter 'href="/' 'href="/qbittorrent/';
-      sub_filter 'src="/' 'src="/qbittorrent/';
-      sub_filter 'action="/' 'action="/qbittorrent/';
-      sub_filter_once off;
-      sub_filter_types text/html text/css text/javascript application/javascript;
 spec:
   ingressClassName: nginx
   tls:
