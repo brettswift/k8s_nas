@@ -95,6 +95,11 @@ spec:
           value: "America/Denver"
         - name: WEBUI_PORT
           value: "8080"
+        - name: WEBUI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qbittorrent-secrets
+              key: WEBUI_PASSWORD
         - name: QBITTORRENT_LOG_LEVEL
           value: "Info"
         volumeMounts:

@@ -13,6 +13,12 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/proxy-redirect-from: "/"
     nginx.ingress.kubernetes.io/proxy-redirect-to: "/qbittorrent/"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      sub_filter 'href="/' 'href="/qbittorrent/';
+      sub_filter 'src="/' 'src="/qbittorrent/';
+      sub_filter 'action="/' 'action="/qbittorrent/';
+      sub_filter_once off;
+      sub_filter_types text/html text/css text/javascript application/javascript;
 spec:
   ingressClassName: nginx
   tls:
