@@ -1,0 +1,29 @@
+# ArgoCD RBAC Configuration
+# Allows terminal access (exec on pods) for all users
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+data:
+  # Default policy: allow all actions for all users
+  policy.default: role:readonly
+  # Allow terminal access (exec on pods) for all users
+  policy.csv: |
+    p, role:admin, applications, *, */*, allow
+    p, role:admin, clusters, get, *, allow
+    p, role:admin, clusters, create, *, allow
+    p, role:admin, repositories, get, *, allow
+    p, role:admin, repositories, create, *, allow
+    p, role:admin, repositories, update, *, allow
+    p, role:admin, repositories, delete, *, allow
+    p, role:admin, logs, get, *, allow
+    p, role:admin, exec, create, *, allow
+    p, role:readonly, applications, get, *, allow
+    p, role:readonly, applications, sync, *, allow
+    p, role:readonly, clusters, get, *, allow
+    p, role:readonly, repositories, get, *, allow
+    p, role:readonly, logs, get, *, allow
+    p, role:readonly, exec, create, *, allow
+    g, *, role:admin
+

@@ -1,3 +1,4 @@
 resources:
   - ingress.yaml
   - argocd-cmd-params-cm.yaml
+  - argocd-rbac-cm.yaml
