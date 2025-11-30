@@ -10,17 +10,6 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/priority: "2000"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      # Rewrite relative paths in HTML responses
-      sub_filter 'href="css/' 'href="/qbittorrent/css/';
-      sub_filter 'href="images/' 'href="/qbittorrent/images/';
-      sub_filter 'href="scripts/' 'href="/qbittorrent/scripts/';
-      sub_filter 'src="css/' 'src="/qbittorrent/css/';
-      sub_filter 'src="images/' 'src="/qbittorrent/images/';
-      sub_filter 'src="scripts/' 'src="/qbittorrent/scripts/';
-      sub_filter 'action="' 'action="/qbittorrent';
-      sub_filter_once off;
-      sub_filter_types text/html text/css text/javascript application/javascript application/json;
 spec:
   ingressClassName: nginx
   tls:
