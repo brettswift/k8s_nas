@@ -1,0 +1,46 @@
+# qBittorrent Traefik IngressRoute
+# Uses Traefik middleware to handle subpath routing
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: qbittorrent-ingressroute
+  namespace: qbittorrent
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`home.brettswift.com`) && PathPrefix(`/qbittorrent`)
+      kind: Rule
+      services:
+        - name: qbittorrent
+          port: 8080
+      middlewares:
+        - name: qbittorrent-stripprefix
+        - name: qbittorrent-redirect
+  tls:
+    secretName: home-brettswift-com-tls
+    namespace: kube-system
+---
+# Middleware to strip /qbittorrent prefix
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: qbittorrent-stripprefix
+  namespace: qbittorrent
+spec:
+  stripPrefix:
+    prefixes:
+      - /qbittorrent
+---
+# Middleware to redirect /qbittorrent to /qbittorrent/
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: qbittorrent-redirect
+  namespace: qbittorrent
+spec:
+  redirectRegex:
+    regex: ^(.*)/qbittorrent$
+    replacement: ${1}/qbittorrent/
+    permanent: true
+
