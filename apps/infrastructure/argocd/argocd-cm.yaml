@@ -1,0 +1,12 @@
+# ArgoCD ConfigMap - Enable admin account
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  # Enable admin account
+  admin.enabled: "true"
+  # Allow all users to have admin role (for terminal access)
+  accounts.admin: "login, apiKey"
+
