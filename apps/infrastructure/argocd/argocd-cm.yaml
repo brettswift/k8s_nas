@@ -1,0 +1,14 @@
+# ArgoCD main configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  # Enable admin account
+  admin.enabled: "true"
+  # Admin account capabilities
+  accounts.admin: login, apiKey
+  # Base href for UI (must match ingress path)
+  server.basehref: "/argocd/"
+
