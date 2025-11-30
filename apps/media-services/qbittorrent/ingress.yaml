@@ -1,6 +1,3 @@
-# qBittorrent Ingress
-# Uses rewrite-target to strip /qbittorrent prefix
-# qBittorrent serves from root path
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,14 +8,15 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/proxy-redirect-from: "/"
-    nginx.ingress.kubernetes.io/proxy-redirect-to: "/qbittorrent/"
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      sub_filter 'href="/' 'href="/qbittorrent/';
-      sub_filter 'src="/' 'src="/qbittorrent/';
-      sub_filter 'action="/' 'action="/qbittorrent/';
-      sub_filter_once off;
-      sub_filter_types text/html text/css text/javascript application/javascript;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Forwarded-Port $server_port;
+      proxy_set_header X-Forwarded-Prefix /qbittorrent;
+      proxy_set_header X-Forwarded-PathBase /qbittorrent;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      # Ensure trailing slash so relative redirects work properly
+      if ($request_uri = /qbittorrent) { return 308 /qbittorrent/; }
 spec:
   ingressClassName: nginx
   tls:
@@ -30,7 +28,7 @@ spec:
     http:
       paths:
       - path: /qbittorrent(/|$)(.*)
-        pathType: ImplementationSpecific
+        pathType: Prefix
         backend:
           service:
             name: qbittorrent
