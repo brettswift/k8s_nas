@@ -17,8 +17,6 @@ spec:
       middlewares:
         - name: qbittorrent-stripprefix
           namespace: qbittorrent
-        - name: qbittorrent-redirect
-          namespace: qbittorrent
   tls:
     secretName: home-brettswift-com-tls
     namespace: kube-system
