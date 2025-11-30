@@ -54,6 +54,16 @@ spec:
           mountPath: /media
         - name: dev-dri
           mountPath: /dev/dri
+        - name: dev-nvidia0
+          mountPath: /dev/nvidia0
+        - name: dev-nvidiactl
+          mountPath: /dev/nvidiactl
+        - name: dev-nvidia-modeset
+          mountPath: /dev/nvidia-modeset
+        - name: dev-nvidia-uvm
+          mountPath: /dev/nvidia-uvm
+        - name: dev-nvidia-uvm-tools
+          mountPath: /dev/nvidia-uvm-tools
       initContainers:
       - name: apply-xml-overrides
         image: alpine:latest
@@ -106,6 +116,21 @@ spec:
         hostPath:
           path: /dev/dri
           type: Directory
+      - name: dev-nvidia0
+        hostPath:
+          path: /dev/nvidia0
+      - name: dev-nvidiactl
+        hostPath:
+          path: /dev/nvidiactl
+      - name: dev-nvidia-modeset
+        hostPath:
+          path: /dev/nvidia-modeset
+      - name: dev-nvidia-uvm
+        hostPath:
+          path: /dev/nvidia-uvm
+      - name: dev-nvidia-uvm-tools
+        hostPath:
+          path: /dev/nvidia-uvm-tools
       - name: network-seed
         configMap:
           name: jellyfin-network-config
