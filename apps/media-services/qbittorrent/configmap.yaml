@@ -3,32 +3,32 @@ kind: ConfigMap
 metadata:
   name: qbittorrent-init-scripts
   namespace: qbittorrent
-# data:
-#   10-set-webui-rootfolder.sh: |
-#     #!/bin/bash
-#     CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+data:
+  10-set-webui-rootfolder.sh: |
+    #!/bin/bash
+    CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
     
-#     # Wait for qBittorrent to create the config file
-#     echo "Waiting for qBittorrent config file..."
-#     for i in {1..60}; do
-#       if [ -f "$CONFIG_FILE" ]; then
-#         echo "Config file found, setting RootFolder..."
-#         break
-#       fi
-#       sleep 1
-#     done
+    # Wait for qBittorrent to create the config file
+    echo "Waiting for qBittorrent config file..."
+    for i in {1..60}; do
+      if [ -f "$CONFIG_FILE" ]; then
+        echo "Config file found, setting RootFolder..."
+        break
+      fi
+      sleep 1
+    done
     
-#     if [ -f "$CONFIG_FILE" ]; then
-#       # Check if RootFolder is already set
-#       if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
-#         # Add RootFolder under [Preferences] section
-#         sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
-#         echo "Added WebUI RootFolder=/qbittorrent/"
-#       else
-#         # Update existing RootFolder
-#         sed -i 's|WebUI\\RootFolder=.*|WebUI\\RootFolder=/qbittorrent/|' "$CONFIG_FILE"
-#         echo "Updated WebUI RootFolder=/qbittorrent/"
-#       fi
-#     else
-#       echo "Config file not found after waiting"
-#     fi
+    if [ -f "$CONFIG_FILE" ]; then
+      # Check if RootFolder is already set
+      if ! grep -q "WebUI.RootFolder" "$CONFIG_FILE"; then
+        # Add RootFolder under [Preferences] section
+        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent/' "$CONFIG_FILE"
+        echo "Added WebUI RootFolder=/qbittorrent/"
+      else
+        # Update existing RootFolder
+        sed -i 's|WebUI\\RootFolder=.*|WebUI\\RootFolder=/qbittorrent/|' "$CONFIG_FILE"
+        echo "Updated WebUI RootFolder=/qbittorrent/"
+      fi
+    else
+      echo "Config file not found after waiting"
+    fi
