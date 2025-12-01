@@ -6,7 +6,8 @@
     - ArgoCD:
         href: https://home.brettswift.com/argocd
         description: GitOps deployment platform
-        icon: argocd.png
+        icon: https://logo.svgcdn.com/devicon/argocd-original.svg
+        logo: https://logo.svgcdn.com/devicon/argocd-original.svg
         widget:
             type: argocd
             url: http://argocd-server.argocd.svc.cluster.local/argocd
