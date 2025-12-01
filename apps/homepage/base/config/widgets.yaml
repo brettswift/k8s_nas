@@ -1,6 +1,8 @@
 - resources:
     cpu: true
     memory: true
+    disk:
+    - /data
 
 - kubernetes:
     cluster:

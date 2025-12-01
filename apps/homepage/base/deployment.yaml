@@ -35,9 +35,15 @@ spec:
           mountPath: /app/config
         - name: logs
           mountPath: /app/config/logs
+        - name: data
+          mountPath: /data
       volumes:
       - name: config
         configMap:
           name: homepage-config
       - name: logs
         emptyDir: {}
+      - name: data
+        hostPath:
+          path: /mnt/data
+          type: Directory
