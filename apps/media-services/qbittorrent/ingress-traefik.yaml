@@ -14,6 +14,7 @@ spec:
   - hosts:
     - qbittorrent.home.brettswift.com
     secretName: home-brettswift-com-tls
+    # Note: Secret must exist in the same namespace as the ingress
   rules:
   - host: qbittorrent.home.brettswift.com
     http:
