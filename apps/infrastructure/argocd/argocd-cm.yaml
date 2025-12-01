@@ -12,6 +12,8 @@ data:
   admin.enabled: "true"
   # Admin account capabilities
   accounts.admin: login, apiKey
+  # Homepage monitoring user - apiKey only (no login)
+  accounts.homepage: apiKey
   # Base href for UI (must match ingress path)
   server.basehref: "/argocd/"
   exec.enabled: "true"

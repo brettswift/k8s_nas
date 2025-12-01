@@ -26,4 +26,6 @@ data:
     p, role:readonly, logs, get, *, allow
     p, role:readonly, exec, create, *, allow
     g, *, role:admin
+    # Homepage user gets readonly role
+    g, homepage, role:readonly
 
