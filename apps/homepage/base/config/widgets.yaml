@@ -24,3 +24,8 @@
       memory: true
       # Shows the label, which is always the node name
       showLabel: true
+
+- argocd:
+    url: http://argocd-server.argocd.svc.cluster.local/argocd
+    key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcmdvY2QiLCJzdWIiOiJob21lcGFnZTphcGlLZXkiLCJuYmYiOjE3NjQ1NjU3OTIsImlhdCI6MTc2NDU2NTc5MiwianRpIjoiMWUwNDA3MjktYjYzOS00OGVkLTg4YmEtYTc2YTdhOTVjOTcwIn0.McBxRrYT4rth1CDKi-XqcUXIhW_DsS9kf83jHzxTUwY
+    refreshInterval: 10000
