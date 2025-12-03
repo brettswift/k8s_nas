@@ -10,7 +10,10 @@ resources:
   - cert-sync-serviceaccount.yaml
   - cert-sync-cronjob.yaml
   # Route53 credentials sync (copies route53-credentials to external-dns namespace)
+  # - CronJob runs every 6 hours (scheduled sync)
   - route53-sync-cronjob.yaml
+  # - ArgoCD hook runs on sync (immediate sync when changes are deployed)
+  - route53-sync-hook.yaml
   # HTTP-01 challenge (won't work with private IP) - keeping for reference
   # - clusterissuer-http.yaml
   # - certificate-http.yaml
