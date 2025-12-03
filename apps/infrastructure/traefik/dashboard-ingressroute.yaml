@@ -9,6 +9,7 @@ metadata:
   namespace: kube-system
   annotations:
     external-dns.alpha.kubernetes.io/hostname: traefik.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
   entryPoints:
     - websecure
