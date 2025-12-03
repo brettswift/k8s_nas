@@ -11,7 +11,8 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: cert-sync-sa
+          serviceAccountName: default
+          # Using default service account - ensure it has permissions to get/apply secrets
           restartPolicy: OnFailure
           containers:
           - name: sync-secret
