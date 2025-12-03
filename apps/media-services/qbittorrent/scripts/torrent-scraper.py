@@ -209,13 +209,13 @@ def send_ntfy_notification(torrent_name, race_name=None):
         message = race_name if race_name else torrent_name
         title = "F1 Torrent Found" if race_name else "F1 Torrent Added"
         
-        # Send to ntfy.sh
+        # Send to ntfy.sh (matching curl syntax: -H "Title: ..." -H "Tags: ..." -d "...")
         response = requests.post(
             f"https://ntfy.sh/{NTFY_TOPIC}",
             data=message.encode('utf-8'),
             headers={
                 "Title": title,
-                "Tags": "racing_car,formula1"
+                "Tags": "formula1"
             },
             timeout=10
         )

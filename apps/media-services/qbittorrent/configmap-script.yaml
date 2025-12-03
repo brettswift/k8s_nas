@@ -133,8 +133,8 @@ data:
     \ Send to ntfy.sh (matching curl syntax: -H \"Title: ...\" -H \"Tags: ...\" -d\
     \ \"...\")\n        response = requests.post(\n            f\"https://ntfy.sh/{NTFY_TOPIC}\"\
     ,\n            data=message.encode('utf-8'),\n            headers={\n        \
-    \        \"Title\": title,\n                \"Tags\": \"racing_car,formula1\"\n\
-    \            },\n            timeout=10\n        )\n        response.raise_for_status()\n\
+    \        \"Title\": title,\n                \"Tags\": \"formula1\"\n         \
+    \   },\n            timeout=10\n        )\n        response.raise_for_status()\n\
     \        logger.info(f\"Sent ntfy notification: {title} - {message}\")\n    except\
     \ Exception as e:\n        logger.warning(f\"Failed to send ntfy notification:\
     \ {e}\", exc_info=True)\n\ndef add_torrent_to_qbit(magnet_link):\n    \"\"\"Add\
