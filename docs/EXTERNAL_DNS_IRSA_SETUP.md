@@ -1,6 +1,8 @@
-# External DNS with IAM Roles (IRSA)
+# External DNS with IAM Roles
 
-External DNS can use IAM roles instead of storing credentials in secrets. This is more secure and follows AWS best practices.
+**Note: IRSA (IAM Roles for Service Accounts) is EKS-specific and won't work on k3s.**
+
+However, if your k3s nodes are EC2 instances, you can use instance profiles (IAM roles attached to EC2 instances).
 
 ## Option 1: Instance Profile (if k3s runs on EC2)
 

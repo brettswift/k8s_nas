@@ -33,22 +33,23 @@ spec:
         env:
         - name: AWS_DEFAULT_REGION
           value: us-west-2
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: route53-credentials
+              key: secret-access-key
         - name: AWS_HOSTED_ZONE_ID
           value: Z1A5BHLIT8EGDS
-        # AWS Credentials: Use IAM role (if available) or fall back to secrets
-        # Option 1: IAM Role (preferred) - if nodes have instance profile, remove these env vars
-        # Option 2: Secrets (current) - uncomment below to use secrets
-        # - name: AWS_SECRET_ACCESS_KEY
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: route53-credentials
-        #       key: secret-access-key
-        # - name: AWS_ACCESS_KEY_ID
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: route53-credentials
-        #       key: access-key-id
-        #       optional: true
+        # AWS_ACCESS_KEY_ID - get from ClusterIssuer or set manually
+        # Run: ./scripts/setup-external-dns-credentials.sh
+        # Note: IRSA doesn't work on k3s (EKS-only feature)
+        # If running on EC2, could use instance profiles instead of secrets
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: route53-credentials
+              key: access-key-id
+              optional: true
         securityContext:
           runAsNonRoot: true
           runAsUser: 65534
