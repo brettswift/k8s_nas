@@ -21,6 +21,7 @@ spec:
         image: registry.k8s.io/external-dns/external-dns:v0.14.0
         args:
         - --source=ingress
+        - --source=traefik-proxy
         - --domain-filter=home.brettswift.com
         - --provider=aws
         - --aws-zone-type=public
@@ -29,6 +30,7 @@ spec:
         - --txt-prefix=external-dns-
         - --log-format=json
         - --log-level=info
+        - --request-timeout=120s
         env:
         - name: AWS_DEFAULT_REGION
           value: us-west-2
