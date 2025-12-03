@@ -37,18 +37,15 @@ spec:
           valueFrom:
             secretKeyRef:
               name: route53-credentials
-              namespace: cert-manager
               key: secret-access-key
         - name: AWS_HOSTED_ZONE_ID
           value: Z1A5BHLIT8EGDS
-        # AWS_ACCESS_KEY_ID needs to be patched manually (same as cert-manager ClusterIssuer)
-        # Run: kubectl patch secret route53-credentials -n cert-manager --type=json \
-        #   -p='[{"op": "add", "path": "/data/access-key-id", "value": "'$(echo -n "YOUR_ACCESS_KEY_ID" | base64)'"}]'
+        # AWS_ACCESS_KEY_ID - get from ClusterIssuer or set manually
+        # Run: ./scripts/setup-external-dns-credentials.sh
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
               name: route53-credentials
-              namespace: cert-manager
               key: access-key-id
               optional: true
         securityContext:
