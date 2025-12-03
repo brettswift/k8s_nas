@@ -14,15 +14,19 @@ echo "   This will be automatically synced to other namespaces (e.g., external-d
 echo ""
 
 # Get AWS credentials (from environment or prompt)
+echo "Enter AWS Access Key ID:"
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-  echo "Enter AWS Access Key ID:"
   read -r AWS_ACCESS_KEY_ID
+else
+  echo "  (using AWS_ACCESS_KEY_ID from environment)"
 fi
 
+echo "Enter AWS Secret Access Key:"
 if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-  echo "Enter AWS Secret Access Key:"
   read -s AWS_SECRET_ACCESS_KEY
   echo ""
+else
+  echo "  (using AWS_SECRET_ACCESS_KEY from environment)"
 fi
 
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
