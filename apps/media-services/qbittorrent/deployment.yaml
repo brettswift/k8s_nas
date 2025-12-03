@@ -23,10 +23,16 @@ spec:
         - |
           chmod +x /scripts/on-torrent-added.sh
           chmod +x /scripts/torrent-scraper.py
-          echo "Script permissions set"
+          chmod +x /scripts/notify_f1.sh
+          # Copy notify_f1.sh to /config so it's accessible for qBittorrent completion hook
+          cp /scripts/notify_f1.sh /config/notify_f1.sh
+          chmod +x /config/notify_f1.sh
+          echo "Script permissions set and notify_f1.sh copied to /config"
         volumeMounts:
         - name: qbittorrent-scripts
           mountPath: /scripts
+        - name: qbittorrent-config
+          mountPath: /config
       containers:
       - name: vpn
         image: qmcgaw/gluetun:latest
