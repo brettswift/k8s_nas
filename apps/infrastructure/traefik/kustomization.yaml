@@ -1,3 +1,4 @@
 resources:
   - tlsstore.yaml
+  - dashboard-ingressroute.yaml
 
