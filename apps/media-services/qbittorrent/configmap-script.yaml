@@ -130,7 +130,8 @@ data:
     \    \n    try:\n        # Use race name if parsed, otherwise use torrent name\n\
     \        message = race_name if race_name else torrent_name\n        title = \"\
     F1 Torrent Found\" if race_name else \"F1 Torrent Added\"\n        \n        #\
-    \ Send to ntfy.sh\n        response = requests.post(\n            f\"https://ntfy.sh/{NTFY_TOPIC}\"\
+    \ Send to ntfy.sh (matching curl syntax: -H \"Title: ...\" -H \"Tags: ...\" -d\
+    \ \"...\")\n        response = requests.post(\n            f\"https://ntfy.sh/{NTFY_TOPIC}\"\
     ,\n            data=message.encode('utf-8'),\n            headers={\n        \
     \        \"Title\": title,\n                \"Tags\": \"racing_car,formula1\"\n\
     \            },\n            timeout=10\n        )\n        response.raise_for_status()\n\
