@@ -29,7 +29,7 @@ spec:
         - --txt-owner-id=external-dns
         - --txt-prefix=external-dns-
         - --log-format=json
-        - --log-level=info
+        - --log-level=debug
         - --request-timeout=120s
         env:
         - name: AWS_DEFAULT_REGION
