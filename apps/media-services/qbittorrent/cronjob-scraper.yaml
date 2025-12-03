@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: qbittorrent-scraper
+  name: qbittorrent-f1-scraper
   namespace: qbittorrent
 spec:
   # Run hourly from 7am-7pm Mountain Time, Thursday through Sunday
