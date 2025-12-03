@@ -48,12 +48,9 @@ spec:
               # Clear pip cache and write new version
               rm -rf "$PIP_CACHE_DIR"
               mkdir -p "$PIP_CACHE_DIR"
-              # Set permissions - make directory and parent writable
-              chmod -R 777 "$CACHE_DIR"
-              # Ensure pip can write (runs as root in alpine, but be explicit)
-              chown -R root:root "$CACHE_DIR" 2>/dev/null || true
+              # Note: Don't chmod PVC-mounted volumes - permissions are set by the storage class
+              # The pip cache directory will be writable by the container user
               echo "$CURRENT_UID" > "$VERSION_FILE"
-              chmod 666 "$VERSION_FILE"
               echo "Cache cleared and version updated"
             volumeMounts:
             - name: pip-cache
@@ -67,10 +64,10 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Ensure pip cache directory exists and is writable
+              # Ensure pip cache directory exists
               mkdir -p /cache/pip
-              chmod 777 /cache/pip 2>/dev/null || true
-              pip install --quiet requests --cache-dir /cache/pip
+              # Install requests (pip will use cache if writable, otherwise will work without cache)
+              pip install --quiet requests --cache-dir /cache/pip || pip install --quiet requests
               python3 /scripts/torrent-scraper.py
             env:
             - name: TZ
