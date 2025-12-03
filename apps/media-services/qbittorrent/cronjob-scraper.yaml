@@ -4,8 +4,8 @@ metadata:
   name: qbittorrent-scraper
   namespace: qbittorrent
 spec:
-  # Run every hour at minute 0
-  schedule: "0 * * * *"
+  # Run hourly from 7am-7pm Mountain Time, Thursday through Sunday
+  schedule: "0 7-19 * * 0,4,5,6"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
@@ -66,6 +66,8 @@ spec:
               pip install --quiet requests --cache-dir /cache/pip
               python3 /scripts/torrent-scraper.py
             env:
+            - name: TZ
+              value: "America/Denver"
             - name: SCRAPE_URL
               value: "https://apibay.org/q.php?q=user:smcgill1969"
             - name: QBT_URL
