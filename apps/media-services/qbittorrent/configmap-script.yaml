@@ -235,3 +235,38 @@ data:
     \  break\n        \n        # Wait before next check (only in sidecar mode)\n\
     \        logger.info(f\"Sleeping for {CHECK_INTERVAL}s...\")\n        time.sleep(CHECK_INTERVAL)\n\
     \nif __name__ == \"__main__\":\n    main()\n\n"
+  notify_f1.sh: "#!/usr/bin/env bash\n# qBittorrent completion hook: Notify on F1\
+    \ torrent completion\n#\n# CONFIGURATION IN qBittorrent WEB UI:\n# 1. Go to Tools\
+    \ → Options → Downloads\n# 2. Check \"Run external program on torrent completion\"\
+    \n# 3. Paste this into the text field:\n#    /config/notify_f1.sh \"%N\" \"%I\"\
+    \ \"%L\"\n#\n# VARIABLES PROVIDED BY qBittorrent:\n#   %N = Torrent name\n#  \
+    \ %I = Info hash\n#   %L = Save path\n#   %F = Content path\n#   %R = Root path\n\
+    #   %D = Torrent save path\n#   %C = Number of files\n#   %Z = Torrent size (bytes)\n\
+    #   %T = Current tracker\n#   %G = Torrent tags (comma separated)\n#\n# SCRIPT\
+    \ LOCATION: /config/notify_f1.sh\n\nset -euo pipefail\n\n# Configuration\nNTFY_TOPIC=\"\
+    bswift_general\"\nSCRIPT_PATH=\"/config/notify_f1.sh\"\n\n# Get arguments from\
+    \ qBittorrent\nTORRENT_NAME=\"${1:-}\"\nTORRENT_HASH=\"${2:-}\"\nSAVE_PATH=\"\
+    ${3:-}\"\n\n# Log function (optional, for debugging)\nlog() {\n    echo \"[$(date\
+    \ '+%Y-%m-%d %H:%M:%S')] $*\" >> /config/notify_f1.log 2>&1 || true\n}\n\nlog\
+    \ \"Torrent completed: $TORRENT_NAME\"\n\n# Check if torrent name is provided\n\
+    if [ -z \"$TORRENT_NAME\" ]; then\n    log \"ERROR: No torrent name provided\"\
+    \n    exit 1\nfi\n\n# Filter for F1 torrents (case-insensitive)\n# Match: formula1,\
+    \ formula.1, FORMULA1, ForMulA1, etc.\nshopt -s nocasematch\nif [[ ! \"$TORRENT_NAME\"\
+    \ =~ formula1|formula\\.1 ]]; then\n    log \"Not an F1 torrent, skipping notification:\
+    \ $TORRENT_NAME\"\n    exit 0\nfi\n\nlog \"F1 torrent detected, sending notification:\
+    \ $TORRENT_NAME\"\n\n# Parse race info from torrent name (optional enhancement)\n\
+    # Format: Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG\nRACE_INFO=$(echo \"$TORRENT_NAME\"\
+    \ | grep -oE 'Formula\\.1\\.[0-9]+x[0-9]+\\.[^.]+\\.([^.]+)' | cut -d'.' -f4-5\
+    \ | tr '.' ' -' 2>/dev/null || echo \"\")\n\n# Build notification message\nif\
+    \ [ -n \"$RACE_INFO\" ]; then\n    # Try to extract country and event type\n \
+    \   COUNTRY=$(echo \"$RACE_INFO\" | cut -d' ' -f1 2>/dev/null || echo \"\")\n\
+    \    EVENT_TYPE=$(echo \"$RACE_INFO\" | cut -d' ' -f2 2>/dev/null || echo \"\"\
+    )\n    \n    if [ -n \"$COUNTRY\" ] && [ -n \"$EVENT_TYPE\" ]; then\n        MESSAGE=\"\
+    $COUNTRY - $EVENT_TYPE\"\n        TITLE=\"F1 Torrent Completed\"\n    else\n \
+    \       MESSAGE=\"$TORRENT_NAME\"\n        TITLE=\"F1 Torrent Completed\"\n  \
+    \  fi\nelse\n    MESSAGE=\"$TORRENT_NAME\"\n    TITLE=\"F1 Torrent Completed\"\
+    \nfi\n\n# Send notification to ntfy.sh\ncurl -s \\\n    -H \"Title: $TITLE\" \\\
+    \n    -H \"Tags: formula1\" \\\n    -d \"$MESSAGE\" \\\n    \"https://ntfy.sh/$NTFY_TOPIC\"\
+    \ > /dev/null 2>&1\n\nif [ $? -eq 0 ]; then\n    log \"Notification sent successfully:\
+    \ $MESSAGE\"\nelse\n    log \"ERROR: Failed to send notification\"\n    exit 1\n\
+    fi\n\nexit 0\n\n"
