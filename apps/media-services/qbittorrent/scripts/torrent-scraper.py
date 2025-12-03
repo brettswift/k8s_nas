@@ -187,27 +187,36 @@ def save_state_to_file(state, state_file):
         logger.warning(f"Failed to save state: {e}", exc_info=True)
         return False
 
-def parse_race_name(torrent_name):
+def parse_race_info(torrent_name):
     """
-    Extract race name from torrent name.
+    Extract race name and event type from torrent name.
     Format: Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG
-    Returns: "USA" or None if can't parse
+    Format: Formula.1.2025x22.USA.Practice.SkyF1UHD.4K-HLG
+    Format: Formula.1.2025x22.USA.Qualifying.SkyF1UHD.4K-HLG
+    Returns: (country, event_type) tuple or (None, None) if can't parse
     """
-    # Pattern: Formula.1.YYYYxNN.Country.Race...
-    match = re.search(r'Formula\.1\.\d+x\d+\.([^.]+)\.Race', torrent_name, re.IGNORECASE)
+    # Pattern: Formula.1.YYYYxNN.Country.EventType...
+    # Event types: Race, Practice, Qualifying, Sprint, Sprint.Qualifying, etc.
+    match = re.search(r'Formula\.1\.\d+x\d+\.([^.]+)\.([^.]+)', torrent_name, re.IGNORECASE)
     if match:
-        return match.group(1)
-    return None
+        country = match.group(1)
+        event_type = match.group(2)
+        return (country, event_type)
+    return (None, None)
 
-def send_ntfy_notification(torrent_name, race_name=None):
+def send_ntfy_notification(torrent_name, country=None, event_type=None):
     """Send notification to ntfy.sh when F1 torrent is found"""
     if not NTFY_TOPIC:
         return
     
     try:
-        # Use race name if parsed, otherwise use torrent name
-        message = race_name if race_name else torrent_name
-        title = "F1 Torrent Found" if race_name else "F1 Torrent Added"
+        # Build message: "Country - EventType" if parsed, otherwise use torrent name
+        if country and event_type:
+            message = f"{country} - {event_type}"
+            title = "F1 Torrent Found"
+        else:
+            message = torrent_name
+            title = "F1 Torrent Added"
         
         # Send to ntfy.sh (matching curl syntax: -H "Title: ..." -H "Tags: ..." -d "...")
         response = requests.post(
@@ -319,8 +328,8 @@ def process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
     
     # Send ntfy notification (only in production mode)
     if not TEST_MODE:
-        race_name = parse_race_name(torrent_name)
-        send_ntfy_notification(torrent_name, race_name)
+        country, event_type = parse_race_info(torrent_name)
+        send_ntfy_notification(torrent_name, country, event_type)
     
     # Update state and save immediately
     add_torrent_to_state(magnet_link, state)
