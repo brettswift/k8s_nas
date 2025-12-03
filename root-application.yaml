@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: git@github.com:brettswift/k8s_nas.git
     path: argocd/applicationsets
-    targetRevision: new-argo
+    targetRevision: live
     directory:
       recurse: true
   destination:
