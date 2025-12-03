@@ -5,5 +5,4 @@ resources:
 - configmap.yaml
 - configmap-script.yaml
 - cronjob-scraper.yaml
-- pvc-pip-cache.yaml
 
