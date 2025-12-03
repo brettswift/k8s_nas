@@ -204,21 +204,14 @@ Same steps, but:
 4. **Best Practice Settings (Advanced):**
    - ✅ **Remove Completed Downloads:** Yes
      - *Automatically removes torrents from qBittorrent after Sonarr imports them*
+     - ⚠️ **Note:** This setting is in **Sonarr/Radarr**, not in qBittorrent
+     - Location: Sonarr/Radarr → Settings → Download Clients → qBittorrent → **Remove Completed Downloads**
    - ✅ **Remove Failed Downloads:** Yes
      - *Removes failed downloads to keep qBittorrent clean*
-   - **Priority:** `1` (Normal) or `0` (Highest)
-     - *Lower number = higher priority. Use 1 for normal, 0 if you want qBittorrent downloads prioritized*
-   - **Initial State:** `Start` (or `Pause` if you want manual control)
-     - *`Start` = downloads begin immediately*
-     - *`Pause` = requires manual start in qBittorrent*
+     - ⚠️ **Note:** This setting is in **Sonarr/Radarr**, not in qBittorrent
+     - Location: Sonarr/Radarr → Settings → Download Clients → qBittorrent → **Remove Failed Downloads**
 
-5. **Remote Path Mappings:**
-   - **Usually NOT needed** - qBittorrent and Sonarr both use `/downloads` → `/mnt/data/downloads`
-   - If paths differ, add mapping:
-     - **Remote Path:** `/downloads` (how qBittorrent sees it)
-     - **Local Path:** `/downloads` (how Sonarr sees it)
-
-6. **Test** → **Save**
+5. **Test** → **Save**
 
 #### Radarr → qBittorrent
 
@@ -231,27 +224,34 @@ Same steps as Sonarr, but:
 Same steps, but:
 - **Category:** `music` (or `lidarr`)
 
-#### qBittorrent Download Directory Configuration
+#### qBittorrent Configuration
 
-**Important:** Before configuring Sonarr/Radarr, ensure qBittorrent is configured to save downloads to the correct path.
+**Important:** Configure qBittorrent before setting up Sonarr/Radarr download clients.
 
 1. **Go to qBittorrent UI:**
    - URL: `https://qbittorrent.home.brettswift.com`
 
-2. **Navigate to Download Settings:**
+2. **WebUI Settings:**
+   - **Tools** → **Options** → **WebUI**
+   - Set up VueTorrent (if using VueTorrent UI)
+   - Configure WebUI preferences
+
+3. **Behaviour Settings:**
+   - **Tools** → **Options** → **Behaviour**
+   - **Logs Location:** `/downloads`
+     - ⚠️ **Important:** Use `/downloads` (container path, not host path)
+     - This keeps logs accessible and organized
+
+4. **Downloads Settings:**
    - **Tools** → **Options** → **Downloads**
-
-3. **Set Default Save Path:**
    - **Default Save Path:** `/downloads`
-   - ⚠️ **Critical:** Use `/downloads` (the container path, not the host path)
-   - This maps to `/mnt/data/downloads` on the host
-   - Both qBittorrent and Sonarr/Radarr mount this same path, so they can share downloads
-
-4. **Optional - Category-Specific Paths:**
-   - If you want organized downloads, you can set category paths:
-     - **Category:** `tv` → **Save Path:** `/downloads/tv`
-     - **Category:** `movies` → **Save Path:** `/downloads/movies`
-   - **Note:** This is optional - Sonarr/Radarr will organize files after import anyway
+     - ⚠️ **Critical:** Use `/downloads` (the container path, not the host path)
+     - This maps to `/mnt/data/downloads` on the host
+     - Both qBittorrent and Sonarr/Radarr mount this same path, so they can share downloads
+   - **Saving Management:**
+     - **Default Torrent Management Mode:** `Manual` (recommended)
+       - ✅ **Keep as Manual** - This allows Sonarr/Radarr to manage torrents
+       - ❌ **Do NOT set to Automatic** - Automatic mode can interfere with Sonarr/Radarr's torrent management
 
 5. **Save Configuration:**
    - Click **OK** to save
