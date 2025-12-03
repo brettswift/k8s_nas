@@ -22,6 +22,7 @@ ENVIRONMENT VARIABLES:
     SAVE_PATH           - Save/download path for torrents (default: /data/media/formula1)
     MAX_AGE_DAYS        - Only add torrents added within last N days (default: 7)
     SEQUENTIAL_DOWNLOAD - Enable sequential download (default: true)
+    NTFY_TOPIC          - ntfy.sh topic for notifications (default: bswift_general)
 
 FILTERING:
     Only adds torrents matching: Formula.1.*4K-HLG or Formula.1.*UHD (case-insensitive)
@@ -64,6 +65,7 @@ CATEGORY = os.getenv("CATEGORY", "formula1")
 SAVE_PATH = os.getenv("SAVE_PATH", "/data/media/formula1")
 MAX_AGE_DAYS = int(os.getenv("MAX_AGE_DAYS", "7"))  # Only add torrents from last week
 SEQUENTIAL_DOWNLOAD = os.getenv("SEQUENTIAL_DOWNLOAD", "true").lower() == "true"
+NTFY_TOPIC = os.getenv("NTFY_TOPIC", "bswift_general")
 
 # Setup logging to both file and stdout
 def setup_logging(log_file):
@@ -185,6 +187,43 @@ def save_state_to_file(state, state_file):
         logger.warning(f"Failed to save state: {e}", exc_info=True)
         return False
 
+def parse_race_name(torrent_name):
+    """
+    Extract race name from torrent name.
+    Format: Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG
+    Returns: "USA" or None if can't parse
+    """
+    # Pattern: Formula.1.YYYYxNN.Country.Race...
+    match = re.search(r'Formula\.1\.\d+x\d+\.([^.]+)\.Race', torrent_name, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return None
+
+def send_ntfy_notification(torrent_name, race_name=None):
+    """Send notification to ntfy.sh when F1 torrent is found"""
+    if not NTFY_TOPIC:
+        return
+    
+    try:
+        # Use race name if parsed, otherwise use torrent name
+        message = race_name if race_name else torrent_name
+        title = "F1 Torrent Found" if race_name else "F1 Torrent Added"
+        
+        # Send to ntfy.sh
+        response = requests.post(
+            f"https://ntfy.sh/{NTFY_TOPIC}",
+            data=message.encode('utf-8'),
+            headers={
+                "Title": title,
+                "Tags": "racing_car,formula1"
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        logger.info(f"Sent ntfy notification: {title} - {message}")
+    except Exception as e:
+        logger.warning(f"Failed to send ntfy notification: {e}", exc_info=True)
+
 def add_torrent_to_qbit(magnet_link):
     """Add torrent to qBittorrent via Web API"""
     try:
@@ -277,6 +316,11 @@ def process_torrent(magnet_link, torrent_name, info_hash, state, state_file):
         logger.info(f"Configured torrent: category={CATEGORY}, path={SAVE_PATH}, sequential={SEQUENTIAL_DOWNLOAD}")
     else:
         logger.warning(f"Failed to configure torrent (may still work): {torrent_name}")
+    
+    # Send ntfy notification (only in production mode)
+    if not TEST_MODE:
+        race_name = parse_race_name(torrent_name)
+        send_ntfy_notification(torrent_name, race_name)
     
     # Update state and save immediately
     add_torrent_to_state(magnet_link, state)

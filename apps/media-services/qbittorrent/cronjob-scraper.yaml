@@ -92,6 +92,8 @@ spec:
               value: "7"  # Only add torrents added within last week
             - name: SEQUENTIAL_DOWNLOAD
               value: "true"
+            - name: NTFY_TOPIC
+              value: "bswift_general"
             resources:
               requests:
                 cpu: "50m"
