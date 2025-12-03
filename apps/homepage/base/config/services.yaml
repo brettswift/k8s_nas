@@ -56,7 +56,7 @@
         icon: flaresolverr.png
 - System:
     - Traefik:
-        href: https://home.brettswift.com/traefik
+        href: https://traefik.home.brettswift.com/dashboard/
         description: Ingress controller dashboard
         icon: traefik.png
     - Prometheus:

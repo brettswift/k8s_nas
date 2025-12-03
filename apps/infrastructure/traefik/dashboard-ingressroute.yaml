@@ -1,6 +1,6 @@
 # Traefik Dashboard IngressRoute
-# Exposes the Traefik dashboard at home.brettswift.com/traefik
-# The dashboard serves /api and /dashboard paths - we strip /traefik prefix
+# Exposes the Traefik dashboard at traefik.home.brettswift.com
+# Uses subdomain routing (cleaner than path-based)
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -11,35 +11,18 @@ spec:
     - websecure
   routes:
     # Route for /api endpoints
-    - match: Host(`home.brettswift.com`) && PathPrefix(`/traefik/api`)
+    - match: Host(`traefik.home.brettswift.com`) && PathPrefix(`/api`)
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
-      middlewares:
-        - name: traefik-dashboard-stripprefix
-          namespace: kube-system
     # Route for /dashboard
-    - match: Host(`home.brettswift.com`) && PathPrefix(`/traefik/dashboard`)
+    - match: Host(`traefik.home.brettswift.com`) && PathPrefix(`/dashboard`)
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
-      middlewares:
-        - name: traefik-dashboard-stripprefix
-          namespace: kube-system
   tls:
     secretName: home-brettswift-com-tls
     namespace: kube-system
----
-# Middleware to strip /traefik prefix
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: traefik-dashboard-stripprefix
-  namespace: kube-system
-spec:
-  stripPrefix:
-    prefixes:
-      - /traefik
 
