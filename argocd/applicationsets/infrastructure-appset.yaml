@@ -12,7 +12,7 @@ spec:
   project: infrastructure
   source:
     repoURL: git@github.com:brettswift/k8s_nas.git
-    targetRevision: new-argo
+    targetRevision: dev
     path: apps/infrastructure
   destination:
     server: https://kubernetes.default.svc
