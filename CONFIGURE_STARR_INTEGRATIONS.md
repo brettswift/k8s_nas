@@ -190,7 +190,7 @@ Same steps, but:
 
 1. **Sonarr UI:** `https://home.brettswift.com/sonarr` → **Settings** → **Download Clients**
 2. **Add Download Client:** Click **+** → Select **qBittorrent**
-3. **Configure:**
+3. **Basic Configuration:**
    - **Name:** `qBittorrent`
    - **Host:** `qbittorrent.qbittorrent.svc.cluster.local` (must use full DNS - different namespace)
    - **Port:** `8080`
@@ -200,17 +200,66 @@ Same steps, but:
      - *Default may be `adminadmin` (check qBittorrent deployment)*
    - **Category:** `tv` (or `sonarr`)
    - ✅ **Use SSL:** No (internal network)
-4. **Test** → **Save**
+
+4. **Best Practice Settings (Advanced):**
+   - ✅ **Remove Completed Downloads:** Yes
+     - *Automatically removes torrents from qBittorrent after Sonarr imports them*
+   - ✅ **Remove Failed Downloads:** Yes
+     - *Removes failed downloads to keep qBittorrent clean*
+   - **Priority:** `1` (Normal) or `0` (Highest)
+     - *Lower number = higher priority. Use 1 for normal, 0 if you want qBittorrent downloads prioritized*
+   - **Initial State:** `Start` (or `Pause` if you want manual control)
+     - *`Start` = downloads begin immediately*
+     - *`Pause` = requires manual start in qBittorrent*
+
+5. **Remote Path Mappings:**
+   - **Usually NOT needed** - qBittorrent and Sonarr both use `/downloads` → `/mnt/data/downloads`
+   - If paths differ, add mapping:
+     - **Remote Path:** `/downloads` (how qBittorrent sees it)
+     - **Local Path:** `/downloads` (how Sonarr sees it)
+
+6. **Test** → **Save**
 
 #### Radarr → qBittorrent
 
-Same steps, but in Radarr:
+Same steps as Sonarr, but:
 - **Category:** `movies` (or `radarr`)
+- All other settings are the same (Remove Completed: Yes, Remove Failed: Yes, etc.)
 
 #### Lidarr → qBittorrent
 
-Same steps, but in Lidarr:
+Same steps, but:
 - **Category:** `music` (or `lidarr`)
+
+#### qBittorrent Download Directory Configuration
+
+**Important:** Before configuring Sonarr/Radarr, ensure qBittorrent is configured to save downloads to the correct path.
+
+1. **Go to qBittorrent UI:**
+   - URL: `https://qbittorrent.home.brettswift.com`
+
+2. **Navigate to Download Settings:**
+   - **Tools** → **Options** → **Downloads**
+
+3. **Set Default Save Path:**
+   - **Default Save Path:** `/downloads`
+   - ⚠️ **Critical:** Use `/downloads` (the container path, not the host path)
+   - This maps to `/mnt/data/downloads` on the host
+   - Both qBittorrent and Sonarr/Radarr mount this same path, so they can share downloads
+
+4. **Optional - Category-Specific Paths:**
+   - If you want organized downloads, you can set category paths:
+     - **Category:** `tv` → **Save Path:** `/downloads/tv`
+     - **Category:** `movies` → **Save Path:** `/downloads/movies`
+   - **Note:** This is optional - Sonarr/Radarr will organize files after import anyway
+
+5. **Save Configuration:**
+   - Click **OK** to save
+
+**Path Reference:**
+- **qBittorrent container:** `/downloads` → Host: `/mnt/data/downloads`
+- **Sonarr/Radarr containers:** `/downloads` → Host: `/mnt/data/downloads`
+- Since paths match, **no remote path mapping needed** in Sonarr/Radarr
 
 ---
 

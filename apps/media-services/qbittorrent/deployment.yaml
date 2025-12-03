@@ -14,26 +14,6 @@ spec:
       labels:
         app: qbittorrent
     spec:
-      initContainers:
-      - name: vuetorrent-installer
-        image: alpine:latest
-        command:
-        - /bin/sh
-        - -c
-        - |
-          apk add --no-cache curl unzip
-          mkdir -p /vuetorrent
-          cd /vuetorrent
-          curl -L -o vuetorrent.zip https://github.com/VueTorrent/VueTorrent/releases/download/v2.30.2/vuetorrent.zip
-          unzip vuetorrent.zip
-          # Move files from vuetorrent/ subdirectory to /vuetorrent/
-          mv vuetorrent/* .
-          rmdir vuetorrent
-          rm vuetorrent.zip
-          echo "VueTorrent installed successfully"
-        volumeMounts:
-        - name: vuetorrent-webui
-          mountPath: /vuetorrent
       containers:
       - name: vpn
         image: qmcgaw/gluetun:latest
@@ -102,6 +82,8 @@ spec:
               key: WEBUI_PASSWORD
         - name: QBITTORRENT_LOG_LEVEL
           value: "Info"
+        - name: DOCKER_MODS
+          value: "ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest"
         volumeMounts:
         - name: qbittorrent-config
           mountPath: /config
@@ -109,8 +91,6 @@ spec:
           mountPath: /downloads
         - name: media
           mountPath: /data
-        - name: vuetorrent-webui
-          mountPath: /vuetorrent
         - name: custom-init-scripts
           mountPath: /custom-cont-init.d
       volumes:
@@ -121,9 +101,6 @@ spec:
       - name: qbittorrent-config
         persistentVolumeClaim:
           claimName: qbittorrent-config
-      - name: vuetorrent-webui
-        persistentVolumeClaim:
-          claimName: vuetorrent-webui
       - name: downloads
         hostPath:
           path: /mnt/data/downloads
