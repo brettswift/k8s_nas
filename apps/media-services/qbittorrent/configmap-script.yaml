@@ -6,11 +6,11 @@ metadata:
 data:
   on-torrent-added.sh: "#!/usr/bin/env bash\n# qBittorrent hook script: Auto-categorize\
     \ Formula 1 torrents\n#\n# To configure in qBittorrent Web UI:\n# 1. Go to Tools\
-    \ \u2192 Options \u2192 Downloads\n# 2. Check \"Run external program on torrent\
-    \ added\"\n# 3. Paste this into the text field:\n#    /scripts/on-torrent-added.sh\
-    \ \"%N\" \"%I\"\n#\n# Called by qBittorrent with: %N (torrent name) and %I (info\
-    \ hash)\n\nset -euo pipefail\n\nTORRENT_NAME=\"${1:-}\"\nTORRENT_HASH=\"${2:-}\"\
-    \n\nif [ -z \"$TORRENT_NAME\" ] || [ -z \"$TORRENT_HASH\" ]; then\n  echo \"Usage:\
+    \ → Options → Downloads\n# 2. Check \"Run external program on torrent added\"\n\
+    # 3. Paste this into the text field:\n#    /scripts/on-torrent-added.sh \"%N\"\
+    \ \"%I\"\n#\n# Called by qBittorrent with: %N (torrent name) and %I (info hash)\n\
+    \nset -euo pipefail\n\nTORRENT_NAME=\"${1:-}\"\nTORRENT_HASH=\"${2:-}\"\n\nif\
+    \ [ -z \"$TORRENT_NAME\" ] || [ -z \"$TORRENT_HASH\" ]; then\n  echo \"Usage:\
     \ $0 <torrent_name> <info_hash>\" >&2\n  exit 1\nfi\n\n# Match formula1 / forumla1\
     \ / formula.1 / forumula.1 etc. (case-insensitive)\nshopt -s nocasematch\nif [[\
     \ \"$TORRENT_NAME\" =~ formula1|forumla1|formula\\.1|forumula\\.1 ]]; then\n \
@@ -39,7 +39,8 @@ data:
     \ (default: formula1)\n    SAVE_PATH           - Save/download path for torrents\
     \ (default: /data/media/formula1)\n    MAX_AGE_DAYS        - Only add torrents\
     \ added within last N days (default: 7)\n    SEQUENTIAL_DOWNLOAD - Enable sequential\
-    \ download (default: true)\n\nFILTERING:\n    Only adds torrents matching: Formula.1.*4K-HLG\
+    \ download (default: true)\n    NTFY_TOPIC          - ntfy.sh topic for notifications\
+    \ (default: bswift_general)\n\nFILTERING:\n    Only adds torrents matching: Formula.1.*4K-HLG\
     \ or Formula.1.*UHD (case-insensitive)\n    Examples that match:\n        - Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG\n\
     \        - Formula.1.2025x21.Brazil.Race.SkyF1UHD.4K-HLG\n    Examples that DON'T\
     \ match:\n        - Formula.1.2025x22.USA.Race.SkyF1HD.SD\n        - Formula.1.2025x22.USA.Race.SkyF1HD.1080p\n\
@@ -60,11 +61,12 @@ data:
     \nCATEGORY = os.getenv(\"CATEGORY\", \"formula1\")\nSAVE_PATH = os.getenv(\"SAVE_PATH\"\
     , \"/data/media/formula1\")\nMAX_AGE_DAYS = int(os.getenv(\"MAX_AGE_DAYS\", \"\
     7\"))  # Only add torrents from last week\nSEQUENTIAL_DOWNLOAD = os.getenv(\"\
-    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\n\n# Setup logging to both\
-    \ file and stdout\ndef setup_logging(log_file):\n    \"\"\"Configure logging to\
-    \ write to both file and stdout\"\"\"\n    # Create logger\n    logger = logging.getLogger()\n\
-    \    logger.setLevel(logging.INFO)\n    \n    # Clear any existing handlers\n\
-    \    logger.handlers.clear()\n    \n    # Format for log messages\n    formatter\
+    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\nNTFY_TOPIC = os.getenv(\"\
+    NTFY_TOPIC\", \"bswift_general\")\n\n# Setup logging to both file and stdout\n\
+    def setup_logging(log_file):\n    \"\"\"Configure logging to write to both file\
+    \ and stdout\"\"\"\n    # Create logger\n    logger = logging.getLogger()\n  \
+    \  logger.setLevel(logging.INFO)\n    \n    # Clear any existing handlers\n  \
+    \  logger.handlers.clear()\n    \n    # Format for log messages\n    formatter\
     \ = logging.Formatter(\n        '%(asctime)s - %(levelname)s - %(message)s',\n\
     \        datefmt='%Y-%m-%d %H:%M:%S'\n    )\n    \n    # File handler with rotation\
     \ (10MB max, keep 5 backups)\n    log_file.parent.mkdir(parents=True, exist_ok=True)\n\
@@ -118,34 +120,49 @@ data:
     \ exist_ok=True)\n        with open(state_file, 'w') as f:\n            json.dump(state,\
     \ f, indent=2)\n        logger.debug(f\"State saved to {state_file}\")\n     \
     \   return True\n    except Exception as e:\n        logger.warning(f\"Failed\
-    \ to save state: {e}\", exc_info=True)\n        return False\n\ndef add_torrent_to_qbit(magnet_link):\n\
-    \    \"\"\"Add torrent to qBittorrent via Web API\"\"\"\n    try:\n        response\
-    \ = requests.post(\n            f\"{QBT_URL}/api/v2/torrents/add\",\n        \
-    \    data={\"urls\": magnet_link},\n            timeout=10\n        )\n      \
-    \  success = response.status_code == 200\n        if not success:\n          \
-    \  logger.warning(f\"qBittorrent API returned status {response.status_code}\"\
-    )\n        return success\n    except Exception as e:\n        logger.error(f\"\
-    Error adding torrent to qBittorrent: {e}\", exc_info=True)\n        return False\n\
-    \ndef configure_torrent(info_hash):\n    \"\"\"Configure torrent: set category,\
-    \ location, and sequential download\"\"\"\n    # Retry configuration (torrent\
-    \ might not be immediately available after add)\n    max_retries = 3\n    for\
-    \ attempt in range(max_retries):\n        try:\n            if attempt > 0:\n\
-    \                time.sleep(2)  # Wait before retry\n            \n          \
-    \  # Set location (save/download path)\n            response = requests.post(\n\
-    \                f\"{QBT_URL}/api/v2/torrents/setLocation\",\n               \
-    \ data={\"hashes\": info_hash, \"location\": SAVE_PATH},\n                timeout=10\n\
+    \ to save state: {e}\", exc_info=True)\n        return False\n\ndef parse_race_name(torrent_name):\n\
+    \    \"\"\"\n    Extract race name from torrent name.\n    Format: Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG\n\
+    \    Returns: \"USA\" or None if can't parse\n    \"\"\"\n    # Pattern: Formula.1.YYYYxNN.Country.Race...\n\
+    \    match = re.search(r'Formula\\.1\\.\\d+x\\d+\\.([^.]+)\\.Race', torrent_name,\
+    \ re.IGNORECASE)\n    if match:\n        return match.group(1)\n    return None\n\
+    \ndef send_ntfy_notification(torrent_name, race_name=None):\n    \"\"\"Send notification\
+    \ to ntfy.sh when F1 torrent is found\"\"\"\n    if not NTFY_TOPIC:\n        return\n\
+    \    \n    try:\n        # Use race name if parsed, otherwise use torrent name\n\
+    \        message = race_name if race_name else torrent_name\n        title = \"\
+    F1 Torrent Found\" if race_name else \"F1 Torrent Added\"\n        \n        #\
+    \ Send to ntfy.sh\n        response = requests.post(\n            f\"https://ntfy.sh/{NTFY_TOPIC}\"\
+    ,\n            data=message.encode('utf-8'),\n            headers={\n        \
+    \        \"Title\": title,\n                \"Tags\": \"racing_car,formula1\"\n\
+    \            },\n            timeout=10\n        )\n        response.raise_for_status()\n\
+    \        logger.info(f\"Sent ntfy notification: {title} - {message}\")\n    except\
+    \ Exception as e:\n        logger.warning(f\"Failed to send ntfy notification:\
+    \ {e}\", exc_info=True)\n\ndef add_torrent_to_qbit(magnet_link):\n    \"\"\"Add\
+    \ torrent to qBittorrent via Web API\"\"\"\n    try:\n        response = requests.post(\n\
+    \            f\"{QBT_URL}/api/v2/torrents/add\",\n            data={\"urls\":\
+    \ magnet_link},\n            timeout=10\n        )\n        success = response.status_code\
+    \ == 200\n        if not success:\n            logger.warning(f\"qBittorrent API\
+    \ returned status {response.status_code}\")\n        return success\n    except\
+    \ Exception as e:\n        logger.error(f\"Error adding torrent to qBittorrent:\
+    \ {e}\", exc_info=True)\n        return False\n\ndef configure_torrent(info_hash):\n\
+    \    \"\"\"Configure torrent: set category, location, and sequential download\"\
+    \"\"\n    # Retry configuration (torrent might not be immediately available after\
+    \ add)\n    max_retries = 3\n    for attempt in range(max_retries):\n        try:\n\
+    \            if attempt > 0:\n                time.sleep(2)  # Wait before retry\n\
+    \            \n            # Set location (save/download path)\n            response\
+    \ = requests.post(\n                f\"{QBT_URL}/api/v2/torrents/setLocation\"\
+    ,\n                data={\"hashes\": info_hash, \"location\": SAVE_PATH},\n  \
+    \              timeout=10\n            )\n            if response.status_code\
+    \ != 200:\n                if attempt < max_retries - 1:\n                   \
+    \ continue\n                logger.warning(f\"Failed to set location: {response.status_code}\"\
+    )\n            \n            # Set category\n            response = requests.post(\n\
+    \                f\"{QBT_URL}/api/v2/torrents/setCategory\",\n               \
+    \ data={\"hashes\": info_hash, \"category\": CATEGORY},\n                timeout=10\n\
     \            )\n            if response.status_code != 200:\n                if\
     \ attempt < max_retries - 1:\n                    continue\n                logger.warning(f\"\
-    Failed to set location: {response.status_code}\")\n            \n            #\
-    \ Set category\n            response = requests.post(\n                f\"{QBT_URL}/api/v2/torrents/setCategory\"\
-    ,\n                data={\"hashes\": info_hash, \"category\": CATEGORY},\n   \
-    \             timeout=10\n            )\n            if response.status_code !=\
-    \ 200:\n                if attempt < max_retries - 1:\n                    continue\n\
-    \                logger.warning(f\"Failed to set category: {response.status_code}\"\
-    )\n            \n            # Enable sequential download if configured\n    \
-    \        if SEQUENTIAL_DOWNLOAD:\n                response = requests.post(\n\
-    \                    f\"{QBT_URL}/api/v2/torrents/toggleSequentialDownload\",\n\
-    \                    data={\"hashes\": info_hash},\n                    timeout=10\n\
+    Failed to set category: {response.status_code}\")\n            \n            #\
+    \ Enable sequential download if configured\n            if SEQUENTIAL_DOWNLOAD:\n\
+    \                response = requests.post(\n                    f\"{QBT_URL}/api/v2/torrents/toggleSequentialDownload\"\
+    ,\n                    data={\"hashes\": info_hash},\n                    timeout=10\n\
     \                )\n                if response.status_code != 200:\n        \
     \            if attempt < max_retries - 1:\n                        continue\n\
     \                    logger.warning(f\"Failed to enable sequential download: {response.status_code}\"\
@@ -168,34 +185,37 @@ data:
     \    if configure_torrent(info_hash):\n        logger.info(f\"Configured torrent:\
     \ category={CATEGORY}, path={SAVE_PATH}, sequential={SEQUENTIAL_DOWNLOAD}\")\n\
     \    else:\n        logger.warning(f\"Failed to configure torrent (may still work):\
-    \ {torrent_name}\")\n    \n    # Update state and save immediately\n    add_torrent_to_state(magnet_link,\
-    \ state)\n    if save_state_to_file(state, state_file):\n        logger.debug(f\"\
-    State saved to {state_file}\")\n    \n    return True\n\ndef process_torrents(torrent_links,\
-    \ state, state_file):\n    \"\"\"Process all torrents, skipping ones we've already\
-    \ seen\"\"\"\n    new_count = 0\n    \n    for magnet_link, torrent_name, info_hash,\
-    \ added_timestamp in torrent_links:\n        # Skip if already seen\n        if\
-    \ is_torrent_seen(magnet_link, state):\n            logger.debug(f\"Skipping already\
-    \ seen torrent: {torrent_name}\")\n            continue\n        \n        # Process\
-    \ the torrent\n        if process_torrent(magnet_link, torrent_name, info_hash,\
-    \ state, state_file):\n            new_count += 1\n            # Small delay between\
-    \ adds (only in production mode)\n            if not TEST_MODE:\n            \
-    \    time.sleep(2)\n    \n    return new_count\n\ndef main():\n    mode_str =\
-    \ \"[TEST MODE - DRY RUN]\" if TEST_MODE else \"\"\n    logger.info(f\"Starting\
-    \ The Pirate Bay scraper {mode_str}\")\n    logger.info(f\"API URL: {SCRAPE_URL}\"\
-    )\n    logger.info(f\"Filter: Formula.1 UHD (4K-HLG) only\")\n    logger.info(f\"\
-    Log file: {LOG_FILE}\")\n    logger.info(f\"State file: {STATE_FILE}\")\n    \n\
-    \    while True:\n        logger.info(\"Checking for new torrents...\")\n    \
-    \    \n        # Fetch torrents from API\n        torrent_links = get_torrent_links(SCRAPE_URL)\n\
-    \        \n        if not torrent_links:\n            logger.info(\"No Formula.1\
-    \ UHD torrents found\")\n            if TEST_MODE:\n                logger.info(\"\
-    [TEST MODE] Exiting after one check\")\n                break\n            logger.info(f\"\
-    Sleeping for {CHECK_INTERVAL}s...\")\n            time.sleep(CHECK_INTERVAL)\n\
-    \            continue\n        \n        # Display found torrents\n        logger.info(f\"\
-    Found {len(torrent_links)} Formula.1 UHD torrent(s) (added within last {MAX_AGE_DAYS}\
-    \ days):\")\n        for magnet_link, torrent_name, info_hash, added_ts in torrent_links:\n\
-    \            added_date = time.strftime('%Y-%m-%d', time.gmtime(added_ts))\n \
-    \           logger.info(f\"  - {torrent_name} (added: {added_date})\")\n     \
-    \       if TEST_MODE:\n                logger.debug(f\"    Magnet: {magnet_link[:60]}...\"\
+    \ {torrent_name}\")\n    \n    # Send ntfy notification (only in production mode)\n\
+    \    if not TEST_MODE:\n        race_name = parse_race_name(torrent_name)\n  \
+    \      send_ntfy_notification(torrent_name, race_name)\n    \n    # Update state\
+    \ and save immediately\n    add_torrent_to_state(magnet_link, state)\n    if save_state_to_file(state,\
+    \ state_file):\n        logger.debug(f\"State saved to {state_file}\")\n    \n\
+    \    return True\n\ndef process_torrents(torrent_links, state, state_file):\n\
+    \    \"\"\"Process all torrents, skipping ones we've already seen\"\"\"\n    new_count\
+    \ = 0\n    \n    for magnet_link, torrent_name, info_hash, added_timestamp in\
+    \ torrent_links:\n        # Skip if already seen\n        if is_torrent_seen(magnet_link,\
+    \ state):\n            logger.debug(f\"Skipping already seen torrent: {torrent_name}\"\
+    )\n            continue\n        \n        # Process the torrent\n        if process_torrent(magnet_link,\
+    \ torrent_name, info_hash, state, state_file):\n            new_count += 1\n \
+    \           # Small delay between adds (only in production mode)\n           \
+    \ if not TEST_MODE:\n                time.sleep(2)\n    \n    return new_count\n\
+    \ndef main():\n    mode_str = \"[TEST MODE - DRY RUN]\" if TEST_MODE else \"\"\
+    \n    logger.info(f\"Starting The Pirate Bay scraper {mode_str}\")\n    logger.info(f\"\
+    API URL: {SCRAPE_URL}\")\n    logger.info(f\"Filter: Formula.1 UHD (4K-HLG) only\"\
+    )\n    logger.info(f\"Log file: {LOG_FILE}\")\n    logger.info(f\"State file:\
+    \ {STATE_FILE}\")\n    \n    while True:\n        logger.info(\"Checking for new\
+    \ torrents...\")\n        \n        # Fetch torrents from API\n        torrent_links\
+    \ = get_torrent_links(SCRAPE_URL)\n        \n        if not torrent_links:\n \
+    \           logger.info(\"No Formula.1 UHD torrents found\")\n            if TEST_MODE:\n\
+    \                logger.info(\"[TEST MODE] Exiting after one check\")\n      \
+    \          break\n            logger.info(f\"Sleeping for {CHECK_INTERVAL}s...\"\
+    )\n            time.sleep(CHECK_INTERVAL)\n            continue\n        \n  \
+    \      # Display found torrents\n        logger.info(f\"Found {len(torrent_links)}\
+    \ Formula.1 UHD torrent(s) (added within last {MAX_AGE_DAYS} days):\")\n     \
+    \   for magnet_link, torrent_name, info_hash, added_ts in torrent_links:\n   \
+    \         added_date = time.strftime('%Y-%m-%d', time.gmtime(added_ts))\n    \
+    \        logger.info(f\"  - {torrent_name} (added: {added_date})\")\n        \
+    \    if TEST_MODE:\n                logger.debug(f\"    Magnet: {magnet_link[:60]}...\"\
     )\n        \n        # Process all torrents\n        new_count = process_torrents(torrent_links,\
     \ state, STATE_FILE)\n        \n        # Summary\n        if new_count == 0:\n\
     \            logger.info(\"No new torrents found\")\n        else:\n         \
