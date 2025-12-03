@@ -64,12 +64,8 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Use /tmp for pip cache (writable by default, no PVC permission issues)
-              # Still try PVC cache first for persistence, fallback to /tmp if not writable
-              mkdir -p /cache/pip /tmp/pip-cache
-              pip install --quiet requests --cache-dir /cache/pip 2>/dev/null || \
-                pip install --quiet requests --cache-dir /tmp/pip-cache 2>/dev/null || \
-                pip install --quiet requests
+              # Install requests without cache (avoids permission warnings, requests is small anyway)
+              pip install --quiet --no-cache-dir requests
               python3 /scripts/torrent-scraper.py
             env:
             - name: TZ
