@@ -1,7 +1,7 @@
 resources:
 - deployment.yaml
 - service.yaml
-- ingress-traefik.yaml
+- ingress.yaml
 - configmap.yaml
 - configmap-script.yaml
 - cronjob-scraper.yaml
