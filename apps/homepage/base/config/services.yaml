@@ -55,10 +55,6 @@
         description: CAPTCHA solver
         icon: flaresolverr.png
 - System:
-    - Traefik:
-        href: https://traefik.home.brettswift.com/dashboard/
-        description: Ingress controller dashboard
-        icon: traefik.png
     - Prometheus:
         href: https://home.brettswift.com/prometheus
         description: Metrics collection and monitoring
