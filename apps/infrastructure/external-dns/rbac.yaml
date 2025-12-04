@@ -10,9 +10,6 @@ rules:
 - apiGroups: ["extensions","networking.k8s.io"]
   resources: ["ingresses"]
   verbs: ["get","watch","list"]
-- apiGroups: ["traefik.io","traefik.containo.us"]
-  resources: ["ingressroutes"]
-  verbs: ["get","watch","list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
