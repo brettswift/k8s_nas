@@ -30,21 +30,20 @@ spec:
           # Configure base_url in Bazarr config - ensure single YAML document
           # Bazarr's YAML parser fails if multiple documents (---) are present
           if [ ! -f "$CONFIG" ] || [ ! -s "$CONFIG" ]; then
-            # Create new config with base_url only
-            echo "base_url: /bazarr" > "$CONFIG"
+            # Create new config - no base_url needed for subdomain routing
+            echo "# base_url not needed - using subdomain bazarr.home.brettswift.com" > "$CONFIG"
           else
             # Existing config - merge base_url into existing config as single document
             # Create temp file without base_url and without document separators
             grep -v "^base_url:" "$CONFIG" | grep -v "^---$" | grep -v "^\s*$" > "$CONFIG.tmp" || echo "" > "$CONFIG.tmp"
             
-            # If temp file has content (not just base_url was present), rebuild config
+            # If temp file has content, rebuild config without base_url (subdomain routing)
             if [ -s "$CONFIG.tmp" ]; then
-              # Write base_url first, then rest of config (no --- separator)
-              echo "base_url: /bazarr" > "$CONFIG"
-              cat "$CONFIG.tmp" >> "$CONFIG"
+              # Remove base_url - not needed for subdomain
+              grep -v "^base_url:" "$CONFIG.tmp" > "$CONFIG" || echo "" > "$CONFIG"
             else
-              # Only base_url was in file, or file was empty/just separators
-              echo "base_url: /bazarr" > "$CONFIG"
+              # Empty config - subdomain routing doesn't need base_url
+              echo "# Using subdomain bazarr.home.brettswift.com - no base_url needed" > "$CONFIG"
             fi
             rm -f "$CONFIG.tmp"
           fi
