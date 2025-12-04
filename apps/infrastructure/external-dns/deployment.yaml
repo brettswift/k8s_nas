@@ -26,6 +26,7 @@ spec:
         - --aws-zone-type=public
         - --zone-id-filter=Z1A5BHLIT8EGDS
         - --aws-zone-match-parent
+        - --aws-prefer-cname
         - --registry=txt
         - --txt-owner-id=external-dns
         - --txt-prefix=external-dns-
