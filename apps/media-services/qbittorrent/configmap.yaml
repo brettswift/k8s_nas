@@ -15,22 +15,12 @@ data:
     
     # If config file exists, update it
     if [ -f "$CONFIG_FILE" ]; then
-      echo "[qBittorrent Init] Config file found, updating RootFolder..."
-      # Remove existing RootFolder if present
+      echo "[qBittorrent Init] Config file found, removing RootFolder..."
+      # Remove existing RootFolder - not needed when using rewrite-target in ingress
+      # The ingress rewrite-target: / strips /qbittorrent, so qBittorrent receives requests at /
       sed -i '/WebUI\\RootFolder/d' "$CONFIG_FILE"
-      # Add RootFolder under [Preferences] section
-      if grep -q "\[Preferences\]" "$CONFIG_FILE"; then
-        sed -i '/\[Preferences\]/a WebUI\\RootFolder=/qbittorrent' "$CONFIG_FILE"
-      else
-        echo -e "\n[Preferences]\nWebUI\\RootFolder=/qbittorrent" >> "$CONFIG_FILE"
-      fi
-      echo "[qBittorrent Init] WebUI RootFolder set to /qbittorrent"
+      echo "[qBittorrent Init] RootFolder removed (using ingress rewrite-target)"
     else
       echo "[qBittorrent Init] Config file not found yet, will be created on first run"
-      # Create initial config with RootFolder
-      cat > "$CONFIG_FILE" << 'EOFCONFIG'
-    [Preferences]
-    WebUI\RootFolder=/qbittorrent
-    EOFCONFIG
-      echo "[qBittorrent Init] Created initial config with RootFolder=/qbittorrent"
+      # No RootFolder needed - ingress rewrite-target handles path transformation
     fi
