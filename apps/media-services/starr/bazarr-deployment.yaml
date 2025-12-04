@@ -31,7 +31,7 @@ spec:
           # Bazarr's YAML parser fails if multiple documents (---) are present
           if [ ! -f "$CONFIG" ] || [ ! -s "$CONFIG" ]; then
             # Create new config with base_url only
-            echo "base_url: /" > "$CONFIG"
+            echo "base_url: /bazarr" > "$CONFIG"
           else
             # Existing config - merge base_url into existing config as single document
             # Create temp file without base_url and without document separators
@@ -40,13 +40,11 @@ spec:
             # If temp file has content (not just base_url was present), rebuild config
             if [ -s "$CONFIG.tmp" ]; then
               # Write base_url first, then rest of config (no --- separator)
-              # Using / because ingress rewrite-target strips /bazarr
-              echo "base_url: /" > "$CONFIG"
+              echo "base_url: /bazarr" > "$CONFIG"
               cat "$CONFIG.tmp" >> "$CONFIG"
             else
               # Only base_url was in file, or file was empty/just separators
-              # Using / because ingress rewrite-target strips /bazarr
-              echo "base_url: /" > "$CONFIG"
+              echo "base_url: /bazarr" > "$CONFIG"
             fi
             rm -f "$CONFIG.tmp"
           fi
