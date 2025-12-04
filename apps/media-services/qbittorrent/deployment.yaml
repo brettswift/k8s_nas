@@ -101,8 +101,9 @@ spec:
               key: WEBUI_PASSWORD
         - name: QBITTORRENT_LOG_LEVEL
           value: "Info"
-        - name: DOCKER_MODS
-          value: "ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest"
+        # DOCKER_MODS temporarily removed - VueTorrent mod not downloading
+        # - name: DOCKER_MODS
+        #   value: "ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest"
         volumeMounts:
         - name: qbittorrent-config
           mountPath: /config
