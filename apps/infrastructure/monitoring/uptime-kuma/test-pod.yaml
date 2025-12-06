@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: uptime-kuma-test
+  namespace: monitoring
+  labels:
+    app: uptime-kuma-test
+spec:
+  serviceAccountName: uptime-kuma-sync
+  restartPolicy: Never
+  containers:
+  - name: test
+    image: python:3.11-slim
+    command:
+    - /bin/bash
+    - -c
+    - |
+      # Install dependencies
+      apt-get update -qq && apt-get install -y -qq curl jq kubectl >/dev/null 2>&1
+      pip install -q python-socketio >/dev/null 2>&1
+      
+      # Keep container running for exec
+      sleep infinity
+    env:
+    - name: UPTIME_KUMA_URL
+      value: "http://uptime-kuma.monitoring.svc.cluster.local:3001"
+    - name: UPTIME_KUMA_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: uptime-kuma-credentials
+          key: username
+    - name: UPTIME_KUMA_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: uptime-kuma-credentials
+          key: password
+    - name: NAMESPACES
+      value: "media homeautomation qbittorrent homepage"
+    volumeMounts:
+    - name: sync-script
+      mountPath: /scripts
+      readOnly: true
+  volumes:
+  - name: sync-script
+    configMap:
+      name: uptime-kuma-sync-python-script
+      defaultMode: 0755
+
