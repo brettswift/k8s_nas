@@ -29,6 +29,10 @@ spec:
         env:
         - name: TZ
           value: "America/Los_Angeles"
+        - name: USE_X_FORWARDED_FOR
+          value: "true"
+        - name: TRUSTED_PROXIES
+          value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         volumeMounts:
         - name: config
           mountPath: /config

@@ -6,6 +6,11 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Forwarded-Proto: $scheme";
+      more_set_headers "X-Real-IP: $remote_addr";
+      more_set_headers "X-Forwarded-For: $proxy_add_x_forwarded_for";
     external-dns.alpha.kubernetes.io/hostname: homeassistant.home.brettswift.com
     external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
