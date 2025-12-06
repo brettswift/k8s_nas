@@ -22,13 +22,17 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: matter-server
-        image: ghcr.io/home-assistant-libs/python-matter-server:latest
+        image: ghcr.io/home-assistant-libs/python-matter-server:stable
         ports:
         - containerPort: 5580
           name: websocket
         env:
         - name: TZ
           value: "America/Los_Angeles"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
         resources:
           requests:
             memory: "128Mi"
@@ -50,4 +54,11 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+        volumeMounts:
+        - name: matter-storage
+          mountPath: /data
+      volumes:
+      - name: matter-storage
+        persistentVolumeClaim:
+          claimName: matter-server-storage
 
