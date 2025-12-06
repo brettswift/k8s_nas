@@ -11,4 +11,4 @@ resources:
 - grafana-deployment.yaml
 - grafana-service.yaml
 - grafana-ingress.yaml
-- ../monitoring/uptime-kuma/
+- uptime-kuma/
