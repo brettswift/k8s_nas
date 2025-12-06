@@ -18,6 +18,7 @@ metadata:
       more_set_headers "X-Forwarded-Host: $host";
     external-dns.alpha.kubernetes.io/hostname: homeassistant.home.brettswift.com
     external-dns.alpha.kubernetes.io/target: home.brettswift.com
+    uptime-kuma.monitor/enabled: "true"
 spec:
   ingressClassName: nginx
   tls:

@@ -9,6 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/priority: "1000"
+    uptime-kuma.monitor/enabled: "true"
 spec:
   ingressClassName: nginx
   tls:
