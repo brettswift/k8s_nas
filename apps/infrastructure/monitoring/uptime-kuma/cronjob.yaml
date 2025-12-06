@@ -34,11 +34,6 @@ spec:
             env:
             - name: UPTIME_KUMA_URL
               value: "http://uptime-kuma.monitoring.svc.cluster.local:3001"
-            - name: UPTIME_KUMA_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: uptime-kuma-api-key
-                  key: api-key
             - name: UPTIME_KUMA_USERNAME
               valueFrom:
                 secretKeyRef:

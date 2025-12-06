@@ -1,279 +1,243 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: uptime-kuma-sync-script
+  name: uptime-kuma-sync-python-script
   namespace: monitoring
   labels:
     app: uptime-kuma-sync
 data:
-  sync-monitors.sh: |
-    #!/bin/bash
-    # Sync Kubernetes Ingress resources to Uptime Kuma monitors
-    # This script queries ingresses with the uptime-kuma.monitor/enabled annotation
-    # and creates/updates monitors in Uptime Kuma via API
+  sync-monitors.py: |
+    #!/usr/bin/env python3
+    """
+    Uptime Kuma Monitor Sync using uptime-kuma-api library
+    This script syncs Kubernetes ingresses to Uptime Kuma monitors
+    """
 
-    set -euo pipefail
+    import os
+    import sys
+    import json
+    import subprocess
+    from typing import Dict, List, Optional
+
+    try:
+        from uptime_kuma_api import UptimeKumaApi
+    except ImportError:
+        print("[ERROR] uptime-kuma-api library not installed")
+        sys.exit(1)
 
     # Configuration
-    UPTIME_KUMA_URL="${UPTIME_KUMA_URL:-http://uptime-kuma.monitoring.svc.cluster.local:3001}"
-    UPTIME_KUMA_API_KEY="${UPTIME_KUMA_API_KEY:-}"
-    NAMESPACES="${NAMESPACES:-media homeautomation qbittorrent homepage}"
-    ANNOTATION_ENABLED="uptime-kuma.monitor/enabled"
-    ANNOTATION_NOTIFICATIONS="uptime-kuma.monitor/notifications"
-    ANNOTATION_NAME="uptime-kuma.monitor/name"
+    UPTIME_KUMA_URL = os.environ.get('UPTIME_KUMA_URL', 'http://uptime-kuma.monitoring.svc.cluster.local:3001')
+    UPTIME_KUMA_USERNAME = os.environ.get('UPTIME_KUMA_USERNAME', 'admin')
+    UPTIME_KUMA_PASSWORD = os.environ.get('UPTIME_KUMA_PASSWORD', '')
+    NAMESPACES = os.environ.get('NAMESPACES', 'media homeautomation qbittorrent homepage').split()
 
-    # Colors for output
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    NC='\033[0m' # No Color
+    ANNOTATION_ENABLED = 'uptime-kuma.monitor/enabled'
+    ANNOTATION_NOTIFICATIONS = 'uptime-kuma.monitor/notifications'
+    ANNOTATION_NAME = 'uptime-kuma.monitor/name'
+    ANNOTATION_HEALTHCHECK_PATH = 'uptime-kuma.monitor/healthcheck-path'
 
-    log_info() {
-        echo -e "${GREEN}[INFO]${NC} $1"
-    }
+    def log_info(msg: str):
+        print(f"[INFO] {msg}")
 
-    log_warn() {
-        echo -e "${YELLOW}[WARN]${NC} $1"
-    }
+    def log_warn(msg: str):
+        print(f"[WARN] {msg}")
 
-    log_error() {
-        echo -e "${RED}[ERROR]${NC} $1"
-    }
+    def log_error(msg: str):
+        print(f"[ERROR] {msg}")
 
-    # Check if API key is set
-    if [ -z "$UPTIME_KUMA_API_KEY" ]; then
-        log_error "UPTIME_KUMA_API_KEY environment variable is not set"
-        exit 1
-    fi
+    def kubectl_get_ingresses(namespace: str) -> List[Dict]:
+        """Get all ingresses from a namespace"""
+        try:
+            result = subprocess.run(
+                ['kubectl', 'get', 'ingress', '-n', namespace, '-o', 'json'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            data = json.loads(result.stdout)
+            return data.get('items', [])
+        except subprocess.CalledProcessError:
+            return []
+        except json.JSONDecodeError:
+            return []
 
-    # Function to get all monitors from Uptime Kuma
-    get_all_monitors() {
-        # Uptime Kuma API uses the API key as a query parameter or in a cookie
-        # Try multiple methods
-        local response=""
-        
-        # Uptime Kuma uses Basic Auth with empty username and API key as password
-        # Format: curl -u ":<api_key>" 
-        response=$(curl -s -u ":${UPTIME_KUMA_API_KEY}" \
-            -X GET \
-            "${UPTIME_KUMA_URL}/api/monitors" 2>/dev/null)
-        
-        # Debug: log first 100 chars of response
-        if echo "$response" | grep -q "<!DOCTYPE html>"; then
-            log_error "API returned HTML instead of JSON. API key may be invalid or Uptime Kuma API not configured."
-            log_error "Response preview: $(echo "$response" | head -c 100)"
-            echo ""
-            return 1
-        fi
-        
-        # Check if response is valid JSON array
-        if echo "$response" | jq -e '. | type == "array"' >/dev/null 2>&1; then
-            echo "$response" | jq -r '.[] | "\(.id)|\(.name)|\(.url)"' 2>/dev/null || echo ""
-        else
-            log_warn "Failed to fetch monitors or invalid response: $(echo "$response" | head -c 200)"
-            echo ""
-        fi
-    }
-
-    # Function to create or update a monitor
-    upsert_monitor() {
-        local monitor_name=$1
-        local monitor_url=$2
-        local enable_notifications=$3
-        local monitor_id=$4
-
-        local json_payload
-        if [ -n "$monitor_id" ]; then
-            # Update existing monitor
-            json_payload=$(jq -n \
-                --arg name "$monitor_name" \
-                --arg url "$monitor_url" \
-                --argjson notifications "$enable_notifications" \
-                '{
-                    name: $name,
-                    url: $url,
-                    type: "http",
-                    interval: 60,
-                    retryInterval: 60,
-                    maxretries: 1,
-                    notify: $notifications
-                }')
+    def build_url_from_ingress(ingress: Dict) -> Optional[str]:
+        """Build URL from ingress spec"""
+        try:
+            rules = ingress.get('spec', {}).get('rules', [])
+            if not rules:
+                return None
             
-            log_info "Updating monitor: $monitor_name ($monitor_id)"
-            local result=$(curl -s -w "\n%{http_code}" -u ":${UPTIME_KUMA_API_KEY}" \
-                -X PUT \
-                -H "Content-Type: application/json" \
-                -d "$json_payload" \
-                "${UPTIME_KUMA_URL}/api/monitor/${monitor_id}")
-            local http_code=$(echo "$result" | tail -1)
-            if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
-                log_error "Failed to update monitor: HTTP $http_code - Response: $(echo "$result" | head -n -1 | head -c 200)"
-            else
-                log_info "Monitor updated successfully"
-            fi
-        else
-            # Create new monitor
-            json_payload=$(jq -n \
-                --arg name "$monitor_name" \
-                --arg url "$monitor_url" \
-                --argjson notifications "$enable_notifications" \
-                '{
-                    name: $name,
-                    url: $url,
-                    type: "http",
-                    interval: 60,
-                    retryInterval: 60,
-                    maxretries: 1,
-                    notify: $notifications
-                }')
+            host = rules[0].get('host', '')
+            paths = rules[0].get('http', {}).get('paths', [])
+            path = paths[0].get('path', '/') if paths else '/'
             
-            log_info "Creating monitor: $monitor_name"
-            local result=$(curl -s -w "\n%{http_code}" -X POST \
-                -H "Content-Type: application/json" \
-                -d "$json_payload" \
-                "${UPTIME_KUMA_URL}/api/monitors?apikey=${UPTIME_KUMA_API_KEY}")
-            local http_code=$(echo "$result" | tail -1)
-            if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
-                log_error "Failed to create monitor: HTTP $http_code - Response: $(echo "$result" | head -n -1 | head -c 200)"
-            else
-                log_info "Monitor created successfully: $monitor_name"
-            fi
-        fi
-    }
-
-    # Function to delete a monitor
-    delete_monitor() {
-        local monitor_id=$1
-        local monitor_name=$2
-        
-        log_info "Deleting monitor: $monitor_name ($monitor_id)"
-        curl -s -X DELETE \
-            -H "Authorization: Bearer ${UPTIME_KUMA_API_KEY}" \
-            "${UPTIME_KUMA_URL}/api/monitors/${monitor_id}" > /dev/null
-    }
-
-    # Function to build URL from ingress
-    build_url_from_ingress() {
-        local ingress_json=$1
-        
-        # Get the first host and path
-        local host=$(echo "$ingress_json" | jq -r '.spec.rules[0].host // empty')
-        local path=$(echo "$ingress_json" | jq -r '.spec.rules[0].http.paths[0].path // "/"')
-        
-        # Check if TLS is configured
-        local has_tls=$(echo "$ingress_json" | jq -r '.spec.tls // [] | length > 0')
-        
-        # Build URL
-        local protocol="http"
-        if [ "$has_tls" = "true" ]; then
-            protocol="https"
-        fi
-        
-        # Normalize path (ensure it starts with /)
-        if [ "$path" = "null" ] || [ -z "$path" ]; then
-            path="/"
-        fi
-        
-        # Remove trailing slash for consistency (except root)
-        if [ "$path" != "/" ] && [[ "$path" == */ ]]; then
-            path="${path%/}"
-        fi
-        
-        echo "${protocol}://${host}${path}"
-    }
-
-    # Main sync logic
-    main() {
-        log_info "Starting Uptime Kuma monitor sync..."
-        log_info "Uptime Kuma URL: $UPTIME_KUMA_URL"
-        
-        # Get all existing monitors and create a lookup map
-        declare -A existing_monitors
-        while IFS='|' read -r id name url; do
-            if [ -n "$id" ] && [ -n "$name" ]; then
-                existing_monitors["$name"]="$id|$url"
-            fi
-        done < <(get_all_monitors)
-        
-        # Track which monitors we've processed
-        declare -A processed_monitors
-        
-        # Query ingresses in specified namespaces
-        for namespace in $NAMESPACES; do
-            log_info "Processing namespace: $namespace"
+            # Check for healthcheck path annotation
+            annotations = ingress.get('metadata', {}).get('annotations', {})
+            healthcheck_path = annotations.get(ANNOTATION_HEALTHCHECK_PATH, '')
             
-            # Get all ingresses in the namespace
-            ingresses=$(kubectl get ingress -n "$namespace" -o json 2>/dev/null || echo '{"items":[]}')
-            ingress_count=$(echo "$ingresses" | jq -r '.items | length')
-            log_info "Found $ingress_count ingresses in namespace $namespace"
-            
-            # Process each ingress
-            echo "$ingresses" | jq -r '.items[] | @base64' | while IFS= read -r ingress_b64; do
-                ingress_json=$(echo "$ingress_b64" | base64 -d)
-                ingress_name=$(echo "$ingress_json" | jq -r '.metadata.name')
+            # Use healthcheck path if specified, otherwise use ingress path
+            if healthcheck_path:
+                # Healthcheck path is always absolute (starts with /)
+                # Use it directly, replacing the ingress path
+                path = healthcheck_path
+            else:
+                # Normalize path - remove regex patterns like (.*)
+                if path and '(' in path:
+                    # Extract the base path before regex
+                    path = path.split('(')[0].rstrip('/')
                 
-                # Check if monitoring is enabled
-                enabled=$(echo "$ingress_json" | jq -r ".metadata.annotations.\"${ANNOTATION_ENABLED}\" // \"false\"")
+                # Normalize path
+                if path == 'null' or not path:
+                    path = '/'
+                if path != '/' and path.endswith('/'):
+                    path = path.rstrip('/')
+            
+            # Check if TLS is configured
+            tls = ingress.get('spec', {}).get('tls', [])
+            protocol = 'https' if tls else 'http'
+            
+            return f"{protocol}://{host}{path}"
+        except Exception as e:
+            log_error(f"Error building URL: {e}")
+            return None
+
+    def main():
+        log_info("Starting Uptime Kuma monitor sync...")
+        log_info(f"Uptime Kuma URL: {UPTIME_KUMA_URL}")
+        
+        if not UPTIME_KUMA_PASSWORD:
+            log_error("UPTIME_KUMA_PASSWORD environment variable is not set")
+            log_error("Note: Uptime Kuma API requires login credentials, not API key")
+            sys.exit(1)
+        
+        # Connect to Uptime Kuma
+        try:
+            api = UptimeKumaApi(UPTIME_KUMA_URL)
+            log_info("Connecting to Uptime Kuma...")
+            api.login(UPTIME_KUMA_USERNAME, UPTIME_KUMA_PASSWORD)
+            log_info("Successfully logged in to Uptime Kuma")
+        except Exception as e:
+            log_error(f"Failed to connect/login to Uptime Kuma: {e}")
+            import traceback
+            log_error(traceback.format_exc())
+            sys.exit(1)
+        
+        # Get existing monitors
+        try:
+            log_info("Fetching existing monitors...")
+            existing_monitors_list = api.get_monitors()
+            existing_monitors = {m.get('name', ''): m for m in existing_monitors_list if m.get('name')}
+            log_info(f"Found {len(existing_monitors)} existing monitors")
+        except Exception as e:
+            log_error(f"Failed to fetch monitors: {e}")
+            existing_monitors = {}
+        
+        processed_monitors = set()
+        
+        # Process ingresses
+        for namespace in NAMESPACES:
+            log_info(f"Processing namespace: {namespace}")
+            ingresses = kubectl_get_ingresses(namespace)
+            log_info(f"Found {len(ingresses)} ingresses in namespace {namespace}")
+            
+            for ingress in ingresses:
+                annotations = ingress.get('metadata', {}).get('annotations', {})
+                enabled = annotations.get(ANNOTATION_ENABLED, 'false')
                 
-                log_info "Checking ingress: $namespace/$ingress_name - enabled: $enabled"
+                ingress_name = ingress.get('metadata', {}).get('name', '')
+                log_info(f"Checking ingress: {namespace}/{ingress_name} - enabled: {enabled}")
                 
-                if [ "$enabled" != "true" ]; then
+                if enabled != 'true':
                     continue
-                fi
                 
-                # Get monitor name (use annotation or default to ingress name)
-                monitor_name=$(echo "$ingress_json" | jq -r ".metadata.annotations.\"${ANNOTATION_NAME}\" // .metadata.name")
-                namespace_name=$(echo "$ingress_json" | jq -r '.metadata.namespace')
-                full_monitor_name="${namespace_name}/${monitor_name}"
+                # Get monitor name
+                monitor_name = annotations.get(ANNOTATION_NAME, ingress_name)
+                full_monitor_name = f"{namespace}/{monitor_name}"
                 
                 # Get notification preference
-                enable_notifications=$(echo "$ingress_json" | jq -r ".metadata.annotations.\"${ANNOTATION_NOTIFICATIONS}\" // \"false\"")
-                if [ "$enable_notifications" = "true" ]; then
-                    enable_notifications="true"
-                else
-                    enable_notifications="false"
-                fi
+                enable_notifications = annotations.get(ANNOTATION_NOTIFICATIONS, 'false') == 'true'
                 
-                # Build URL from ingress
-                monitor_url=$(build_url_from_ingress "$ingress_json")
-                
-                if [ -z "$monitor_url" ] || [ "$monitor_url" = "null" ]; then
-                    log_warn "Skipping ${full_monitor_name}: Could not build URL"
+                # Build URL
+                monitor_url = build_url_from_ingress(ingress)
+                if not monitor_url:
+                    log_warn(f"Skipping {full_monitor_name}: Could not build URL")
                     continue
-                fi
                 
-                log_info "Processing: ${full_monitor_name} -> ${monitor_url}"
+                log_info(f"Processing: {full_monitor_name} -> {monitor_url}")
                 
-                # Check if monitor already exists
-                monitor_id=""
-                if [ -n "${existing_monitors[$full_monitor_name]:-}" ]; then
-                    monitor_id=$(echo "${existing_monitors[$full_monitor_name]}" | cut -d'|' -f1)
-                fi
+                # Check if monitor exists
+                monitor_id = None
+                if full_monitor_name in existing_monitors:
+                    monitor_id = existing_monitors[full_monitor_name].get('id')
+                    log_info(f"Updating monitor: {full_monitor_name} ({monitor_id})")
+                else:
+                    log_info(f"Creating monitor: {full_monitor_name}")
                 
-                # Create or update monitor
-                upsert_monitor "$full_monitor_name" "$monitor_url" "$enable_notifications" "$monitor_id"
+                # Prepare monitor data
+                # Note: The uptime-kuma-api library handles conditions internally for 2.0+
+                monitor_data = {
+                    'name': full_monitor_name,
+                    'url': monitor_url,
+                    'type': 'http',
+                    'interval': 60,
+                    'retryInterval': 60,
+                    'maxretries': 1,
+                }
                 
-                # Mark as processed
-                processed_monitors["$full_monitor_name"]=1
-            done
-        done
+                # Add notification settings if needed
+                if enable_notifications:
+                    monitor_data['notify'] = True
+                
+                # Create or update
+                try:
+                    if monitor_id:
+                        api.edit_monitor(monitor_id, **monitor_data)
+                        log_info(f"Monitor updated successfully: {full_monitor_name}")
+                    else:
+                        # For new monitors in 2.0+, we need to ensure conditions is set
+                        # Try adding monitor, if it fails with conditions error, add default conditions
+                        try:
+                            api.add_monitor(**monitor_data)
+                            log_info(f"Monitor created successfully: {full_monitor_name}")
+                        except Exception as e:
+                            if 'conditions' in str(e).lower() or 'NOT NULL constraint' in str(e):
+                                # Add default conditions for 2.0+ - use empty list
+                                monitor_data_with_conditions = monitor_data.copy()
+                                monitor_data_with_conditions['conditions'] = []
+                                try:
+                                    api.add_monitor(**monitor_data_with_conditions)
+                                    log_info(f"Monitor created successfully (with conditions): {full_monitor_name}")
+                                except Exception as e2:
+                                    log_error(f"Failed to create monitor even with conditions: {full_monitor_name} - {e2}")
+                            else:
+                                raise
+                except Exception as e:
+                    log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+                
+                processed_monitors.add(full_monitor_name)
         
-        # Delete monitors that no longer have the annotation
-        log_info "Checking for monitors to remove..."
-        for monitor_name in "${!existing_monitors[@]}"; do
-            # Check if this monitor name matches our namespace pattern
-            if [[ "$monitor_name" =~ ^(media|homeautomation|qbittorrent|homepage)/ ]]; then
-                # Check if we processed this monitor
-                if [ -z "${processed_monitors[$monitor_name]:-}" ]; then
-                    monitor_id=$(echo "${existing_monitors[$monitor_name]}" | cut -d'|' -f1)
-                    delete_monitor "$monitor_id" "$monitor_name"
-                fi
-            fi
-        done
+        # Remove monitors that no longer have the annotation
+        log_info("Checking for monitors to remove...")
+        for monitor_name, monitor_data in existing_monitors.items():
+            if monitor_name.startswith(tuple(f"{ns}/" for ns in NAMESPACES)):
+                if monitor_name not in processed_monitors:
+                    monitor_id = monitor_data.get('id')
+                    log_info(f"Deleting monitor: {monitor_name} ({monitor_id})")
+                    try:
+                        api.delete_monitor(monitor_id)
+                        log_info(f"Monitor deleted successfully: {monitor_name}")
+                    except Exception as e:
+                        log_error(f"Failed to delete monitor: {monitor_name} - {e}")
         
-        log_info "Monitor sync completed!"
-    }
+        # Disconnect
+        try:
+            api.disconnect()
+            log_info("Disconnected from Uptime Kuma")
+        except:
+            pass
+        
+        log_info("Monitor sync completed!")
 
-    # Run main function
-    main
-
+    if __name__ == '__main__':
+        main()
