@@ -31,3 +31,18 @@ data:
         hs = {}
         hs.status = "Healthy"
         return hs
+    apps/Deployment:
+      actions: |
+        - action: logs
+          displayName: View Logs
+          iconClass: fa fa-file-text-o
+    apps/ReplicaSet:
+      actions: |
+        - action: logs
+          displayName: View Logs
+          iconClass: fa fa-file-text-o
+    ""/Pod:
+      actions: |
+        - action: logs
+          displayName: View Logs
+          iconClass: fa fa-file-text-o
