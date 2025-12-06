@@ -150,7 +150,7 @@ data:
                 return None
             
             # Insert status page into database
-            query = f"INSERT INTO status_page (title, slug, description, icon, theme, published) VALUES ('{title}', '{slug}', 'Kubernetes cluster services status', '/icon.svg', 'light', 1); SELECT id FROM status_page WHERE slug='{slug}';"
+            query = f"INSERT INTO status_page (title, slug, description, icon, theme, published) VALUES ('{title}', '{slug}', 'Kubernetes cluster services status', '/icon.svg', 'dark', 1); SELECT id FROM status_page WHERE slug='{slug}';"
             result = subprocess.run(
                 ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', query],
                 capture_output=True,
@@ -164,6 +164,73 @@ data:
         except Exception as e:
             log_warn(f"Failed to create status page in database: {e}")
             return None
+
+    def add_monitor_to_status_page_db(status_page_id: int, monitor_id: int) -> bool:
+        """Add monitor to status page via database (using groups)"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return False
+            
+            # Get or create a default group for this status page
+            group_query = f"SELECT id FROM \"group\" WHERE status_page_id={status_page_id} LIMIT 1;"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', group_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            group_id = result.stdout.strip()
+            
+            if not group_id:
+                # Create a default group for this status page
+                create_group_query = f"INSERT INTO \"group\" (name, status_page_id, public, active, weight) VALUES ('Services', {status_page_id}, 1, 1, 1000); SELECT id FROM \"group\" WHERE status_page_id={status_page_id} LIMIT 1;"
+                result = subprocess.run(
+                    ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', create_group_query],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                group_id = result.stdout.strip()
+            
+            if not group_id:
+                log_warn(f"Could not get or create group for status page {status_page_id}")
+                return False
+            
+            group_id = int(group_id)
+            
+            # Check if monitor is already in the group
+            check_query = f"SELECT COUNT(*) FROM monitor_group WHERE monitor_id={monitor_id} AND group_id={group_id};"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', check_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip() == '1':
+                # Already added
+                return True
+            
+            # Add monitor to group
+            add_query = f"INSERT INTO monitor_group (monitor_id, group_id, weight, send_url) VALUES ({monitor_id}, {group_id}, 1000, 0);"
+            subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', add_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return True
+        except Exception as e:
+            log_warn(f"Failed to add monitor to status page via database: {e}")
+            return False
 
     def main():
         log_info("Starting Uptime Kuma monitor sync...")
@@ -427,11 +494,22 @@ data:
                                         log_warn(f"Event {add_event} returned: {error_msg}")
                                 
                                 if not success:
-                                    error_msg = add_response.get('msg', 'No response') if add_response else 'No response'
-                                    log_warn(f"Failed to add monitor to status page: {error_msg}")
+                                    # Fallback: Try to add via database
+                                    log_info("API addition failed, trying database fallback...")
+                                    if add_monitor_to_status_page_db(status_page_id, monitor_id):
+                                        log_info(f"Added monitor {full_monitor_name} to status page via database")
+                                        status_page_monitor_ids.add(monitor_id)
+                                    else:
+                                        error_msg = add_response.get('msg', 'No response') if add_response else 'No response'
+                                        log_warn(f"Failed to add monitor to status page via API or database: {error_msg}")
                             except Exception as e:
-                                # Idempotent: if already added or other error, just log and continue
-                                log_warn(f"Could not add monitor to status page (may already be added): {e}")
+                                # Fallback: Try to add via database
+                                log_warn(f"Exception adding monitor to status page: {e}. Trying database fallback...")
+                                if add_monitor_to_status_page_db(status_page_id, monitor_id):
+                                    log_info(f"Added monitor {full_monitor_name} to status page via database fallback")
+                                    status_page_monitor_ids.add(monitor_id)
+                                else:
+                                    log_warn(f"Could not add monitor to status page via database: {e}")
                         else:
                             log_info(f"Monitor {full_monitor_name} already on status page")
                     elif not status_page_id:
