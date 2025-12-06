@@ -76,6 +76,8 @@ spec:
             echo "" >> "$CONFIG_FILE"
             echo "bluetooth:" >> "$CONFIG_FILE"
             echo "  adapter: none" >> "$CONFIG_FILE"
+            echo "" >> "$CONFIG_FILE"
+            echo "backup:" >> "$CONFIG_FILE"
           fi
         volumeMounts:
         - name: config
