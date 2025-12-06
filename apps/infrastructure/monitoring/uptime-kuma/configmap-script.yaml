@@ -136,36 +136,57 @@ data:
         processed_monitors = set()
         
         # Get "K8s Cluster" status page (idempotent)
-        # Note: Status page creation via API may not be supported in 1.23.17
-        # User should create the status page manually in UI, then this script will add monitors to it
+        # Use emit with callback since call() times out for status pages
         status_page_name = "K8s Cluster"
         status_page_id = None
+        status_page_response = None
+        
+        def handle_status_page_list(*args):
+            nonlocal status_page_response
+            status_page_response = args[0] if args else None
+        
         try:
             log_info(f"Looking for existing status page: {status_page_name}")
-            # Try to get status pages - if this fails, status pages may not be supported via API
-            # In that case, user needs to create status page manually in UI
-            try:
-                # Try the most likely event name first
-                response = api._call('getStatusPageList')
-                if response and response.get('ok'):
-                    status_pages = response.get('statusPageList', [])
-                    log_info(f"Found {len(status_pages)} status pages")
+            # Use emit with callback instead of call (call times out)
+            api.sio.emit('getStatusPageList', callback=handle_status_page_list)
+            time.sleep(2)  # Wait for response
+            
+            if status_page_response and status_page_response.get('ok'):
+                status_pages = status_page_response.get('statusPageList', [])
+                log_info(f"Found {len(status_pages)} status pages")
+                
+                # Search for existing status page
+                for sp in status_pages:
+                    if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
+                        status_page_id = sp.get('id')
+                        log_info(f"Found existing status page: {status_page_name} (ID: {status_page_id})")
+                        break
+                
+                if not status_page_id:
+                    log_warn(f"Status page '{status_page_name}' not found. Creating it...")
+                    # Try to create status page using emit
+                    create_response = None
+                    def handle_create(*args):
+                        nonlocal create_response
+                        create_response = args[0] if args else None
                     
-                    # Search for existing status page
-                    for sp in status_pages:
-                        if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
-                            status_page_id = sp.get('id')
-                            log_info(f"Found existing status page: {status_page_name} (ID: {status_page_id})")
-                            break
+                    slug = status_page_name.lower().replace(' ', '-')
+                    api.sio.emit('addStatusPage', {
+                        'title': status_page_name,
+                        'slug': slug,
+                        'description': 'Kubernetes cluster services status',
+                        'theme': 'light',
+                        'published': True
+                    }, callback=handle_create)
+                    time.sleep(2)
                     
-                    if not status_page_id:
-                        log_warn(f"Status page '{status_page_name}' not found. Please create it manually in the UI, then monitors will be added automatically.")
-                else:
-                    log_warn(f"Could not get status pages. Status pages may not be supported via API in this version.")
-            except Exception as e:
-                # If getting status pages fails, it's likely not supported via API
-                log_warn(f"Status page API not available (may not be supported in 1.23.17): {e}")
-                log_warn(f"Please create status page '{status_page_name}' manually in the UI if you want monitors added to it.")
+                    if create_response and create_response.get('ok'):
+                        status_page_id = create_response.get('id')
+                        log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
+                    else:
+                        log_warn(f"Could not create status page. Please create '{status_page_name}' manually in the UI.")
+            else:
+                log_warn(f"Could not get status pages. Response: {status_page_response}")
         except Exception as e:
             log_warn(f"Status page lookup failed: {e}")
             status_page_id = None
@@ -174,21 +195,16 @@ data:
         status_page_monitor_ids = set()
         if status_page_id:
             try:
-                # Try different event names for getting status page details
-                event_names = ['getStatusPage', 'statusPage', 'getStatusPageById']
+                # Use emit with callback to get status page details
                 status_page_details = None
-                for event_name in event_names:
-                    try:
-                        response = api._call(event_name, {'id': status_page_id})
-                        if response and response.get('ok'):
-                            status_page_details = response
-                            log_info(f"Got status page details using event: {event_name}")
-                            break
-                    except Exception as e:
-                        log_warn(f"Event {event_name} failed: {e}")
-                        continue
+                def handle_status_page(*args):
+                    nonlocal status_page_details
+                    status_page_details = args[0] if args else None
                 
-                if status_page_details:
+                api.sio.emit('getStatusPage', {'id': status_page_id}, callback=handle_status_page)
+                time.sleep(2)
+                
+                if status_page_details and status_page_details.get('ok'):
                     monitors = status_page_details.get('monitorList', [])
                     status_page_monitor_ids = {m.get('monitorId') for m in monitors if m.get('monitorId')}
                     log_info(f"Status page has {len(status_page_monitor_ids)} monitors")
@@ -274,29 +290,24 @@ data:
                     if status_page_id and monitor_id:
                         if monitor_id not in status_page_monitor_ids:
                             try:
-                                # Try different event names for adding monitor to status page
-                                add_events = ['addStatusPageMonitor', 'statusPageMonitor:add', 'addMonitorToStatusPage']
-                                added = False
-                                for event_name in add_events:
-                                    try:
-                                        result = api._call(event_name, {
-                                            'statusPageId': status_page_id,
-                                            'monitorId': monitor_id
-                                        })
-                                        if result and result.get('ok'):
-                                            log_info(f"Added monitor {full_monitor_name} to status page {status_page_name} using {event_name}")
-                                            status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
-                                            added = True
-                                            break
-                                        else:
-                                            error_msg = result.get('msg', 'Unknown error') if result else 'No response'
-                                            log_warn(f"Event {event_name} returned error: {error_msg}")
-                                    except Exception as e:
-                                        log_warn(f"Event {event_name} exception: {e}")
-                                        continue
+                                # Use emit with callback to add monitor to status page
+                                add_response = None
+                                def handle_add(*args):
+                                    nonlocal add_response
+                                    add_response = args[0] if args else None
                                 
-                                if not added:
-                                    log_warn(f"Failed to add monitor {full_monitor_name} to status page with all methods")
+                                api.sio.emit('addStatusPageMonitor', {
+                                    'statusPageId': status_page_id,
+                                    'monitorId': monitor_id
+                                }, callback=handle_add)
+                                time.sleep(1)
+                                
+                                if add_response and add_response.get('ok'):
+                                    log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
+                                    status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
+                                else:
+                                    error_msg = add_response.get('msg', 'Unknown error') if add_response else 'No response'
+                                    log_warn(f"Failed to add monitor to status page: {error_msg}")
                             except Exception as e:
                                 # Idempotent: if already added or other error, just log and continue
                                 log_warn(f"Could not add monitor to status page (may already be added): {e}")
