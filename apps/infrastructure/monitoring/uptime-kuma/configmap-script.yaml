@@ -141,7 +141,7 @@ data:
         try:
             log_info(f"Getting or creating status page: {status_page_name}")
             # Use _call directly - library methods may not exist
-            response = api._call('getStatusPageList', timeout=10)
+            response = api._call('getStatusPageList')
             status_pages = response.get('statusPageList', []) if response and response.get('ok') else []
             
             for sp in status_pages:
@@ -161,7 +161,7 @@ data:
                     'description': 'Kubernetes cluster services status',
                     'theme': 'light',
                     'published': True
-                }, timeout=10)
+                })
                 
                 if result and result.get('ok'):
                     status_page_id = result.get('id')
@@ -175,7 +175,7 @@ data:
                         result2 = api._call('addStatusPage', {
                             'title': status_page_name,
                             'slug': slug
-                        }, timeout=10)
+                        })
                         if result2 and result2.get('ok'):
                             status_page_id = result2.get('id')
                             log_info(f"Status page created with alternative method (ID: {status_page_id})")
@@ -193,7 +193,7 @@ data:
         status_page_monitor_ids = set()
         if status_page_id:
             try:
-                response = api._call('getStatusPage', {'id': status_page_id}, timeout=10)
+                response = api._call('getStatusPage', {'id': status_page_id})
                 status_page_details = response if response and response.get('ok') else None
                 
                 if status_page_details:
@@ -286,7 +286,7 @@ data:
                                 result = api._call('addStatusPageMonitor', {
                                     'statusPageId': status_page_id,
                                     'monitorId': monitor_id
-                                }, timeout=10)
+                                })
                                 if result and result.get('ok'):
                                     log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
                                     status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
