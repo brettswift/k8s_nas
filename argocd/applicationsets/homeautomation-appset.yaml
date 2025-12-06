@@ -9,6 +9,8 @@ spec:
       elements:
       - name: homeassistant
         path: apps/homeautomation/homeassistant
+      - name: matter-server
+        path: apps/homeautomation/matter-server
   template:
     metadata:
       name: '{{name}}'
