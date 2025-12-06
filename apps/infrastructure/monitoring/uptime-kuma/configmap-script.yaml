@@ -159,16 +159,20 @@ data:
                 log_info(f"Creating status page: {status_page_name}")
                 slug = status_page_name.lower().replace(' ', '-')
                 try:
-                    result = api.add_status_page(title=status_page_name, slug=slug)
-                except AttributeError:
-                    # Fallback: use _call directly
-                    result = api._call('addStatusPage', {'title': status_page_name, 'slug': slug}, timeout=10)
-                
-                if result and (result.get('ok') if isinstance(result, dict) else True):
-                    status_page_id = result.get('id') if isinstance(result, dict) else result
-                    log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
-                else:
-                    log_warn(f"Failed to create status page, will continue without it")
+                    try:
+                        result = api.add_status_page(title=status_page_name, slug=slug)
+                    except AttributeError:
+                        # Fallback: use _call directly
+                        result = api._call('addStatusPage', {'title': status_page_name, 'slug': slug}, timeout=10)
+                    
+                    if result and (result.get('ok') if isinstance(result, dict) else True):
+                        status_page_id = result.get('id') if isinstance(result, dict) else result
+                        log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
+                    else:
+                        error_msg = result.get('msg', 'Unknown error') if isinstance(result, dict) else str(result)
+                        log_warn(f"Failed to create status page: {error_msg}, will continue without it")
+                except Exception as create_error:
+                    log_warn(f"Failed to create status page: {create_error}, will continue without it")
         except Exception as e:
             log_warn(f"Failed to get/create status page (will continue without it): {e}")
             status_page_id = None
