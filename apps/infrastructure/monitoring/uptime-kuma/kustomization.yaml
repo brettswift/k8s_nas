@@ -3,4 +3,8 @@ resources:
 - service.yaml
 - ingress.yaml
 - pvc.yaml
+- cronjob.yaml
+- serviceaccount.yaml
+- rbac.yaml
+- configmap-script.yaml
 

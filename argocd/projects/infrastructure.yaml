@@ -70,6 +70,8 @@ spec:
       kind: ServiceAccount
     - group: ''
       kind: Deployment
+    - group: ''
+      kind: PersistentVolumeClaim
     - group: 'apps'
       kind: Deployment
     - group: 'apps'

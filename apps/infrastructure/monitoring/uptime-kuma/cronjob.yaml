@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: uptime-kuma-sync
+  namespace: monitoring
+  labels:
+    app: uptime-kuma-sync
+spec:
+  schedule: "0 2 * * *"  # Run daily at 2 AM
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: uptime-kuma-sync
+        spec:
+          serviceAccountName: uptime-kuma-sync
+          restartPolicy: OnFailure
+          containers:
+          - name: sync
+            image: alpine/k8s:1.28.0
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Install jq and curl
+              apk add --no-cache jq curl bash
+              
+              # Run sync script
+              /scripts/sync-monitors.sh
+            env:
+            - name: UPTIME_KUMA_URL
+              value: "http://uptime-kuma.monitoring.svc.cluster.local:3001"
+            - name: UPTIME_KUMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-api-key
+                  key: api-key
+            - name: NAMESPACES
+              value: "media homeautomation qbittorrent homepage"
+            volumeMounts:
+            - name: sync-script
+              mountPath: /scripts
+              readOnly: true
+          volumes:
+          - name: sync-script
+            configMap:
+              name: uptime-kuma-sync-script
+              defaultMode: 0755
+
