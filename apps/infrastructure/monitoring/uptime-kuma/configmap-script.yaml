@@ -140,13 +140,9 @@ data:
         status_page_id = None
         try:
             log_info(f"Getting or creating status page: {status_page_name}")
-            # Try using library method, fallback to _call if method doesn't exist
-            try:
-                status_pages = api.get_status_pages()
-            except AttributeError:
-                # Fallback: use _call directly
-                response = api._call('getStatusPageList', timeout=10)
-                status_pages = response.get('statusPageList', []) if response and response.get('ok') else []
+            # Use _call directly - library methods may not exist
+            response = api._call('getStatusPageList', timeout=10)
+            status_pages = response.get('statusPageList', []) if response and response.get('ok') else []
             
             for sp in status_pages:
                 if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
@@ -158,35 +154,47 @@ data:
                 # Create status page if it doesn't exist
                 log_info(f"Creating status page: {status_page_name}")
                 slug = status_page_name.lower().replace(' ', '-')
-                try:
+                # Use _call with correct event name for 1.23.17
+                result = api._call('add', {
+                    'title': status_page_name,
+                    'slug': slug,
+                    'description': 'Kubernetes cluster services status',
+                    'theme': 'light',
+                    'published': True
+                }, timeout=10)
+                
+                if result and result.get('ok'):
+                    status_page_id = result.get('id')
+                    log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
+                else:
+                    error_msg = result.get('msg', 'Unknown error') if result else 'No response'
+                    log_error(f"Failed to create status page: {error_msg}")
+                    # Try alternative event name
                     try:
-                        result = api.add_status_page(title=status_page_name, slug=slug)
-                    except AttributeError:
-                        # Fallback: use _call directly
-                        result = api._call('addStatusPage', {'title': status_page_name, 'slug': slug}, timeout=10)
-                    
-                    if result and (result.get('ok') if isinstance(result, dict) else True):
-                        status_page_id = result.get('id') if isinstance(result, dict) else result
-                        log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
-                    else:
-                        error_msg = result.get('msg', 'Unknown error') if isinstance(result, dict) else str(result)
-                        log_warn(f"Failed to create status page: {error_msg}, will continue without it")
-                except Exception as create_error:
-                    log_warn(f"Failed to create status page: {create_error}, will continue without it")
+                        log_info(f"Trying alternative method for status page creation...")
+                        result2 = api._call('addStatusPage', {
+                            'title': status_page_name,
+                            'slug': slug
+                        }, timeout=10)
+                        if result2 and result2.get('ok'):
+                            status_page_id = result2.get('id')
+                            log_info(f"Status page created with alternative method (ID: {status_page_id})")
+                        else:
+                            log_error(f"Alternative method also failed: {result2.get('msg') if result2 else 'No response'}")
+                    except Exception as e2:
+                        log_error(f"Alternative method exception: {e2}")
         except Exception as e:
-            log_warn(f"Failed to get/create status page (will continue without it): {e}")
+            log_error(f"Failed to get/create status page: {e}")
+            import traceback
+            log_error(traceback.format_exc())
             status_page_id = None
         
         # Get monitors already on the status page (if status page exists)
         status_page_monitor_ids = set()
         if status_page_id:
             try:
-                try:
-                    status_page_details = api.get_status_page(status_page_id)
-                except AttributeError:
-                    # Fallback: use _call directly
-                    response = api._call('getStatusPage', {'id': status_page_id}, timeout=10)
-                    status_page_details = response if response and response.get('ok') else None
+                response = api._call('getStatusPage', {'id': status_page_id}, timeout=10)
+                status_page_details = response if response and response.get('ok') else None
                 
                 if status_page_details:
                     monitors = status_page_details.get('monitorList', [])
@@ -274,18 +282,24 @@ data:
                     if status_page_id and monitor_id:
                         if monitor_id not in status_page_monitor_ids:
                             try:
-                                try:
-                                    api.add_status_page_monitor(status_page_id, monitor_id)
-                                except AttributeError:
-                                    # Fallback: use _call directly
-                                    api._call('addStatusPageMonitor', {'statusPageId': status_page_id, 'monitorId': monitor_id}, timeout=10)
-                                log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
-                                status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
+                                # Use _call directly with correct event name
+                                result = api._call('addStatusPageMonitor', {
+                                    'statusPageId': status_page_id,
+                                    'monitorId': monitor_id
+                                }, timeout=10)
+                                if result and result.get('ok'):
+                                    log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
+                                    status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
+                                else:
+                                    error_msg = result.get('msg', 'Unknown error') if result else 'No response'
+                                    log_warn(f"Failed to add monitor to status page: {error_msg}")
                             except Exception as e:
                                 # Idempotent: if already added or other error, just log and continue
                                 log_warn(f"Could not add monitor to status page (may already be added): {e}")
                         else:
                             log_info(f"Monitor {full_monitor_name} already on status page")
+                    elif not status_page_id:
+                        log_warn(f"Status page not available, skipping adding monitor {full_monitor_name} to status page")
                 except Exception as e:
                     log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
                     import traceback
