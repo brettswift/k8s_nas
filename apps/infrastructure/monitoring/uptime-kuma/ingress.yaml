@@ -15,7 +15,7 @@ spec:
     - uptime-kuma.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
-  - host: uptime-kuma.home.brettswift.com
+  - host: uptime.home.brettswift.com
     http:
       paths:
       - path: /
