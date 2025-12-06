@@ -63,3 +63,8 @@
         href: https://home.brettswift.com/grafana
         description: Monitoring dashboards and visualization
         icon: grafana.png
+- Home Automation:
+    - Home Assistant:
+        href: https://homeassistant.home.brettswift.com
+        description: Home automation platform
+        icon: homeassistant.png
