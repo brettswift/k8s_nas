@@ -135,64 +135,39 @@ data:
         
         processed_monitors = set()
         
-        # Get or create "K8s Cluster" status page (idempotent)
+        # Get "K8s Cluster" status page (idempotent)
+        # Note: Status page creation via API may not be supported in 1.23.17
+        # User should create the status page manually in UI, then this script will add monitors to it
         status_page_name = "K8s Cluster"
         status_page_id = None
         try:
-            log_info(f"Getting or creating status page: {status_page_name}")
-            # Try different event names for getting status pages
-            status_pages = []
-            event_names = ['getStatusPageList', 'statusPageList', 'getStatusPages', 'statusPages']
-            for event_name in event_names:
-                try:
-                    response = api._call(event_name)
-                    if response and response.get('ok'):
-                        status_pages = response.get('statusPageList', response.get('statusPages', []))
-                        log_info(f"Got status pages using event: {event_name}")
-                        break
-                except Exception as e:
-                    log_warn(f"Event {event_name} failed: {e}")
-                    continue
-            
-            # Search for existing status page
-            for sp in status_pages:
-                if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
-                    status_page_id = sp.get('id')
-                    log_info(f"Found existing status page: {status_page_name} (ID: {status_page_id})")
-                    break
-            
-            if not status_page_id:
-                # Create status page if it doesn't exist
-                log_info(f"Creating status page: {status_page_name}")
-                slug = status_page_name.lower().replace(' ', '-')
-                # Try different event names for creating status page
-                create_events = ['addStatusPage', 'statusPage:add', 'add']
-                for event_name in create_events:
-                    try:
-                        result = api._call(event_name, {
-                            'title': status_page_name,
-                            'slug': slug,
-                            'description': 'Kubernetes cluster services status',
-                            'theme': 'light',
-                            'published': True
-                        })
-                        if result and result.get('ok'):
-                            status_page_id = result.get('id')
-                            log_info(f"Status page created using event {event_name} (ID: {status_page_id})")
+            log_info(f"Looking for existing status page: {status_page_name}")
+            # Try to get status pages - if this fails, status pages may not be supported via API
+            # In that case, user needs to create status page manually in UI
+            try:
+                # Try the most likely event name first
+                response = api._call('getStatusPageList')
+                if response and response.get('ok'):
+                    status_pages = response.get('statusPageList', [])
+                    log_info(f"Found {len(status_pages)} status pages")
+                    
+                    # Search for existing status page
+                    for sp in status_pages:
+                        if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
+                            status_page_id = sp.get('id')
+                            log_info(f"Found existing status page: {status_page_name} (ID: {status_page_id})")
                             break
-                        else:
-                            error_msg = result.get('msg', 'Unknown error') if result else 'No response'
-                            log_warn(f"Event {event_name} returned error: {error_msg}")
-                    except Exception as e:
-                        log_warn(f"Event {event_name} exception: {e}")
-                        continue
-                
-                if not status_page_id:
-                    log_error(f"Failed to create status page with all methods")
+                    
+                    if not status_page_id:
+                        log_warn(f"Status page '{status_page_name}' not found. Please create it manually in the UI, then monitors will be added automatically.")
+                else:
+                    log_warn(f"Could not get status pages. Status pages may not be supported via API in this version.")
+            except Exception as e:
+                # If getting status pages fails, it's likely not supported via API
+                log_warn(f"Status page API not available (may not be supported in 1.23.17): {e}")
+                log_warn(f"Please create status page '{status_page_name}' manually in the UI if you want monitors added to it.")
         except Exception as e:
-            log_error(f"Failed to get/create status page: {e}")
-            import traceback
-            log_error(traceback.format_exc())
+            log_warn(f"Status page lookup failed: {e}")
             status_page_id = None
         
         # Get monitors already on the status page (if status page exists)
