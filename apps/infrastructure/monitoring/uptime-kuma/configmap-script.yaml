@@ -196,9 +196,10 @@ data:
                     log_info(f"Monitor updated successfully: {full_monitor_name}")
                 else:
                     # Uptime Kuma 2.0+ requires conditions field (NOT NULL constraint)
-                    # The uptime-kuma-api library doesn't support it, so use raw Socket.IO call
+                    # Conditions should be an array of condition groups, each with conditions array
+                    # Format: [{"conditions": []}] for an empty condition group
                     monitor_data_with_conditions = monitor_data.copy()
-                    monitor_data_with_conditions['conditions'] = []  # Empty list for 2.0+
+                    monitor_data_with_conditions['conditions'] = [{"conditions": []}]  # Proper structure for 2.0+
                     # Use _call to bypass library limitations
                     result = api._call('add', monitor_data_with_conditions)
                     log_info(f"Monitor created successfully: {full_monitor_name}")
