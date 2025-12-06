@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homeassistant-ingress
+  namespace: homeautomation
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    external-dns.alpha.kubernetes.io/hostname: homeassistant.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - homeassistant.home.brettswift.com
+    secretName: home-brettswift-com-tls
+  rules:
+  - host: homeassistant.home.brettswift.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: 8123
+
