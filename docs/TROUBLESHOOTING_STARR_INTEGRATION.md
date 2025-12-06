@@ -185,3 +185,4 @@ kubectl get secret starr-secrets -n media -o jsonpath='{.data.PROWLARR_API_KEY}'
 
 
 
+
