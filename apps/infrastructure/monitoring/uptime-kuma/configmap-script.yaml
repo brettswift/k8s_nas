@@ -195,9 +195,12 @@ data:
                     api.edit_monitor(monitor_id, **monitor_data)
                     log_info(f"Monitor updated successfully: {full_monitor_name}")
                 else:
-                    # The uptime-kuma-api library handles conditions internally for 2.0+
-                    # Just call add_monitor with the standard parameters
-                    api.add_monitor(**monitor_data)
+                    # Uptime Kuma 2.0+ requires conditions field (NOT NULL constraint)
+                    # The uptime-kuma-api library doesn't support it, so use raw Socket.IO call
+                    monitor_data_with_conditions = monitor_data.copy()
+                    monitor_data_with_conditions['conditions'] = []  # Empty list for 2.0+
+                    # Use _call to bypass library limitations
+                    result = api._call('add', monitor_data_with_conditions)
                     log_info(f"Monitor created successfully: {full_monitor_name}")
             except Exception as e:
                 log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
