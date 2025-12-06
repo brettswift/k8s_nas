@@ -27,7 +27,7 @@ spec:
             - |
               # Install dependencies
               apt-get update -qq && apt-get install -y -qq curl jq kubectl >/dev/null 2>&1
-              pip install -q uptime-kuma-api >/dev/null 2>&1
+              pip install -q python-socketio >/dev/null 2>&1
               
               # Run Python sync script
               python3 /scripts/sync-monitors.py

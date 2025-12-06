@@ -9,7 +9,7 @@ data:
   sync-monitors.py: |
     #!/usr/bin/env python3
     """
-    Uptime Kuma Monitor Sync using uptime-kuma-api library
+    Uptime Kuma Monitor Sync using Socket.IO directly
     This script syncs Kubernetes ingresses to Uptime Kuma monitors
     """
 
@@ -17,12 +17,13 @@ data:
     import sys
     import json
     import subprocess
+    import time
     from typing import Dict, List, Optional
 
     try:
-        from uptime_kuma_api import UptimeKumaApi
+        import socketio
     except ImportError:
-        print("[ERROR] uptime-kuma-api library not installed")
+        print("[ERROR] python-socketio library not installed")
         sys.exit(1)
 
     # Configuration
@@ -108,29 +109,57 @@ data:
         
         if not UPTIME_KUMA_PASSWORD:
             log_error("UPTIME_KUMA_PASSWORD environment variable is not set")
-            log_error("Note: Uptime Kuma API requires login credentials, not API key")
             sys.exit(1)
+        
+        # Initialize Socket.IO client
+        sio = socketio.Client()
+        login_success = False
         
         # Connect to Uptime Kuma
         try:
-            api = UptimeKumaApi(UPTIME_KUMA_URL)
-            log_info("Connecting to Uptime Kuma...")
-            api.login(UPTIME_KUMA_USERNAME, UPTIME_KUMA_PASSWORD)
-            log_info("Successfully logged in to Uptime Kuma")
+            log_info("Connecting to Uptime Kuma via Socket.IO...")
+            sio.connect(UPTIME_KUMA_URL)
+            log_info("Connected to Uptime Kuma")
+            
+            # Login
+            log_info("Authenticating...")
+            login_response = sio.call('login', {
+                'username': UPTIME_KUMA_USERNAME,
+                'password': UPTIME_KUMA_PASSWORD
+            }, timeout=10)
+            
+            if login_response and login_response.get('ok'):
+                log_info("Successfully logged in to Uptime Kuma")
+                login_success = True
+            else:
+                error_msg = login_response.get('msg', 'Unknown error') if login_response else 'No response'
+                log_error(f"Login failed: {error_msg}")
+                sys.exit(1)
         except Exception as e:
             log_error(f"Failed to connect/login to Uptime Kuma: {e}")
             import traceback
             log_error(traceback.format_exc())
             sys.exit(1)
         
+        if not login_success:
+            log_error("Login was not successful")
+            sys.exit(1)
+        
         # Get existing monitors
         try:
             log_info("Fetching existing monitors...")
-            existing_monitors_list = api.get_monitors()
-            existing_monitors = {m.get('name', ''): m for m in existing_monitors_list if m.get('name')}
-            log_info(f"Found {len(existing_monitors)} existing monitors")
+            monitors_response = sio.call('getMonitors', timeout=10)
+            if monitors_response and monitors_response.get('ok'):
+                existing_monitors_list = monitors_response.get('monitors', [])
+                existing_monitors = {m.get('name', ''): m for m in existing_monitors_list if m.get('name')}
+                log_info(f"Found {len(existing_monitors)} existing monitors")
+            else:
+                log_warn("Failed to get monitors response, assuming no monitors exist")
+                existing_monitors = {}
         except Exception as e:
             log_error(f"Failed to fetch monitors: {e}")
+            import traceback
+            log_error(traceback.format_exc())
             existing_monitors = {}
         
         processed_monitors = set()
@@ -175,7 +204,8 @@ data:
                     log_info(f"Creating monitor: {full_monitor_name}")
                 
                 # Prepare monitor data
-                # Note: The uptime-kuma-api library handles conditions internally for 2.0+
+                # Uptime Kuma 2.0.2 requires conditions field as JSON string
+                # Format: "[{\"every\": true, \"conditions\": []}]" - condition group with 'every' property
                 monitor_data = {
                     'name': full_monitor_name,
                     'url': monitor_url,
@@ -183,49 +213,59 @@ data:
                     'interval': 60,
                     'retryInterval': 60,
                     'maxretries': 1,
+                    'conditions': json.dumps([{"every": True, "conditions": []}])  # Empty condition group for 2.0.2
                 }
                 
                 # Add notification settings if needed
                 if enable_notifications:
                     monitor_data['notify'] = True
                 
-            # Create or update
-            try:
-                if monitor_id:
-                    api.edit_monitor(monitor_id, **monitor_data)
-                    log_info(f"Monitor updated successfully: {full_monitor_name}")
-                else:
-                    # Uptime Kuma 2.0+ requires conditions field (NOT NULL constraint)
-                    # Conditions should be an array of condition groups, each with conditions array
-                    # Format: [{"conditions": []}] for an empty condition group
-                    monitor_data_with_conditions = monitor_data.copy()
-                    monitor_data_with_conditions['conditions'] = [{"conditions": []}]  # Proper structure for 2.0+
-                    # Use _call to bypass library limitations
-                    result = api._call('add', monitor_data_with_conditions)
-                    log_info(f"Monitor created successfully: {full_monitor_name}")
-            except Exception as e:
-                log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
-                import traceback
-                log_error(traceback.format_exc())
+                # Create or update
+                try:
+                    if monitor_id:
+                        # Update existing monitor
+                        monitor_data['id'] = monitor_id
+                        response = sio.call('editMonitor', monitor_data, timeout=10)
+                        if response and response.get('ok'):
+                            log_info(f"Monitor updated successfully: {full_monitor_name}")
+                        else:
+                            error_msg = response.get('msg', 'Unknown error') if response else 'No response'
+                            raise Exception(f"Update failed: {error_msg}")
+                    else:
+                        # Create new monitor
+                        response = sio.call('addMonitor', monitor_data, timeout=10)
+                        if response and response.get('ok'):
+                            log_info(f"Monitor created successfully: {full_monitor_name}")
+                        else:
+                            error_msg = response.get('msg', 'Unknown error') if response else 'No response'
+                            raise Exception(f"Create failed: {error_msg}")
+                except Exception as e:
+                    log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+                    import traceback
+                    log_error(traceback.format_exc())
                 
                 processed_monitors.add(full_monitor_name)
         
         # Remove monitors that no longer have the annotation
         log_info("Checking for monitors to remove...")
-        for monitor_name, monitor_data in existing_monitors.items():
+        for monitor_name, monitor_info in existing_monitors.items():
             if monitor_name.startswith(tuple(f"{ns}/" for ns in NAMESPACES)):
                 if monitor_name not in processed_monitors:
-                    monitor_id = monitor_data.get('id')
+                    monitor_id = monitor_info.get('id')
                     log_info(f"Deleting monitor: {monitor_name} ({monitor_id})")
                     try:
-                        api.delete_monitor(monitor_id)
-                        log_info(f"Monitor deleted successfully: {monitor_name}")
+                        response = sio.call('deleteMonitor', {'id': monitor_id}, timeout=10)
+                        if response and response.get('ok'):
+                            log_info(f"Monitor deleted successfully: {monitor_name}")
+                        else:
+                            error_msg = response.get('msg', 'Unknown error') if response else 'No response'
+                            log_error(f"Failed to delete monitor: {monitor_name} - {error_msg}")
                     except Exception as e:
                         log_error(f"Failed to delete monitor: {monitor_name} - {e}")
         
         # Disconnect
         try:
-            api.disconnect()
+            sio.disconnect()
             log_info("Disconnected from Uptime Kuma")
         except:
             pass

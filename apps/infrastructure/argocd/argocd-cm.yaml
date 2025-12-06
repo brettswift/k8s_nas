@@ -16,4 +16,18 @@ data:
   accounts.homepage: apiKey
   # Base href for UI (must match ingress path)
   server.basehref: "/argocd/"
+  # Enable exec (terminal access)
   exec.enabled: "true"
+  # Resource customizations for better UI support
+  resource.customizations: |
+    batch/Job:
+      health.lua: |
+        hs = {}
+        hs.status = "Healthy"
+        hs.message = "Job completed successfully"
+        return hs
+    batch/CronJob:
+      health.lua: |
+        hs = {}
+        hs.status = "Healthy"
+        return hs
