@@ -189,31 +189,20 @@ data:
                 if enable_notifications:
                     monitor_data['notify'] = True
                 
-                # Create or update
-                try:
-                    if monitor_id:
-                        api.edit_monitor(monitor_id, **monitor_data)
-                        log_info(f"Monitor updated successfully: {full_monitor_name}")
-                    else:
-                        # For new monitors in 2.0+, we need to ensure conditions is set
-                        # Try adding monitor, if it fails with conditions error, add default conditions
-                        try:
-                            api.add_monitor(**monitor_data)
-                            log_info(f"Monitor created successfully: {full_monitor_name}")
-                        except Exception as e:
-                            if 'conditions' in str(e).lower() or 'NOT NULL constraint' in str(e):
-                                # Add default conditions for 2.0+ - use empty list
-                                monitor_data_with_conditions = monitor_data.copy()
-                                monitor_data_with_conditions['conditions'] = []
-                                try:
-                                    api.add_monitor(**monitor_data_with_conditions)
-                                    log_info(f"Monitor created successfully (with conditions): {full_monitor_name}")
-                                except Exception as e2:
-                                    log_error(f"Failed to create monitor even with conditions: {full_monitor_name} - {e2}")
-                            else:
-                                raise
-                except Exception as e:
-                    log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+            # Create or update
+            try:
+                if monitor_id:
+                    api.edit_monitor(monitor_id, **monitor_data)
+                    log_info(f"Monitor updated successfully: {full_monitor_name}")
+                else:
+                    # The uptime-kuma-api library handles conditions internally for 2.0+
+                    # Just call add_monitor with the standard parameters
+                    api.add_monitor(**monitor_data)
+                    log_info(f"Monitor created successfully: {full_monitor_name}")
+            except Exception as e:
+                log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+                import traceback
+                log_error(traceback.format_exc())
                 
                 processed_monitors.add(full_monitor_name)
         
