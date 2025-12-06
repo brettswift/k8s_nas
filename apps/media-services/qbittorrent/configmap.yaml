@@ -7,20 +7,22 @@ data:
   10-set-webui-rootfolder.sh: |
     #!/usr/bin/with-contenv bash
     CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+    VUETORRENT_PATH="/vuetorrent"
     
-    echo "[qBittorrent Init] Setting WebUI RootFolder..."
+    echo "[qBittorrent Init] Setting WebUI RootFolder for VueTorrent..."
     
     # Create config directory if it doesn't exist
     mkdir -p /config/qBittorrent
     
     # If config file exists, update it
     if [ -f "$CONFIG_FILE" ]; then
-      echo "[qBittorrent Init] Config file found, removing RootFolder..."
-      # Remove RootFolder - not needed for subdomain routing (qbittorrent.home.brettswift.com)
-      # Subdomain routing doesn't require path prefix, so no RootFolder needed
+      echo "[qBittorrent Init] Config file found, setting RootFolder to $VUETORRENT_PATH..."
+      # Remove existing RootFolder setting first
       sed -i '/WebUI\\RootFolder/d' "$CONFIG_FILE"
-      echo "[qBittorrent Init] RootFolder removed (using subdomain routing)"
+      # Add the correct RootFolder for VueTorrent (alternative UI needs this path)
+      # Add it under [Preferences] section
+      sed -i '/\[Preferences\]/a WebUI\\RootFolder='"$VUETORRENT_PATH" "$CONFIG_FILE"
+      echo "[qBittorrent Init] RootFolder set to $VUETORRENT_PATH"
     else
       echo "[qBittorrent Init] Config file not found yet, will be created on first run"
-      # No RootFolder needed for subdomain routing
     fi
