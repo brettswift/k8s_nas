@@ -69,9 +69,17 @@ spec:
         env:
         - name: TZ
           value: "America/Los_Angeles"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: bluetooth
+          mountPath: /dev/hci0
+          readOnly: false
         resources:
           requests:
             memory: "512Mi"
@@ -99,4 +107,8 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: homeassistant-config
+      - name: bluetooth
+        hostPath:
+          path: /dev/hci0
+          type: CharDevice
 
