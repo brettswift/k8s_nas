@@ -320,6 +320,7 @@ data:
                                 
                                 # Try different event names
                                 add_events = ['addStatusPageMonitor', 'statusPageMonitor:add', 'addMonitorToStatusPage']
+                                success = False
                                 for add_event in add_events:
                                     add_response = None
                                     api.sio.emit(add_event, {
@@ -331,19 +332,15 @@ data:
                                     if add_response and add_response.get('ok'):
                                         log_info(f"Added monitor {full_monitor_name} to status page using {add_event}")
                                         status_page_monitor_ids.add(monitor_id)
+                                        success = True
                                         break
                                     
                                     if add_response:
                                         error_msg = add_response.get('msg', 'Unknown error')
                                         log_warn(f"Event {add_event} returned: {error_msg}")
                                 
-                                if not add_response or not add_response.get('ok'):
-                                
-                                if add_response and add_response.get('ok'):
-                                    log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
-                                    status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
-                                else:
-                                    error_msg = add_response.get('msg', 'Unknown error') if add_response else 'No response'
+                                if not success:
+                                    error_msg = add_response.get('msg', 'No response') if add_response else 'No response'
                                     log_warn(f"Failed to add monitor to status page: {error_msg}")
                             except Exception as e:
                                 # Idempotent: if already added or other error, just log and continue
