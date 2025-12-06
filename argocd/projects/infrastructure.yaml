@@ -27,6 +27,12 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: 'external-dns'
       server: https://kubernetes.default.svc
+    - namespace: 'media'
+      server: https://kubernetes.default.svc
+    - namespace: 'homeautomation'
+      server: https://kubernetes.default.svc
+    - namespace: 'qbittorrent'
+      server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
     - group: ''
