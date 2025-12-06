@@ -48,14 +48,19 @@ data:
 
     # Function to get all monitors from Uptime Kuma
     get_all_monitors() {
-        local response=$(curl -s -X GET \
-            -H "Authorization: Bearer ${UPTIME_KUMA_API_KEY}" \
-            -H "Content-Type: application/json" \
+        # Uptime Kuma API uses the API key as a query parameter or in a cookie
+        # Try multiple methods
+        local response=""
+        
+        # Uptime Kuma uses Basic Auth with empty username and API key as password
+        # Format: curl -u ":<api_key>" 
+        response=$(curl -s -u ":${UPTIME_KUMA_API_KEY}" \
+            -X GET \
             "${UPTIME_KUMA_URL}/api/monitors" 2>/dev/null)
         
         # Debug: log first 100 chars of response
         if echo "$response" | grep -q "<!DOCTYPE html>"; then
-            log_error "API returned HTML instead of JSON. Check API key and endpoint."
+            log_error "API returned HTML instead of JSON. API key may be invalid or Uptime Kuma API not configured."
             log_error "Response preview: $(echo "$response" | head -c 100)"
             echo ""
             return 1
@@ -95,14 +100,16 @@ data:
                 }')
             
             log_info "Updating monitor: $monitor_name ($monitor_id)"
-            local result=$(curl -s -w "\n%{http_code}" -X PUT \
-                -H "Authorization: Bearer ${UPTIME_KUMA_API_KEY}" \
+            local result=$(curl -s -w "\n%{http_code}" -u ":${UPTIME_KUMA_API_KEY}" \
+                -X PUT \
                 -H "Content-Type: application/json" \
                 -d "$json_payload" \
-                "${UPTIME_KUMA_URL}/api/monitors/${monitor_id}")
+                "${UPTIME_KUMA_URL}/api/monitor/${monitor_id}")
             local http_code=$(echo "$result" | tail -1)
             if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
-                log_error "Failed to update monitor: HTTP $http_code"
+                log_error "Failed to update monitor: HTTP $http_code - Response: $(echo "$result" | head -n -1 | head -c 200)"
+            else
+                log_info "Monitor updated successfully"
             fi
         else
             # Create new monitor
@@ -122,15 +129,14 @@ data:
             
             log_info "Creating monitor: $monitor_name"
             local result=$(curl -s -w "\n%{http_code}" -X POST \
-                -H "Authorization: Bearer ${UPTIME_KUMA_API_KEY}" \
                 -H "Content-Type: application/json" \
                 -d "$json_payload" \
-                "${UPTIME_KUMA_URL}/api/monitors")
+                "${UPTIME_KUMA_URL}/api/monitors?apikey=${UPTIME_KUMA_API_KEY}")
             local http_code=$(echo "$result" | tail -1)
             if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
-                log_error "Failed to create monitor: HTTP $http_code - Response: $(echo "$result" | head -n -1)"
+                log_error "Failed to create monitor: HTTP $http_code - Response: $(echo "$result" | head -n -1 | head -c 200)"
             else
-                log_info "Monitor created successfully"
+                log_info "Monitor created successfully: $monitor_name"
             fi
         fi
     }
@@ -198,13 +204,18 @@ data:
             
             # Get all ingresses in the namespace
             ingresses=$(kubectl get ingress -n "$namespace" -o json 2>/dev/null || echo '{"items":[]}')
+            ingress_count=$(echo "$ingresses" | jq -r '.items | length')
+            log_info "Found $ingress_count ingresses in namespace $namespace"
             
             # Process each ingress
             echo "$ingresses" | jq -r '.items[] | @base64' | while IFS= read -r ingress_b64; do
                 ingress_json=$(echo "$ingress_b64" | base64 -d)
+                ingress_name=$(echo "$ingress_json" | jq -r '.metadata.name')
                 
                 # Check if monitoring is enabled
                 enabled=$(echo "$ingress_json" | jq -r ".metadata.annotations.\"${ANNOTATION_ENABLED}\" // \"false\"")
+                
+                log_info "Checking ingress: $namespace/$ingress_name - enabled: $enabled"
                 
                 if [ "$enabled" != "true" ]; then
                     continue

@@ -20,16 +20,17 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: sync
-            image: alpine/k8s:1.28.0
+            image: python:3.11-slim
             command:
-            - /bin/sh
+            - /bin/bash
             - -c
             - |
-              # Install jq and curl
-              apk add --no-cache jq curl bash
+              # Install dependencies
+              apt-get update -qq && apt-get install -y -qq curl jq kubectl >/dev/null 2>&1
+              pip install -q uptime-kuma-api >/dev/null 2>&1
               
-              # Run sync script
-              /scripts/sync-monitors.sh
+              # Run Python sync script
+              python3 /scripts/sync-monitors.py
             env:
             - name: UPTIME_KUMA_URL
               value: "http://uptime-kuma.monitoring.svc.cluster.local:3001"
@@ -38,6 +39,16 @@ spec:
                 secretKeyRef:
                   name: uptime-kuma-api-key
                   key: api-key
+            - name: UPTIME_KUMA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-credentials
+                  key: username
+            - name: UPTIME_KUMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-credentials
+                  key: password
             - name: NAMESPACES
               value: "media homeautomation qbittorrent homepage"
             volumeMounts:
@@ -47,6 +58,6 @@ spec:
           volumes:
           - name: sync-script
             configMap:
-              name: uptime-kuma-sync-script
+              name: uptime-kuma-sync-python-script
               defaultMode: 0755
 

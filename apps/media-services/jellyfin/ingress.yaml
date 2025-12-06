@@ -13,6 +13,7 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     uptime-kuma.monitor/enabled: "true"
+    uptime-kuma.monitor/healthcheck-path: "/jellyfin/health"
 spec:
   ingressClassName: nginx
   tls:
