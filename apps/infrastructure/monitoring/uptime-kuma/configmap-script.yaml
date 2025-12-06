@@ -103,6 +103,68 @@ data:
             log_error(f"Error building URL: {e}")
             return None
 
+    def get_status_page_from_db(title: str, slug: str) -> Optional[int]:
+        """Get status page ID from database via kubectl exec"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return None
+            
+            # Query database for status page
+            query = f"SELECT id FROM status_page WHERE title='{title}' OR slug='{slug}' LIMIT 1;"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            status_page_id = result.stdout.strip()
+            if status_page_id:
+                return int(status_page_id)
+            return None
+        except Exception as e:
+            log_warn(f"Failed to get status page from database: {e}")
+            return None
+
+    def create_status_page_in_db(title: str, slug: str) -> Optional[int]:
+        """Create status page in database via kubectl exec"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return None
+            
+            # Insert status page into database
+            query = f"INSERT INTO status_page (title, slug, description, icon, theme, published) VALUES ('{title}', '{slug}', 'Kubernetes cluster services status', '/icon.svg', 'light', 1); SELECT id FROM status_page WHERE slug='{slug}';"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            status_page_id = result.stdout.strip()
+            if status_page_id:
+                return int(status_page_id)
+            return None
+        except Exception as e:
+            log_warn(f"Failed to create status page in database: {e}")
+            return None
+
     def main():
         log_info("Starting Uptime Kuma monitor sync...")
         log_info(f"Uptime Kuma URL: {UPTIME_KUMA_URL}")
@@ -198,13 +260,38 @@ data:
                             break
                     
                     if not status_page_id:
-                    
-                        log_warn(f"Could not create status page. Please create '{status_page_name}' manually in the UI.")
+                        # Fallback: Try to create via database
+                        log_info("API creation failed, trying database fallback...")
+                        slug = status_page_name.lower().replace(' ', '-')
+                        status_page_id = create_status_page_in_db(status_page_name, slug)
+                        if status_page_id:
+                            log_info(f"Status page created via database (ID: {status_page_id})")
+                        else:
+                            log_warn(f"Could not create status page via API or database. Please create '{status_page_name}' manually in the UI.")
             else:
-                log_warn(f"Could not get status pages. Response: {status_page_response}")
+                log_warn(f"Could not get status pages via API. Trying database fallback...")
+                slug = status_page_name.lower().replace(' ', '-')
+                status_page_id = get_status_page_from_db(status_page_name, slug)
+                if status_page_id:
+                    log_info(f"Found status page via database (ID: {status_page_id})")
+                else:
+                    # Try to create it
+                    status_page_id = create_status_page_in_db(status_page_name, slug)
+                    if status_page_id:
+                        log_info(f"Status page created via database (ID: {status_page_id})")
+                    else:
+                        log_warn(f"Could not find or create status page. Please create '{status_page_name}' manually in the UI.")
         except Exception as e:
             log_warn(f"Status page lookup failed: {e}")
-            status_page_id = None
+            # Fallback to database
+            slug = status_page_name.lower().replace(' ', '-')
+            status_page_id = get_status_page_from_db(status_page_name, slug)
+            if not status_page_id:
+                status_page_id = create_status_page_in_db(status_page_name, slug)
+            if status_page_id:
+                log_info(f"Found/created status page via database fallback (ID: {status_page_id})")
+            else:
+                status_page_id = None
         
         # Get monitors already on the status page (if status page exists)
         status_page_monitor_ids = set()
