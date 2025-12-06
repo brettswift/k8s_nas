@@ -60,6 +60,11 @@ spec:
               sed -i '/^default_config:/a\bluetooth:' "$CONFIG_FILE" || true
               sed -i '/^bluetooth:$/a\  adapter: none' "$CONFIG_FILE" || true
             fi
+            # Enable backup service
+            if ! grep -q "^backup:" "$CONFIG_FILE"; then
+              echo "" >> "$CONFIG_FILE"
+              echo "backup:" >> "$CONFIG_FILE"
+            fi
           else
             # Create new config file
             echo "http:" > "$CONFIG_FILE"
