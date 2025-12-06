@@ -6,13 +6,13 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    external-dns.alpha.kubernetes.io/hostname: uptime-kuma.home.brettswift.com
+    external-dns.alpha.kubernetes.io/hostname: uptime.home.brettswift.com
     external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - uptime-kuma.home.brettswift.com
+    - uptime.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
   - host: uptime.home.brettswift.com
