@@ -1,0 +1,41 @@
+---
+description: Development workflow and GitOps rules
+globs:
+alwaysApply: true
+---
+
+# Development Rules
+
+## Mandate Management
+
+1. **New Mandates**: When a new mandate is given (explicitly with the word "mandate" or implied), update this MDC file with the new rule. If the word "mandate" isn't used but a rule is implied, ask if it's a mandate before adding it.
+
+## GitOps Workflow
+
+2. **Always Use GitOps**: 
+   - Always commit changes on a branch
+   - Always push via: `git push <branch>:live`
+   - Never apply changes directly with `kubectl apply` (except for temporary test pods)
+   - All deployments must go through GitOps (ArgoCD tracks the `live` branch)
+
+3. **Post-Push Verification**:
+   - Always confirm that ArgoCD has synced after pushing
+   - Manually trigger sync if needed
+   - Always check pod logs to ensure the change was successful
+   - Verify the change is working before considering it complete
+
+## Testing Process
+
+4. **Cron Jobs and Scripts Testing**:
+   - Use temporary test pods for API testing:
+     a) `kubectl apply` a temporary test pod in the correct namespace with same service account/permissions
+     b) `kubectl exec` commands into it to test the API interactively
+     c) Destroy the test pod when done
+     d) Add the cron job or pod to the codebase
+     e) Git push via `git push <branch>:live` as per rule #2
+
+## Service Protection
+
+5. **Critical Service Confirmation**:
+   - If about to take Jellyfin or `/media` servers offline, confirm it's OK first
+   - Never make changes that would disrupt media services without explicit approval
