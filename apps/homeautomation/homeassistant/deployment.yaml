@@ -48,16 +48,17 @@ spec:
               echo "    - 172.16.0.0/12" >> "$CONFIG_FILE"
               echo "    - 192.168.0.0/16" >> "$CONFIG_FILE"
             fi
-            # Disable Bluetooth integration
+            # Disable Bluetooth integration completely
             if ! grep -q "^bluetooth:" "$CONFIG_FILE"; then
               echo "" >> "$CONFIG_FILE"
               echo "bluetooth:" >> "$CONFIG_FILE"
               echo "  adapter: none" >> "$CONFIG_FILE"
-            else
-              # Update existing bluetooth section to disable
-              if grep -q "^bluetooth:" "$CONFIG_FILE"; then
-                sed -i '/^bluetooth:/,/^[^ ]/ { /^bluetooth:/a\  adapter: none' "$CONFIG_FILE" || true
-              fi
+            fi
+            # Also exclude bluetooth from default_config if present
+            if grep -q "^default_config:" "$CONFIG_FILE" && ! grep -q "bluetooth:" "$CONFIG_FILE"; then
+              # Add bluetooth exclusion
+              sed -i '/^default_config:/a\bluetooth:' "$CONFIG_FILE" || true
+              sed -i '/^bluetooth:$/a\  adapter: none' "$CONFIG_FILE" || true
             fi
           else
             # Create new config file
