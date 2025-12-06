@@ -20,6 +20,46 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - name: configure-reverse-proxy
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - |
+          CONFIG_FILE="/config/configuration.yaml"
+          if [ -f "$CONFIG_FILE" ]; then
+            # Check if http section exists
+            if grep -q "^http:" "$CONFIG_FILE"; then
+              # Update existing http section to add use_x_forwarded_for and trusted_proxies
+              if ! grep -q "use_x_forwarded_for" "$CONFIG_FILE"; then
+                sed -i '/^http:/a\  use_x_forwarded_for: true' "$CONFIG_FILE"
+              fi
+              if ! grep -q "trusted_proxies" "$CONFIG_FILE"; then
+                sed -i '/^http:/a\  trusted_proxies:\n    - 10.0.0.0/8\n    - 172.16.0.0/12\n    - 192.168.0.0/16' "$CONFIG_FILE"
+              fi
+            else
+              # Add http section if it doesn't exist
+              echo "" >> "$CONFIG_FILE"
+              echo "http:" >> "$CONFIG_FILE"
+              echo "  use_x_forwarded_for: true" >> "$CONFIG_FILE"
+              echo "  trusted_proxies:" >> "$CONFIG_FILE"
+              echo "    - 10.0.0.0/8" >> "$CONFIG_FILE"
+              echo "    - 172.16.0.0/12" >> "$CONFIG_FILE"
+              echo "    - 192.168.0.0/16" >> "$CONFIG_FILE"
+            fi
+          else
+            # Create new config file
+            echo "http:" > "$CONFIG_FILE"
+            echo "  use_x_forwarded_for: true" >> "$CONFIG_FILE"
+            echo "  trusted_proxies:" >> "$CONFIG_FILE"
+            echo "    - 10.0.0.0/8" >> "$CONFIG_FILE"
+            echo "    - 172.16.0.0/12" >> "$CONFIG_FILE"
+            echo "    - 192.168.0.0/16" >> "$CONFIG_FILE"
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: homeassistant
         image: homeassistant/home-assistant:latest
@@ -29,10 +69,6 @@ spec:
         env:
         - name: TZ
           value: "America/Los_Angeles"
-        - name: USE_X_FORWARDED_FOR
-          value: "true"
-        - name: TRUSTED_PROXIES
-          value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         volumeMounts:
         - name: config
           mountPath: /config
