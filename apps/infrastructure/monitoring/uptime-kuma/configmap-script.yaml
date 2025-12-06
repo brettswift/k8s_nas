@@ -140,10 +140,21 @@ data:
         status_page_id = None
         try:
             log_info(f"Getting or creating status page: {status_page_name}")
-            # Use _call directly - library methods may not exist
-            response = api._call('getStatusPageList')
-            status_pages = response.get('statusPageList', []) if response and response.get('ok') else []
+            # Try different event names for getting status pages
+            status_pages = []
+            event_names = ['getStatusPageList', 'statusPageList', 'getStatusPages', 'statusPages']
+            for event_name in event_names:
+                try:
+                    response = api._call(event_name)
+                    if response and response.get('ok'):
+                        status_pages = response.get('statusPageList', response.get('statusPages', []))
+                        log_info(f"Got status pages using event: {event_name}")
+                        break
+                except Exception as e:
+                    log_warn(f"Event {event_name} failed: {e}")
+                    continue
             
+            # Search for existing status page
             for sp in status_pages:
                 if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
                     status_page_id = sp.get('id')
@@ -154,35 +165,30 @@ data:
                 # Create status page if it doesn't exist
                 log_info(f"Creating status page: {status_page_name}")
                 slug = status_page_name.lower().replace(' ', '-')
-                # Use _call with correct event name for 1.23.17
-                result = api._call('add', {
-                    'title': status_page_name,
-                    'slug': slug,
-                    'description': 'Kubernetes cluster services status',
-                    'theme': 'light',
-                    'published': True
-                })
-                
-                if result and result.get('ok'):
-                    status_page_id = result.get('id')
-                    log_info(f"Status page created: {status_page_name} (ID: {status_page_id})")
-                else:
-                    error_msg = result.get('msg', 'Unknown error') if result else 'No response'
-                    log_error(f"Failed to create status page: {error_msg}")
-                    # Try alternative event name
+                # Try different event names for creating status page
+                create_events = ['addStatusPage', 'statusPage:add', 'add']
+                for event_name in create_events:
                     try:
-                        log_info(f"Trying alternative method for status page creation...")
-                        result2 = api._call('addStatusPage', {
+                        result = api._call(event_name, {
                             'title': status_page_name,
-                            'slug': slug
+                            'slug': slug,
+                            'description': 'Kubernetes cluster services status',
+                            'theme': 'light',
+                            'published': True
                         })
-                        if result2 and result2.get('ok'):
-                            status_page_id = result2.get('id')
-                            log_info(f"Status page created with alternative method (ID: {status_page_id})")
+                        if result and result.get('ok'):
+                            status_page_id = result.get('id')
+                            log_info(f"Status page created using event {event_name} (ID: {status_page_id})")
+                            break
                         else:
-                            log_error(f"Alternative method also failed: {result2.get('msg') if result2 else 'No response'}")
-                    except Exception as e2:
-                        log_error(f"Alternative method exception: {e2}")
+                            error_msg = result.get('msg', 'Unknown error') if result else 'No response'
+                            log_warn(f"Event {event_name} returned error: {error_msg}")
+                    except Exception as e:
+                        log_warn(f"Event {event_name} exception: {e}")
+                        continue
+                
+                if not status_page_id:
+                    log_error(f"Failed to create status page with all methods")
         except Exception as e:
             log_error(f"Failed to get/create status page: {e}")
             import traceback
@@ -193,8 +199,19 @@ data:
         status_page_monitor_ids = set()
         if status_page_id:
             try:
-                response = api._call('getStatusPage', {'id': status_page_id})
-                status_page_details = response if response and response.get('ok') else None
+                # Try different event names for getting status page details
+                event_names = ['getStatusPage', 'statusPage', 'getStatusPageById']
+                status_page_details = None
+                for event_name in event_names:
+                    try:
+                        response = api._call(event_name, {'id': status_page_id})
+                        if response and response.get('ok'):
+                            status_page_details = response
+                            log_info(f"Got status page details using event: {event_name}")
+                            break
+                    except Exception as e:
+                        log_warn(f"Event {event_name} failed: {e}")
+                        continue
                 
                 if status_page_details:
                     monitors = status_page_details.get('monitorList', [])
@@ -282,17 +299,29 @@ data:
                     if status_page_id and monitor_id:
                         if monitor_id not in status_page_monitor_ids:
                             try:
-                                # Use _call directly with correct event name
-                                result = api._call('addStatusPageMonitor', {
-                                    'statusPageId': status_page_id,
-                                    'monitorId': monitor_id
-                                })
-                                if result and result.get('ok'):
-                                    log_info(f"Added monitor {full_monitor_name} to status page {status_page_name}")
-                                    status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
-                                else:
-                                    error_msg = result.get('msg', 'Unknown error') if result else 'No response'
-                                    log_warn(f"Failed to add monitor to status page: {error_msg}")
+                                # Try different event names for adding monitor to status page
+                                add_events = ['addStatusPageMonitor', 'statusPageMonitor:add', 'addMonitorToStatusPage']
+                                added = False
+                                for event_name in add_events:
+                                    try:
+                                        result = api._call(event_name, {
+                                            'statusPageId': status_page_id,
+                                            'monitorId': monitor_id
+                                        })
+                                        if result and result.get('ok'):
+                                            log_info(f"Added monitor {full_monitor_name} to status page {status_page_name} using {event_name}")
+                                            status_page_monitor_ids.add(monitor_id)  # Track it so we don't try to add again
+                                            added = True
+                                            break
+                                        else:
+                                            error_msg = result.get('msg', 'Unknown error') if result else 'No response'
+                                            log_warn(f"Event {event_name} returned error: {error_msg}")
+                                    except Exception as e:
+                                        log_warn(f"Event {event_name} exception: {e}")
+                                        continue
+                                
+                                if not added:
+                                    log_warn(f"Failed to add monitor {full_monitor_name} to status page with all methods")
                             except Exception as e:
                                 # Idempotent: if already added or other error, just log and continue
                                 log_warn(f"Could not add monitor to status page (may already be added): {e}")
