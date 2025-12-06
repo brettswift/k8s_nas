@@ -8,6 +8,7 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     external-dns.alpha.kubernetes.io/hostname: jellyseerr.home.brettswift.com
     external-dns.alpha.kubernetes.io/target: home.brettswift.com
+    uptime-kuma.monitor/enabled: "true"
 spec:
   ingressClassName: nginx
   tls:
