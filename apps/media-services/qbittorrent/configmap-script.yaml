@@ -40,7 +40,7 @@ data:
     \ (default: /data/media/formula1)\n    MAX_AGE_DAYS        - Only add torrents\
     \ added within last N days (default: 7)\n    SEQUENTIAL_DOWNLOAD - Enable sequential\
     \ download (default: true)\n    NTFY_TOPIC          - ntfy.sh topic for notifications\
-    \ (default: bswift_general)\n\nFILTERING:\n    Only adds torrents matching: Formula.1.*4K-HLG\
+    \ (default: bswift_downloads)\n\nFILTERING:\n    Only adds torrents matching: Formula.1.*4K-HLG\
     \ or Formula.1.*UHD (case-insensitive)\n    Examples that match:\n        - Formula.1.2025x22.USA.Race.SkyF1UHD.4K-HLG\n\
     \        - Formula.1.2025x21.Brazil.Race.SkyF1UHD.4K-HLG\n    Examples that DON'T\
     \ match:\n        - Formula.1.2025x22.USA.Race.SkyF1HD.SD\n        - Formula.1.2025x22.USA.Race.SkyF1HD.1080p\n\
@@ -61,8 +61,8 @@ data:
     \nCATEGORY = os.getenv(\"CATEGORY\", \"formula1\")\nSAVE_PATH = os.getenv(\"SAVE_PATH\"\
     , \"/data/media/formula1\")\nMAX_AGE_DAYS = int(os.getenv(\"MAX_AGE_DAYS\", \"\
     7\"))  # Only add torrents from last week\nSEQUENTIAL_DOWNLOAD = os.getenv(\"\
-    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\nNTFY_TOPIC = os.getenv(\"\
-    NTFY_TOPIC\", \"bswift_general\")\n\n# Setup logging to both file and stdout\n\
+    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\n    NTFY_TOPIC = os.getenv(\"\
+    NTFY_TOPIC\", \"bswift_downloads\")\n\n# Setup logging to both file and stdout\n\
     def setup_logging(log_file):\n    \"\"\"Configure logging to write to both file\
     \ and stdout\"\"\"\n    # Create logger\n    logger = logging.getLogger()\n  \
     \  logger.setLevel(logging.INFO)\n    \n    # Clear any existing handlers\n  \
@@ -244,7 +244,7 @@ data:
     #   %D = Torrent save path\n#   %C = Number of files\n#   %Z = Torrent size (bytes)\n\
     #   %T = Current tracker\n#   %G = Torrent tags (comma separated)\n#\n# SCRIPT\
     \ LOCATION: /config/notify_f1.sh\n\nset -euo pipefail\n\n# Configuration\nNTFY_TOPIC=\"\
-    bswift_general\"\nSCRIPT_PATH=\"/config/notify_f1.sh\"\n\n# Get arguments from\
+    bswift_downloads\"\nSCRIPT_PATH=\"/config/notify_f1.sh\"\n\n# Get arguments from\
     \ qBittorrent\nTORRENT_NAME=\"${1:-}\"\nTORRENT_HASH=\"${2:-}\"\nSAVE_PATH=\"\
     ${3:-}\"\n\n# Log function (optional, for debugging)\nlog() {\n    echo \"[$(date\
     \ '+%Y-%m-%d %H:%M:%S')] $*\" >> /config/notify_f1.log 2>&1 || true\n}\n\nlog\

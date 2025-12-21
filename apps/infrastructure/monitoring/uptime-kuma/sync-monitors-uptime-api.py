@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""
+Uptime Kuma Monitor Sync using uptime-kuma-api library
+This script syncs Kubernetes ingresses to Uptime Kuma monitors
+"""
+
+import os
+import sys
+import json
+import subprocess
+from typing import Dict, List, Optional
+
+try:
+    from uptime_kuma_api import UptimeKumaApi
+except ImportError:
+    print("[ERROR] uptime-kuma-api library not installed")
+    sys.exit(1)
+
+# Configuration
+UPTIME_KUMA_URL = os.environ.get('UPTIME_KUMA_URL', 'http://uptime-kuma.monitoring.svc.cluster.local:3001')
+UPTIME_KUMA_USERNAME = os.environ.get('UPTIME_KUMA_USERNAME', 'admin')
+UPTIME_KUMA_PASSWORD = os.environ.get('UPTIME_KUMA_PASSWORD', '')
+NAMESPACES = os.environ.get('NAMESPACES', 'media homeautomation qbittorrent homepage').split()
+
+ANNOTATION_ENABLED = 'uptime-kuma.monitor/enabled'
+ANNOTATION_NOTIFICATIONS = 'uptime-kuma.monitor/notifications'
+ANNOTATION_NAME = 'uptime-kuma.monitor/name'
+ANNOTATION_HEALTHCHECK_PATH = 'uptime-kuma.monitor/healthcheck-path'
+
+def log_info(msg: str):
+    print(f"[INFO] {msg}")
+
+def log_warn(msg: str):
+    print(f"[WARN] {msg}")
+
+def log_error(msg: str):
+    print(f"[ERROR] {msg}")
+
+def kubectl_get_ingresses(namespace: str) -> List[Dict]:
+    """Get all ingresses from a namespace"""
+    try:
+        result = subprocess.run(
+            ['kubectl', 'get', 'ingress', '-n', namespace, '-o', 'json'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        data = json.loads(result.stdout)
+        return data.get('items', [])
+    except subprocess.CalledProcessError:
+        return []
+    except json.JSONDecodeError:
+        return []
+
+def build_url_from_ingress(ingress: Dict) -> Optional[str]:
+    """Build URL from ingress spec"""
+    try:
+        rules = ingress.get('spec', {}).get('rules', [])
+        if not rules:
+            return None
+        
+        host = rules[0].get('host', '')
+        paths = rules[0].get('http', {}).get('paths', [])
+        path = paths[0].get('path', '/') if paths else '/'
+        
+        # Check for healthcheck path annotation
+        annotations = ingress.get('metadata', {}).get('annotations', {})
+        healthcheck_path = annotations.get(ANNOTATION_HEALTHCHECK_PATH, '')
+        
+        # Use healthcheck path if specified, otherwise use ingress path
+        if healthcheck_path:
+            # Healthcheck path is always absolute (starts with /)
+            # Use it directly, replacing the ingress path
+            path = healthcheck_path
+        else:
+            # Normalize path - remove regex patterns like (.*)
+            if path and '(' in path:
+                # Extract the base path before regex
+                path = path.split('(')[0].rstrip('/')
+            
+            # Normalize path
+            if path == 'null' or not path:
+                path = '/'
+            if path != '/' and path.endswith('/'):
+                path = path.rstrip('/')
+        
+        # Check if TLS is configured
+        tls = ingress.get('spec', {}).get('tls', [])
+        protocol = 'https' if tls else 'http'
+        
+        return f"{protocol}://{host}{path}"
+    except Exception as e:
+        log_error(f"Error building URL: {e}")
+        return None
+
+def main():
+    log_info("Starting Uptime Kuma monitor sync...")
+    log_info(f"Uptime Kuma URL: {UPTIME_KUMA_URL}")
+    
+    if not UPTIME_KUMA_PASSWORD:
+        log_error("UPTIME_KUMA_PASSWORD environment variable is not set")
+        log_error("Note: Uptime Kuma API requires login credentials, not API key")
+        sys.exit(1)
+    
+    # Connect to Uptime Kuma
+    try:
+        api = UptimeKumaApi(UPTIME_KUMA_URL)
+        log_info("Connecting to Uptime Kuma...")
+        api.login(UPTIME_KUMA_USERNAME, UPTIME_KUMA_PASSWORD)
+        log_info("Successfully logged in to Uptime Kuma")
+    except Exception as e:
+        log_error(f"Failed to connect/login to Uptime Kuma: {e}")
+        import traceback
+        log_error(traceback.format_exc())
+        sys.exit(1)
+    
+    # Get existing monitors
+    try:
+        log_info("Fetching existing monitors...")
+        existing_monitors_list = api.get_monitors()
+        existing_monitors = {m.get('name', ''): m for m in existing_monitors_list if m.get('name')}
+        log_info(f"Found {len(existing_monitors)} existing monitors")
+    except Exception as e:
+        log_error(f"Failed to fetch monitors: {e}")
+        existing_monitors = {}
+    
+    processed_monitors = set()
+    
+    # Process ingresses
+    for namespace in NAMESPACES:
+        log_info(f"Processing namespace: {namespace}")
+        ingresses = kubectl_get_ingresses(namespace)
+        log_info(f"Found {len(ingresses)} ingresses in namespace {namespace}")
+        
+        for ingress in ingresses:
+            annotations = ingress.get('metadata', {}).get('annotations', {})
+            enabled = annotations.get(ANNOTATION_ENABLED, 'false')
+            
+            ingress_name = ingress.get('metadata', {}).get('name', '')
+            log_info(f"Checking ingress: {namespace}/{ingress_name} - enabled: {enabled}")
+            
+            if enabled != 'true':
+                continue
+            
+            # Get monitor name
+            monitor_name = annotations.get(ANNOTATION_NAME, ingress_name)
+            full_monitor_name = f"{namespace}/{monitor_name}"
+            
+            # Get notification preference
+            enable_notifications = annotations.get(ANNOTATION_NOTIFICATIONS, 'false') == 'true'
+            
+            # Build URL
+            monitor_url = build_url_from_ingress(ingress)
+            if not monitor_url:
+                log_warn(f"Skipping {full_monitor_name}: Could not build URL")
+                continue
+            
+            log_info(f"Processing: {full_monitor_name} -> {monitor_url}")
+            
+            # Check if monitor exists
+            monitor_id = None
+            if full_monitor_name in existing_monitors:
+                monitor_id = existing_monitors[full_monitor_name].get('id')
+                log_info(f"Updating monitor: {full_monitor_name} ({monitor_id})")
+            else:
+                log_info(f"Creating monitor: {full_monitor_name}")
+            
+            # Prepare monitor data
+            # Note: The uptime-kuma-api library handles conditions internally for 2.0+
+            monitor_data = {
+                'name': full_monitor_name,
+                'url': monitor_url,
+                'type': 'http',
+                'interval': 60,
+                'retryInterval': 60,
+                'maxretries': 1,
+            }
+            
+            # Add notification settings if needed
+            if enable_notifications:
+                monitor_data['notify'] = True
+            
+            # Create or update
+            try:
+                if monitor_id:
+                    api.edit_monitor(monitor_id, **monitor_data)
+                    log_info(f"Monitor updated successfully: {full_monitor_name}")
+                else:
+                    # For new monitors in 2.0+, we need to ensure conditions is set
+                    # Try adding monitor, if it fails with conditions error, add default conditions
+                    try:
+                        api.add_monitor(**monitor_data)
+                        log_info(f"Monitor created successfully: {full_monitor_name}")
+                    except Exception as e:
+                        if 'conditions' in str(e).lower() or 'NOT NULL constraint' in str(e):
+                            # Add default conditions for 2.0+ - use empty list
+                            monitor_data_with_conditions = monitor_data.copy()
+                            monitor_data_with_conditions['conditions'] = []
+                            try:
+                                api.add_monitor(**monitor_data_with_conditions)
+                                log_info(f"Monitor created successfully (with conditions): {full_monitor_name}")
+                            except Exception as e2:
+                                log_error(f"Failed to create monitor even with conditions: {full_monitor_name} - {e2}")
+                        else:
+                            raise
+            except Exception as e:
+                log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+            
+            processed_monitors.add(full_monitor_name)
+    
+    # Remove monitors that no longer have the annotation
+    log_info("Checking for monitors to remove...")
+    for monitor_name, monitor_data in existing_monitors.items():
+        if monitor_name.startswith(tuple(f"{ns}/" for ns in NAMESPACES)):
+            if monitor_name not in processed_monitors:
+                monitor_id = monitor_data.get('id')
+                log_info(f"Deleting monitor: {monitor_name} ({monitor_id})")
+                try:
+                    api.delete_monitor(monitor_id)
+                    log_info(f"Monitor deleted successfully: {monitor_name}")
+                except Exception as e:
+                    log_error(f"Failed to delete monitor: {monitor_name} - {e}")
+    
+    # Disconnect
+    try:
+        api.disconnect()
+        log_info("Disconnected from Uptime Kuma")
+    except:
+        pass
+    
+    log_info("Monitor sync completed!")
+
+if __name__ == '__main__':
+    main()
+

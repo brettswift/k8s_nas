@@ -110,16 +110,10 @@ spec:
           mountPath: /downloads
         - name: media
           mountPath: /data
-        - name: custom-init-scripts
-          mountPath: /custom-cont-init.d
         - name: qbittorrent-scripts
           mountPath: /scripts
           readOnly: true
       volumes:
-      - name: custom-init-scripts
-        configMap:
-          name: qbittorrent-init-scripts
-          defaultMode: 0755
       - name: qbittorrent-config
         persistentVolumeClaim:
           claimName: qbittorrent-config

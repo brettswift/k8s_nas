@@ -1,0 +1,547 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-sync-python-script
+  namespace: monitoring
+  labels:
+    app: uptime-kuma-sync
+data:
+  sync-monitors.py: |
+    #!/usr/bin/env python3
+    """
+    Uptime Kuma Monitor Sync using uptime-kuma-api library
+    This script syncs Kubernetes ingresses to Uptime Kuma monitors
+    """
+
+    import os
+    import sys
+    import json
+    import subprocess
+    import time
+    from typing import Dict, List, Optional
+
+    try:
+        from uptime_kuma_api import UptimeKumaApi
+    except ImportError:
+        print("[ERROR] uptime-kuma-api library not installed")
+        sys.exit(1)
+
+    # Configuration
+    UPTIME_KUMA_URL = os.environ.get('UPTIME_KUMA_URL', 'http://uptime-kuma.monitoring.svc.cluster.local:3001')
+    UPTIME_KUMA_USERNAME = os.environ.get('UPTIME_KUMA_USERNAME', 'admin')
+    UPTIME_KUMA_PASSWORD = os.environ.get('UPTIME_KUMA_PASSWORD', '')
+    NAMESPACES = os.environ.get('NAMESPACES', 'media homeautomation qbittorrent homepage').split()
+
+    ANNOTATION_ENABLED = 'uptime-kuma.monitor/enabled'
+    ANNOTATION_NOTIFICATIONS = 'uptime-kuma.monitor/notifications'
+    ANNOTATION_NAME = 'uptime-kuma.monitor/name'
+    ANNOTATION_HEALTHCHECK_PATH = 'uptime-kuma.monitor/healthcheck-path'
+
+    def log_info(msg: str):
+        print(f"[INFO] {msg}")
+
+    def log_warn(msg: str):
+        print(f"[WARN] {msg}")
+
+    def log_error(msg: str):
+        print(f"[ERROR] {msg}")
+
+    def kubectl_get_ingresses(namespace: str) -> List[Dict]:
+        """Get all ingresses from a namespace"""
+        try:
+            result = subprocess.run(
+                ['kubectl', 'get', 'ingress', '-n', namespace, '-o', 'json'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            data = json.loads(result.stdout)
+            return data.get('items', [])
+        except subprocess.CalledProcessError:
+            return []
+        except json.JSONDecodeError:
+            return []
+
+    def build_url_from_ingress(ingress: Dict) -> Optional[str]:
+        """Build URL from ingress spec"""
+        try:
+            rules = ingress.get('spec', {}).get('rules', [])
+            if not rules:
+                return None
+            
+            host = rules[0].get('host', '')
+            paths = rules[0].get('http', {}).get('paths', [])
+            path = paths[0].get('path', '/') if paths else '/'
+            
+            # Check for healthcheck path annotation
+            annotations = ingress.get('metadata', {}).get('annotations', {})
+            healthcheck_path = annotations.get(ANNOTATION_HEALTHCHECK_PATH, '')
+            
+            # Use healthcheck path if specified, otherwise use ingress path
+            if healthcheck_path:
+                # Healthcheck path is always absolute (starts with /)
+                # Use it directly, replacing the ingress path
+                path = healthcheck_path
+            else:
+                # Normalize path - remove regex patterns like (.*)
+                if path and '(' in path:
+                    # Extract the base path before regex
+                    path = path.split('(')[0].rstrip('/')
+                
+                # Normalize path
+                if path == 'null' or not path:
+                    path = '/'
+                if path != '/' and path.endswith('/'):
+                    path = path.rstrip('/')
+            
+            # Check if TLS is configured
+            tls = ingress.get('spec', {}).get('tls', [])
+            protocol = 'https' if tls else 'http'
+            
+            return f"{protocol}://{host}{path}"
+        except Exception as e:
+            log_error(f"Error building URL: {e}")
+            return None
+
+    def get_status_page_from_db(title: str, slug: str) -> Optional[int]:
+        """Get status page ID from database via kubectl exec"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return None
+            
+            # Query database for status page
+            query = f"SELECT id FROM status_page WHERE title='{title}' OR slug='{slug}' LIMIT 1;"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            status_page_id = result.stdout.strip()
+            if status_page_id:
+                return int(status_page_id)
+            return None
+        except Exception as e:
+            log_warn(f"Failed to get status page from database: {e}")
+            return None
+
+    def create_status_page_in_db(title: str, slug: str) -> Optional[int]:
+        """Create status page in database via kubectl exec"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return None
+            
+            # Insert status page into database
+            query = f"INSERT INTO status_page (title, slug, description, icon, theme, published) VALUES ('{title}', '{slug}', 'Kubernetes cluster services status', '/icon.svg', 'dark', 1); SELECT id FROM status_page WHERE slug='{slug}';"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            status_page_id = result.stdout.strip()
+            if status_page_id:
+                return int(status_page_id)
+            return None
+        except Exception as e:
+            log_warn(f"Failed to create status page in database: {e}")
+            return None
+
+    def add_monitor_to_status_page_db(status_page_id: int, monitor_id: int) -> bool:
+        """Add monitor to status page via database (using groups)"""
+        try:
+            # Get Uptime Kuma pod name
+            result = subprocess.run(
+                ['kubectl', 'get', 'pod', '-n', 'monitoring', '-l', 'app=uptime-kuma', '-o', 'jsonpath={.items[0].metadata.name}'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            kuma_pod = result.stdout.strip()
+            if not kuma_pod:
+                log_warn("Could not find Uptime Kuma pod")
+                return False
+            
+            # Get or create a default group for this status page
+            group_query = f"SELECT id FROM \"group\" WHERE status_page_id={status_page_id} LIMIT 1;"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', group_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            group_id = result.stdout.strip()
+            
+            if not group_id:
+                # Create a default group for this status page
+                create_group_query = f"INSERT INTO \"group\" (name, status_page_id, public, active, weight) VALUES ('Services', {status_page_id}, 1, 1, 1000); SELECT id FROM \"group\" WHERE status_page_id={status_page_id} LIMIT 1;"
+                result = subprocess.run(
+                    ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', create_group_query],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                group_id = result.stdout.strip()
+            
+            if not group_id:
+                log_warn(f"Could not get or create group for status page {status_page_id}")
+                return False
+            
+            group_id = int(group_id)
+            
+            # Check if monitor is already in the group
+            check_query = f"SELECT COUNT(*) FROM monitor_group WHERE monitor_id={monitor_id} AND group_id={group_id};"
+            result = subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', check_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip() == '1':
+                # Already added
+                return True
+            
+            # Add monitor to group
+            add_query = f"INSERT INTO monitor_group (monitor_id, group_id, weight, send_url) VALUES ({monitor_id}, {group_id}, 1000, 0);"
+            subprocess.run(
+                ['kubectl', 'exec', '-n', 'monitoring', kuma_pod, '--', 'sqlite3', '/app/data/kuma.db', add_query],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return True
+        except Exception as e:
+            log_warn(f"Failed to add monitor to status page via database: {e}")
+            return False
+
+    def main():
+        log_info("Starting Uptime Kuma monitor sync...")
+        log_info(f"Uptime Kuma URL: {UPTIME_KUMA_URL}")
+        
+        if not UPTIME_KUMA_PASSWORD:
+            log_error("UPTIME_KUMA_PASSWORD environment variable is not set")
+            sys.exit(1)
+        
+        # Connect to Uptime Kuma using the library
+        try:
+            api = UptimeKumaApi(UPTIME_KUMA_URL)
+            log_info("Connecting to Uptime Kuma...")
+            api.login(UPTIME_KUMA_USERNAME, UPTIME_KUMA_PASSWORD)
+            log_info("Successfully logged in to Uptime Kuma")
+        except Exception as e:
+            log_error(f"Failed to connect/login to Uptime Kuma: {e}")
+            import traceback
+            log_error(traceback.format_exc())
+            sys.exit(1)
+        
+        # Get existing monitors
+        try:
+            log_info("Fetching existing monitors...")
+            existing_monitors_list = api.get_monitors()
+            existing_monitors = {m.get('name', ''): m for m in existing_monitors_list if m.get('name')}
+            log_info(f"Found {len(existing_monitors)} existing monitors")
+        except Exception as e:
+            log_error(f"Failed to fetch monitors: {e}")
+            existing_monitors = {}
+        
+        processed_monitors = set()
+        
+        # Get "K8s Cluster" status page (idempotent)
+        # Use emit with callback since call() times out for status pages
+        status_page_name = "K8s Cluster"
+        status_page_id = None
+        status_page_response = None
+        
+        def handle_status_page_list(*args):
+            nonlocal status_page_response
+            status_page_response = args[0] if args else None
+        
+        try:
+            log_info(f"Looking for existing status page: {status_page_name}")
+            # Use emit with callback instead of call (call times out)
+            # Try different event name formats
+            event_names = ['getStatusPageList', 'statusPageList', 'getStatusPages']
+            for event_name in event_names:
+                status_page_response = None
+                api.sio.emit(event_name, callback=handle_status_page_list)
+                time.sleep(3)  # Wait longer for response
+                
+                if status_page_response:
+                    log_info(f"Got response from event: {event_name}")
+                    break
+            
+            if status_page_response and status_page_response.get('ok'):
+                status_pages = status_page_response.get('statusPageList', [])
+                log_info(f"Found {len(status_pages)} status pages")
+                
+                # Search for existing status page
+                for sp in status_pages:
+                    if sp.get('title') == status_page_name or sp.get('slug') == status_page_name.lower().replace(' ', '-'):
+                        status_page_id = sp.get('id')
+                        log_info(f"Found existing status page: {status_page_name} (ID: {status_page_id})")
+                        break
+                
+                if not status_page_id:
+                    log_warn(f"Status page '{status_page_name}' not found. Creating it...")
+                    # Try to create status page using emit
+                    create_response = None
+                    def handle_create(*args):
+                        nonlocal create_response
+                        create_response = args[0] if args else None
+                    
+                    slug = status_page_name.lower().replace(' ', '-')
+                    # Try different event names for creating
+                    create_events = ['addStatusPage', 'statusPage:add', 'add']
+                    for create_event in create_events:
+                        create_response = None
+                        api.sio.emit(create_event, {
+                            'title': status_page_name,
+                            'slug': slug,
+                            'description': 'Kubernetes cluster services status',
+                            'theme': 'light',
+                            'published': True
+                        }, callback=handle_create)
+                        time.sleep(3)
+                        
+                        if create_response and create_response.get('ok'):
+                            status_page_id = create_response.get('id')
+                            log_info(f"Status page created using {create_event} (ID: {status_page_id})")
+                            break
+                    
+                    if not status_page_id:
+                        # Fallback: Try to create via database
+                        log_info("API creation failed, trying database fallback...")
+                        slug = status_page_name.lower().replace(' ', '-')
+                        status_page_id = create_status_page_in_db(status_page_name, slug)
+                        if status_page_id:
+                            log_info(f"Status page created via database (ID: {status_page_id})")
+                        else:
+                            log_warn(f"Could not create status page via API or database. Please create '{status_page_name}' manually in the UI.")
+            else:
+                log_warn(f"Could not get status pages via API. Trying database fallback...")
+                slug = status_page_name.lower().replace(' ', '-')
+                status_page_id = get_status_page_from_db(status_page_name, slug)
+                if status_page_id:
+                    log_info(f"Found status page via database (ID: {status_page_id})")
+                else:
+                    # Try to create it
+                    status_page_id = create_status_page_in_db(status_page_name, slug)
+                    if status_page_id:
+                        log_info(f"Status page created via database (ID: {status_page_id})")
+                    else:
+                        log_warn(f"Could not find or create status page. Please create '{status_page_name}' manually in the UI.")
+        except Exception as e:
+            log_warn(f"Status page lookup failed: {e}")
+            # Fallback to database
+            slug = status_page_name.lower().replace(' ', '-')
+            status_page_id = get_status_page_from_db(status_page_name, slug)
+            if not status_page_id:
+                status_page_id = create_status_page_in_db(status_page_name, slug)
+            if status_page_id:
+                log_info(f"Found/created status page via database fallback (ID: {status_page_id})")
+            else:
+                status_page_id = None
+        
+        # Get monitors already on the status page (if status page exists)
+        status_page_monitor_ids = set()
+        if status_page_id:
+            try:
+                # Use emit with callback to get status page details
+                status_page_details = None
+                def handle_status_page(*args):
+                    nonlocal status_page_details
+                    status_page_details = args[0] if args else None
+                
+                # Try different event names
+                get_events = ['getStatusPage', 'statusPage', 'getStatusPageById']
+                for get_event in get_events:
+                    status_page_details = None
+                    api.sio.emit(get_event, {'id': status_page_id}, callback=handle_status_page)
+                    time.sleep(2)
+                    
+                    if status_page_details and status_page_details.get('ok'):
+                        break
+                
+                if status_page_details and status_page_details.get('ok'):
+                    monitors = status_page_details.get('monitorList', [])
+                    status_page_monitor_ids = {m.get('monitorId') for m in monitors if m.get('monitorId')}
+                    log_info(f"Status page has {len(status_page_monitor_ids)} monitors")
+            except Exception as e:
+                log_warn(f"Failed to get status page monitors: {e}")
+        
+        # Process ingresses
+        for namespace in NAMESPACES:
+            log_info(f"Processing namespace: {namespace}")
+            ingresses = kubectl_get_ingresses(namespace)
+            log_info(f"Found {len(ingresses)} ingresses in namespace {namespace}")
+            
+            for ingress in ingresses:
+                annotations = ingress.get('metadata', {}).get('annotations', {})
+                enabled = annotations.get(ANNOTATION_ENABLED, 'false')
+                
+                ingress_name = ingress.get('metadata', {}).get('name', '')
+                log_info(f"Checking ingress: {namespace}/{ingress_name} - enabled: {enabled}")
+                
+                if enabled != 'true':
+                    continue
+                
+                # Get monitor name
+                monitor_name = annotations.get(ANNOTATION_NAME, ingress_name)
+                full_monitor_name = f"{namespace}/{monitor_name}"
+                
+                # Get notification preference
+                enable_notifications = annotations.get(ANNOTATION_NOTIFICATIONS, 'false') == 'true'
+                
+                # Build URL
+                monitor_url = build_url_from_ingress(ingress)
+                if not monitor_url:
+                    log_warn(f"Skipping {full_monitor_name}: Could not build URL")
+                    continue
+                
+                log_info(f"Processing: {full_monitor_name} -> {monitor_url}")
+                
+                # Check if monitor exists
+                monitor_id = None
+                if full_monitor_name in existing_monitors:
+                    monitor_id = existing_monitors[full_monitor_name].get('id')
+                    log_info(f"Updating monitor: {full_monitor_name} ({monitor_id})")
+                else:
+                    log_info(f"Creating monitor: {full_monitor_name}")
+                
+                # Prepare monitor data
+                monitor_data = {
+                    'name': full_monitor_name,
+                    'url': monitor_url,
+                    'type': 'http',
+                    'interval': 60,
+                    'retryInterval': 60,
+                    'maxretries': 1,
+                }
+                
+                # Add notification settings if needed
+                if enable_notifications:
+                    monitor_data['notify'] = True
+                
+                # Create or update
+                try:
+                    if monitor_id:
+                        api.edit_monitor(monitor_id, **monitor_data)
+                        log_info(f"Monitor updated successfully: {full_monitor_name}")
+                    else:
+                        result = api.add_monitor(**monitor_data)
+                        # Get the monitor ID from the result if available, or refresh from API
+                        if result and isinstance(result, dict):
+                            monitor_id = result.get('id') or result.get('monitorID')
+                        if not monitor_id:
+                            # Refresh monitors to get the ID
+                            try:
+                                updated_monitors = api.get_monitors()
+                                for m in updated_monitors:
+                                    if m.get('name') == full_monitor_name:
+                                        monitor_id = m.get('id')
+                                        break
+                            except:
+                                pass
+                        log_info(f"Monitor created successfully: {full_monitor_name}")
+                    
+                    # Add monitor to status page if status page exists and monitor not already added
+                    if status_page_id and monitor_id:
+                        if monitor_id not in status_page_monitor_ids:
+                            try:
+                                # Use emit with callback to add monitor to status page
+                                add_response = None
+                                def handle_add(*args):
+                                    nonlocal add_response
+                                    add_response = args[0] if args else None
+                                
+                                # Try different event names
+                                add_events = ['addStatusPageMonitor', 'statusPageMonitor:add', 'addMonitorToStatusPage']
+                                success = False
+                                for add_event in add_events:
+                                    add_response = None
+                                    api.sio.emit(add_event, {
+                                        'statusPageId': status_page_id,
+                                        'monitorId': monitor_id
+                                    }, callback=handle_add)
+                                    time.sleep(2)
+                                    
+                                    if add_response and add_response.get('ok'):
+                                        log_info(f"Added monitor {full_monitor_name} to status page using {add_event}")
+                                        status_page_monitor_ids.add(monitor_id)
+                                        success = True
+                                        break
+                                    
+                                    if add_response:
+                                        error_msg = add_response.get('msg', 'Unknown error')
+                                        log_warn(f"Event {add_event} returned: {error_msg}")
+                                
+                                if not success:
+                                    # Fallback: Try to add via database
+                                    log_info("API addition failed, trying database fallback...")
+                                    if add_monitor_to_status_page_db(status_page_id, monitor_id):
+                                        log_info(f"Added monitor {full_monitor_name} to status page via database")
+                                        status_page_monitor_ids.add(monitor_id)
+                                    else:
+                                        error_msg = add_response.get('msg', 'No response') if add_response else 'No response'
+                                        log_warn(f"Failed to add monitor to status page via API or database: {error_msg}")
+                            except Exception as e:
+                                # Fallback: Try to add via database
+                                log_warn(f"Exception adding monitor to status page: {e}. Trying database fallback...")
+                                if add_monitor_to_status_page_db(status_page_id, monitor_id):
+                                    log_info(f"Added monitor {full_monitor_name} to status page via database fallback")
+                                    status_page_monitor_ids.add(monitor_id)
+                                else:
+                                    log_warn(f"Could not add monitor to status page via database: {e}")
+                        else:
+                            log_info(f"Monitor {full_monitor_name} already on status page")
+                    elif not status_page_id:
+                        log_warn(f"Status page not available, skipping adding monitor {full_monitor_name} to status page")
+                except Exception as e:
+                    log_error(f"Failed to {'update' if monitor_id else 'create'} monitor: {full_monitor_name} - {e}")
+                    import traceback
+                    log_error(traceback.format_exc())
+                
+                processed_monitors.add(full_monitor_name)
+        
+        # Remove monitors that no longer have the annotation
+        log_info("Checking for monitors to remove...")
+        for monitor_name, monitor_info in existing_monitors.items():
+            if monitor_name.startswith(tuple(f"{ns}/" for ns in NAMESPACES)):
+                if monitor_name not in processed_monitors:
+                    monitor_id = monitor_info.get('id')
+                    log_info(f"Deleting monitor: {monitor_name} ({monitor_id})")
+                    try:
+                        api.delete_monitor(monitor_id)
+                        log_info(f"Monitor deleted successfully: {monitor_name}")
+                    except Exception as e:
+                        log_error(f"Failed to delete monitor: {monitor_name} - {e}")
+        
+        # Disconnect
+        try:
+            api.disconnect()
+            log_info("Disconnected from Uptime Kuma")
+        except:
+            pass
+        
+        log_info("Monitor sync completed!")
+
+    if __name__ == '__main__':
+        main()

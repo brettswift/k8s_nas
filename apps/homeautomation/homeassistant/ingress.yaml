@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homeassistant-ingress
+  namespace: homeautomation
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Forwarded-Proto: $scheme";
+      more_set_headers "X-Real-IP: $remote_addr";
+      more_set_headers "X-Forwarded-For: $proxy_add_x_forwarded_for";
+      more_set_headers "X-Forwarded-Host: $host";
+    external-dns.alpha.kubernetes.io/hostname: homeassistant.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+    uptime-kuma.monitor/enabled: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - homeassistant.home.brettswift.com
+    secretName: home-brettswift-com-tls
+  rules:
+  - host: homeassistant.home.brettswift.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: 8123
+

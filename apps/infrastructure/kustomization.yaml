@@ -1,6 +1,6 @@
 resources:
   # - nvidia-device-plugin/  # Disabled - glibc incompatibility with host OS
   - cert-manager/
-  - traefik/
+  - external-dns/
 # argocd/ removed - managed by argocd-config Application separately
 # monitoring/ removed - managed by monitoring Application separately

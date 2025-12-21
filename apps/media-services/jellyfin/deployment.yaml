@@ -38,6 +38,8 @@ spec:
           value: "all"
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: "compute,video,utility"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/lib/x86_64-linux-gnu:/opt/nvidia/lib:/usr/lib/jellyfin-ffmpeg"
         resources:
           limits:
             cpu: "2"
@@ -64,6 +66,9 @@ spec:
           mountPath: /dev/nvidia-uvm
         - name: dev-nvidia-uvm-tools
           mountPath: /dev/nvidia-uvm-tools
+        - name: nvidia-libs
+          mountPath: /opt/nvidia/lib
+          readOnly: true
       initContainers:
       - name: apply-xml-overrides
         image: alpine:latest
@@ -131,6 +136,10 @@ spec:
       - name: dev-nvidia-uvm-tools
         hostPath:
           path: /dev/nvidia-uvm-tools
+      - name: nvidia-libs
+        hostPath:
+          path: /usr/lib/x86_64-linux-gnu
+          type: Directory
       - name: network-seed
         configMap:
           name: jellyfin-network-config

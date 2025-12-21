@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sync-route53-credentials
+  namespace: cert-manager
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours (credentials don't change often)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          # Using default service account - ensure it has permissions to get/apply secrets
+          restartPolicy: OnFailure
+          containers:
+          - name: sync-secret
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              SOURCE_NS="cert-manager"
+              SECRET_NAME="route53-credentials"
+              
+              # Target namespaces that need route53 credentials
+              TARGET_NS="external-dns"
+              
+              echo "Syncing $SECRET_NAME from $SOURCE_NS to: $TARGET_NS"
+              echo ""
+              
+              for ns in $TARGET_NS; do
+                if [ "$ns" != "$SOURCE_NS" ]; then
+                  echo "Syncing to namespace: $ns"
+                  kubectl get secret "$SECRET_NAME" -n "$SOURCE_NS" -o yaml | \
+                    sed "s/namespace: $SOURCE_NS/namespace: $ns/" | \
+                    sed '/^  uid:/d' | \
+                    sed '/^  resourceVersion:/d' | \
+                    sed '/^  selfLink:/d' | \
+                    sed '/^  creationTimestamp:/d' | \
+                    kubectl apply -f -
+                  echo "✅ Synced to $ns"
+                fi
+              done
+              
+              echo ""
+              echo "✅ Sync complete"
+

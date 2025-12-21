@@ -1,13 +1,19 @@
 resources:
 - namespace.yaml
-- prometheus-configmap.yaml
-- prometheus-deployment.yaml
-- prometheus-service.yaml
-- prometheus-serviceaccount.yaml
-- prometheus-ingress.yaml
-- grafana-configmap.yaml
-- grafana-dashboard-configmap.yaml
-- grafana-dashboard-config.yaml
-- grafana-deployment.yaml
-- grafana-service.yaml
-- grafana-ingress.yaml
+# Prometheus - commented out, work in progress
+# - prometheus-configmap.yaml
+# - prometheus-deployment.yaml
+# - prometheus-service.yaml
+# - prometheus-serviceaccount.yaml
+# - prometheus-ingress.yaml
+# Grafana - commented out, work in progress
+# - grafana-configmap.yaml
+# - grafana-dashboard-configmap.yaml
+# - grafana-dashboard-config.yaml
+# - grafana-deployment.yaml
+# - grafana-service.yaml
+# - grafana-ingress.yaml
+# Uptime Kuma - starting fresh
+- uptime-kuma/
+# Netdata - removed: requires cloud login even in older versions
+# - netdata/

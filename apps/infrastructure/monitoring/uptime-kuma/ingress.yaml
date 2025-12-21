@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    external-dns.alpha.kubernetes.io/hostname: uptime.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - uptime.home.brettswift.com
+    secretName: home-brettswift-com-tls
+  rules:
+  - host: uptime.home.brettswift.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: uptime-kuma
+            port:
+              number: 3001
+

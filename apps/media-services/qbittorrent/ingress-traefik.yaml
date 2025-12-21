@@ -8,6 +8,8 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    external-dns.alpha.kubernetes.io/hostname: qbittorrent.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
   ingressClassName: nginx
   tls:

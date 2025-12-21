@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: homeautomation
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: homeassistant
+        path: apps/homeautomation/homeassistant
+      - name: matter-server
+        path: apps/homeautomation/matter-server
+  template:
+    metadata:
+      name: '{{name}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: '{{name}}'
+    spec:
+      project: apps
+      source:
+        repoURL: git@github.com:brettswift/k8s_nas.git
+        targetRevision: live
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: homeautomation
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+

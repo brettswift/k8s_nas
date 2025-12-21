@@ -22,7 +22,7 @@ ENVIRONMENT VARIABLES:
     SAVE_PATH           - Save/download path for torrents (default: /data/media/formula1)
     MAX_AGE_DAYS        - Only add torrents added within last N days (default: 7)
     SEQUENTIAL_DOWNLOAD - Enable sequential download (default: true)
-    NTFY_TOPIC          - ntfy.sh topic for notifications (default: bswift_general)
+    NTFY_TOPIC          - ntfy.sh topic for notifications (default: bswift_downloads)
 
 FILTERING:
     Only adds torrents matching: Formula.1.*4K-HLG or Formula.1.*UHD (case-insensitive)
@@ -65,7 +65,7 @@ CATEGORY = os.getenv("CATEGORY", "formula1")
 SAVE_PATH = os.getenv("SAVE_PATH", "/data/media/formula1")
 MAX_AGE_DAYS = int(os.getenv("MAX_AGE_DAYS", "7"))  # Only add torrents from last week
 SEQUENTIAL_DOWNLOAD = os.getenv("SEQUENTIAL_DOWNLOAD", "true").lower() == "true"
-NTFY_TOPIC = os.getenv("NTFY_TOPIC", "bswift_general")
+NTFY_TOPIC = os.getenv("NTFY_TOPIC", "bswift_downloads")
 
 # Setup logging to both file and stdout
 def setup_logging(log_file):

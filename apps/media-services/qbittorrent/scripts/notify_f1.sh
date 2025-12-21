@@ -24,7 +24,7 @@
 set -euo pipefail
 
 # Configuration
-NTFY_TOPIC="bswift_general"
+NTFY_TOPIC="bswift_downloads"
 SCRIPT_PATH="/config/notify_f1.sh"
 
 # Get arguments from qBittorrent

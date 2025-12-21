@@ -52,7 +52,7 @@ spec:
             - name: SEQUENTIAL_DOWNLOAD
               value: "true"
             - name: NTFY_TOPIC
-              value: "bswift_general"
+              value: "bswift_downloads"
             resources:
               requests:
                 cpu: "50m"
