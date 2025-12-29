@@ -1,6 +1,7 @@
 resources:
 - namespace.yaml
 - common-configmap.yaml
+- wireguard-configmap.yaml
 - sonarr-deployment.yaml
 - sonarr-ingress.yaml
 - sabnzbd-deployment.yaml
