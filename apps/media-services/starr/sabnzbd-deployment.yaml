@@ -81,25 +81,19 @@ spec:
           name: sabnzbd-web
         env:
         - name: VPN_SERVICE_PROVIDER
-          value: "ipvanish"
+          value: "custom"
         - name: VPN_TYPE
           value: "wireguard"
-        - name: OPENVPN_USER
-          valueFrom:
-            secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_USER
-        - name: OPENVPN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_PASSWORD
-        - name: SERVER_COUNTRIES
-          value: "Canada"
-        - name: SERVER_HOSTNAMES
-          value: "yvr-c14.ipvanish.com"
-        - name: OPENVPN_ENDPOINT_IP
-          value: ""
+        - name: WIREGUARD_CONFIG_FILE
+          value: "/wireguard/yvr-c14.conf"
+        - name: WIREGUARD_PRIVATE_KEY
+          value: "X69eAF5LmQsBM+hHL7kxGK29er5f+k52iGfY2O2Oq1I="
+        - name: WIREGUARD_PUBLIC_KEY
+          value: "iv+/rgxpze0UjC1CD6vfZerhXclGllEy6zp9r9O3Pig="
+        - name: WIREGUARD_ENDPOINT_IP
+          value: "209.234.253.38"
+        - name: WIREGUARD_ENDPOINT_PORT
+          value: "51820"
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
@@ -113,6 +107,9 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: wireguard-config
+          mountPath: /wireguard
+          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -215,6 +212,9 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: sabnzbd-config
+      - name: wireguard-config
+        configMap:
+          name: wireguard-config
       - name: media
         hostPath:
           path: /mnt/data
