@@ -81,19 +81,13 @@ spec:
           name: sabnzbd-web
         env:
         - name: VPN_SERVICE_PROVIDER
-          value: "custom"
+          value: "ipvanish"
         - name: VPN_TYPE
           value: "wireguard"
-        - name: WIREGUARD_INTERFACE_PRIVATE_KEY
-          value: "X69eAF5LmQsBM+hHL7kxGK29er5f+k52iGfY2O2Oq1I="
-        - name: WIREGUARD_INTERFACE_ADDRESS
-          value: "100.96.1.218/32"
-        - name: WIREGUARD_PEER_PUBLIC_KEY
-          value: "iv+/rgxpze0UjC1CD6vfZerhXclGllEy6zp9r9O3Pig="
-        - name: WIREGUARD_PEER_ENDPOINT_IP
-          value: "209.234.253.38"
-        - name: WIREGUARD_PEER_ENDPOINT_PORT
-          value: "51820"
+        - name: SERVER_COUNTRIES
+          value: "Canada"
+        - name: SERVER_HOSTNAMES
+          value: "yvr-c14.ipvanish.com"
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
