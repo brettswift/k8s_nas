@@ -97,7 +97,7 @@ spec:
         - name: SERVER_COUNTRIES
           value: "Canada"
         - name: SERVER_HOSTNAMES
-          value: "yvr-c14.ipvanish.com"
+          value: "yvr-c19.ipvanish.com"
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
@@ -111,9 +111,6 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
-        - name: wireguard-config
-          mountPath: /wireguard
-          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -191,11 +188,11 @@ spec:
           mountPath: /data
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "1Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "4000m"
         livenessProbe:
           httpGet:
             path: /
@@ -216,9 +213,6 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: sabnzbd-config
-      - name: wireguard-config
-        configMap:
-          name: wireguard-config
       - name: media
         hostPath:
           path: /mnt/data
