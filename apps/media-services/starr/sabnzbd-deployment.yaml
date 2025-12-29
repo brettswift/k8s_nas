@@ -84,15 +84,15 @@ spec:
           value: "custom"
         - name: VPN_TYPE
           value: "wireguard"
-        - name: WIREGUARD_CONFIG_FILE
-          value: "/wireguard/yvr-c14.conf"
-        - name: WIREGUARD_PRIVATE_KEY
+        - name: WIREGUARD_INTERFACE_PRIVATE_KEY
           value: "X69eAF5LmQsBM+hHL7kxGK29er5f+k52iGfY2O2Oq1I="
-        - name: WIREGUARD_PUBLIC_KEY
+        - name: WIREGUARD_INTERFACE_ADDRESS
+          value: "100.96.1.218/32"
+        - name: WIREGUARD_PEER_PUBLIC_KEY
           value: "iv+/rgxpze0UjC1CD6vfZerhXclGllEy6zp9r9O3Pig="
-        - name: WIREGUARD_ENDPOINT_IP
+        - name: WIREGUARD_PEER_ENDPOINT_IP
           value: "209.234.253.38"
-        - name: WIREGUARD_ENDPOINT_PORT
+        - name: WIREGUARD_PEER_ENDPOINT_PORT
           value: "51820"
         - name: DOT
           value: "off"
