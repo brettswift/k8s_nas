@@ -82,8 +82,18 @@ spec:
         env:
         - name: VPN_SERVICE_PROVIDER
           value: "ipvanish"
-        - name: VPN_TYPE
-          value: "wireguard"
+        - name: OPENVPN_PROTOCOL
+          value: "udp"
+        - name: OPENVPN_USER
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_USER
+        - name: OPENVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_PASSWORD
         - name: SERVER_COUNTRIES
           value: "Canada"
         - name: SERVER_HOSTNAMES
