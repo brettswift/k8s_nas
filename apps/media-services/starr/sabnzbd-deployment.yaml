@@ -188,11 +188,11 @@ spec:
           mountPath: /data
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "1Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "4000m"
         livenessProbe:
           httpGet:
             path: /
