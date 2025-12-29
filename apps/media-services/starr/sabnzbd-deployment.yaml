@@ -95,7 +95,9 @@ spec:
               name: vpn-secrets
               key: OPENVPN_PASSWORD
         - name: SERVER_COUNTRIES
-          value: "Canada,United States"
+          value: "Canada"
+        - name: SERVER_HOSTNAMES
+          value: "yvr-c14.ipvanish.com"
         - name: OPENVPN_ENDPOINT_IP
           value: ""
         - name: DOT
