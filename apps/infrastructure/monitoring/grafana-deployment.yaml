@@ -23,7 +23,7 @@ spec:
         - containerPort: 3000
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "admin"
+          value: "ncf-YRU_vek7ujm1prv"
         - name: GF_SERVER_ROOT_URL
           value: "https://home.brettswift.com/grafana"
         - name: GF_SERVER_SERVE_FROM_SUB_PATH
