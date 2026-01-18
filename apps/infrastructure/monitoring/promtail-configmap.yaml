@@ -43,5 +43,10 @@ data:
           - action: replace
             source_labels: [__meta_kubernetes_pod_label_app]
             target_label: app
+          - action: replace
+            source_labels: [__meta_kubernetes_pod_container_name, __meta_kubernetes_pod_name, __meta_kubernetes_namespace]
+            regex: (.+);(.+);(.+)
+            replacement: /var/log/containers/*$2_$3_$1-*.log
+            target_label: __path__
         pipeline_stages:
           - docker: {}
