@@ -474,7 +474,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(rate({job=\"kubernetes/pods\"} |= \"error\" [5m])) by (instance)",
+              "expr": "sum(rate({job=\"loki.source.kubernetes.pods\"} |= \"error\" [5m])) by (instance)",
               "interval": "",
               "legendFormat": "{{instance}}",
               "refId": "A"
@@ -549,7 +549,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{job=\"kubernetes/pods\"} |= \"error\"",
+              "expr": "{job=\"loki.source.kubernetes.pods\"} |= \"error\"",
               "refId": "A"
             }
           ],
@@ -585,7 +585,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{job=\"kubernetes/pods\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
+              "expr": "{job=\"loki.source.kubernetes.pods\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
               "refId": "A"
             }
           ],
@@ -618,7 +618,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"kubernetes/pods\"}, instance)",
+            "definition": "label_values({job=\"loki.source.kubernetes.pods\"}, instance)",
             "description": null,
             "error": null,
             "hide": 0,
