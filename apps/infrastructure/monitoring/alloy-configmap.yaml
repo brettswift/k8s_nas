@@ -11,7 +11,18 @@ data:
 
     loki.source.kubernetes "pods" {
       targets    = discovery.kubernetes.pods.targets
+      forward_to = [loki.process.pods.receiver]
+    }
+
+    loki.process "pods" {
       forward_to = [loki.write.default.receiver]
+
+      stage.labels {
+        values = {
+          namespace = "$__meta_kubernetes_namespace",
+          app       = "$__meta_kubernetes_pod_label_app",
+        }
+      }
     }
 
     loki.write "default" {
