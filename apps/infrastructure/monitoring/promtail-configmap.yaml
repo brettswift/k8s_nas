@@ -22,24 +22,3 @@ data:
             labels:
               job: container-logs
               __path__: /var/log/containers/*.log
-        relabel_configs:
-          - action: replace
-            source_labels: [__path__]
-            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
-            target_label: pod
-            replacement: $1
-          - action: replace
-            source_labels: [__path__]
-            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
-            target_label: namespace
-            replacement: $2
-          - action: replace
-            source_labels: [__path__]
-            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
-            target_label: container
-            replacement: $3
-          - action: drop
-            source_labels: [namespace]
-            regex: kube-system|kube-public|kube-node-lease
-        pipeline_stages:
-          - cri: {}
