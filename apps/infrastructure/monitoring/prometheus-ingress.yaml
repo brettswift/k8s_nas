@@ -7,8 +7,6 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/app-root: /prometheus/
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   tls:
@@ -19,8 +17,8 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /prometheus(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /prometheus
+        pathType: Prefix
         backend:
           service:
             name: prometheus
