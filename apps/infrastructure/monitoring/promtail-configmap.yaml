@@ -49,4 +49,4 @@ data:
             replacement: /var/log/containers/*$2_$3_$1-*.log
             target_label: __path__
         pipeline_stages:
-          - docker: {}
+          - cri: {}
