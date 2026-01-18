@@ -16,41 +16,30 @@ data:
       - url: http://loki:3100/loki/api/v1/push
 
     scrape_configs:
-      - job_name: kubernetes-pods
-        kubernetes_sd_configs:
-          - role: pod
-            api_server: https://kubernetes.default.svc:443
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            tls_config:
-              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - job_name: container-logs
+        static_configs:
+          - targets: [localhost]
+            labels:
+              job: container-logs
+              __path__: /var/log/containers/*.log
         relabel_configs:
-          # Drop noisy system namespaces by default.
-          - action: drop
-            source_labels: [__meta_kubernetes_namespace]
-            regex: kube-system|kube-public|kube-node-lease
-          # Allow opt-out via namespace label: logging=disabled
-          - action: drop
-            source_labels: [__meta_kubernetes_namespace_label_logging]
-            regex: disabled
           - action: replace
-            source_labels: [__meta_kubernetes_namespace]
-            target_label: namespace
-          - action: replace
-            source_labels: [__meta_kubernetes_pod_name]
+            source_labels: [__path__]
+            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
             target_label: pod
+            replacement: $1
           - action: replace
-            source_labels: [__meta_kubernetes_pod_container_name]
+            source_labels: [__path__]
+            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
+            target_label: namespace
+            replacement: $2
+          - action: replace
+            source_labels: [__path__]
+            regex: /var/log/containers/([^_]+)_([^_]+)_([^-.]+)-[0-9a-f]+\\.log
             target_label: container
-          - action: replace
-            source_labels: [__meta_kubernetes_node_name]
-            target_label: node
-          - action: replace
-            source_labels: [__meta_kubernetes_pod_label_app]
-            target_label: app
-          - action: replace
-            source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
-            regex: (.+);(.+)
-            target_label: __path__
-            replacement: /var/log/pods/*$1/$2/*.log
+            replacement: $3
+          - action: drop
+            source_labels: [namespace]
+            regex: kube-system|kube-public|kube-node-lease
         pipeline_stages:
           - cri: {}
