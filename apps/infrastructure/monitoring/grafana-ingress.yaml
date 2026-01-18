@@ -6,7 +6,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # No rewrite-target - Grafana handles subpath with GF_SERVER_SERVE_FROM_SUB_PATH=true
 spec:
   ingressClassName: nginx
   tls:
