@@ -237,8 +237,8 @@ data:
           "pluginVersion": "8.0.0",
           "targets": [
             {
-              "expr": "max by (namespace, pod) (time() - container_last_seen{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"POD\",container!=\"\"} < 60)",
-              "interval": "",
+              "expr": "max by (namespace, pod) ((time() - container_last_seen{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"POD\",container!=\"\"}) < 60)",
+              "interval": "30s",
               "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A"
             }
