@@ -12,7 +12,7 @@ data:
       grpc_listen_port: 9095
 
     common:
-      path: /loki
+      path_prefix: /loki
       replication_factor: 1
       ring:
         kvstore:
