@@ -195,65 +195,6 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 0.5
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 8
-          },
-          "id": 3,
-          "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true
-          },
-          "pluginVersion": "8.0.0",
-          "targets": [
-            {
-              "expr": "max by (namespace, pod) ((time() - container_last_seen{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"POD\",container!=\"\"}) < 60)",
-              "interval": "30s",
-              "legendFormat": "{{namespace}}/{{pod}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Pod Status (Last 60s)",
-          "type": "bargauge"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": null
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
                 "mode": "palette-classic"
               },
               "custom": {
@@ -301,7 +242,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
+            "x": 0,
             "y": 8
           },
           "id": 4,
@@ -381,8 +322,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 16
+            "x": 12,
+            "y": 8
           },
           "id": 5,
           "options": {
@@ -533,9 +474,9 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(rate({namespace=~\"$namespace\",app=~\"$application\"} |= \"error\" | json | __error__=\"\" [5m])) by (app)",
+              "expr": "sum(rate({job=\"kubernetes/pods\"} |= \"error\" [5m])) by (instance)",
               "interval": "",
-              "legendFormat": "{{app}}",
+              "legendFormat": "{{instance}}",
               "refId": "A"
             }
           ],
@@ -608,7 +549,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |= \"error\" | json",
+              "expr": "{job=\"kubernetes/pods\"} |= \"error\"",
               "refId": "A"
             }
           ],
@@ -644,7 +585,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
+              "expr": "{job=\"kubernetes/pods\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
               "refId": "A"
             }
           ],
@@ -677,7 +618,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values(namespace)",
+            "definition": "label_values({job=\"kubernetes/pods\"}, instance)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -707,13 +648,13 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({namespace=~\"$namespace\"}, app)",
+            "definition": "label_values({job=\"kubernetes/pods\",instance=~\"$namespace\"}, instance)",
             "description": null,
             "error": null,
             "hide": 0,
             "includeAll": true,
             "label": "Application",
-            "multi": true,
+            "multi": false,
             "name": "application",
             "options": [],
             "query": {
@@ -737,7 +678,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+            "definition": "label_values({job=\"kubernetes/pods\",instance=~\"$namespace\"}, instance)",
             "description": null,
             "error": null,
             "hide": 0,
