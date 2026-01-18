@@ -28,6 +28,7 @@ spec:
           - '--storage.tsdb.retention.time=200h'
           - '--web.enable-lifecycle'
           - '--web.external-url=https://home.brettswift.com/prometheus/'
+          - '--web.route-prefix=/prometheus'
         ports:
         - containerPort: 9090
         resources:
