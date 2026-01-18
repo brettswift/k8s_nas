@@ -19,11 +19,12 @@ resources:
 - loki-pvc.yaml
 - loki-deployment.yaml
 - loki-service.yaml
-- promtail-serviceaccount.yaml
-- promtail-clusterrole.yaml
-- promtail-clusterrolebinding.yaml
-- promtail-configmap.yaml
-- promtail-daemonset.yaml
+# Alloy (replaces promtail)
+- alloy-configmap.yaml
+- alloy-serviceaccount.yaml
+- alloy-clusterrole.yaml
+- alloy-clusterrolebinding.yaml
+- alloy-daemonset.yaml
 # Uptime Kuma - starting fresh
 - uptime-kuma/
 # Netdata - removed: requires cloud login even in older versions
