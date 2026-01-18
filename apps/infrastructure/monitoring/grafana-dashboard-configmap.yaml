@@ -237,13 +237,13 @@ data:
           "pluginVersion": "8.0.0",
           "targets": [
             {
-              "expr": "up{namespace=~\"$namespace\",pod=~\"$pod\"}",
+              "expr": "max by (namespace, pod) (time() - container_last_seen{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"POD\",container!=\"\"} < 60)",
               "interval": "",
               "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A"
             }
           ],
-          "title": "Pod Status",
+          "title": "Pod Status (Last 60s)",
           "type": "bargauge"
         },
         {
@@ -417,7 +417,7 @@ data:
       "templating": {
         "list": [
           {
-            "allValue": null,
+            "allValue": ".*",
             "current": {
               "selected": false,
               "text": "All",
@@ -427,7 +427,7 @@ data:
               "type": "prometheus",
               "uid": null
             },
-            "definition": "label_values(up, namespace)",
+            "definition": "label_values(container_last_seen, namespace)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -437,7 +437,7 @@ data:
             "name": "namespace",
             "options": [],
             "query": {
-              "query": "label_values(up, namespace)",
+              "query": "label_values(container_last_seen, namespace)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -447,7 +447,7 @@ data:
             "type": "query"
           },
           {
-            "allValue": null,
+            "allValue": ".*",
             "current": {
               "selected": false,
               "text": "All",
@@ -457,7 +457,7 @@ data:
               "type": "prometheus",
               "uid": null
             },
-            "definition": "label_values(up{namespace=~\"$namespace\"}, pod)",
+            "definition": "label_values(container_last_seen{namespace=~\"$namespace\"}, pod)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -467,7 +467,7 @@ data:
             "name": "pod",
             "options": [],
             "query": {
-              "query": "label_values(up{namespace=~\"$namespace\"}, pod)",
+              "query": "label_values(container_last_seen{namespace=~\"$namespace\"}, pod)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
