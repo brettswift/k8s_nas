@@ -1,29 +1,30 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: promtail
+  name: alloy
   namespace: monitoring
   labels:
-    app: promtail
+    app: alloy
 spec:
   selector:
     matchLabels:
-      app: promtail
+      app: alloy
   template:
     metadata:
       labels:
-        app: promtail
+        app: alloy
     spec:
-      serviceAccountName: promtail
+      serviceAccountName: alloy
       containers:
-        - name: promtail
-          image: grafana/promtail:2.9.4
+        - name: alloy
+          image: grafana/alloy:latest
           args:
-            - -config.file=/etc/promtail/promtail.yaml
-            - -log.level=debug
+            - run
+            - --server.http.listen-addr=0.0.0.0:12345
+            - /etc/alloy/config.alloy
           ports:
             - name: http
-              containerPort: 9080
+              containerPort: 12345
           resources:
             requests:
               cpu: 50m
@@ -33,18 +34,14 @@ spec:
               memory: 256Mi
           volumeMounts:
             - name: config
-              mountPath: /etc/promtail
-            - name: positions
-              mountPath: /run/promtail
+              mountPath: /etc/alloy
             - name: varlog
               mountPath: /var/log
               readOnly: true
       volumes:
         - name: config
           configMap:
-            name: promtail-config
-        - name: positions
-          emptyDir: {}
+            name: alloy-config
         - name: varlog
           hostPath:
             path: /var/log
