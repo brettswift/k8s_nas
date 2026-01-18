@@ -18,7 +18,7 @@ data:
       forward_to = [loki.write.default.receiver]
 
       stage.label_drop {
-        label_names = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_id"]
+        names = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_id"]
       }
 
       stage.labels {
