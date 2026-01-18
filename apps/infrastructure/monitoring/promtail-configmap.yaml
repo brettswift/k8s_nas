@@ -19,6 +19,10 @@ data:
       - job_name: kubernetes-pods
         kubernetes_sd_configs:
           - role: pod
+            api_server: https://kubernetes.default.svc:443
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         relabel_configs:
           # Drop noisy system namespaces by default.
           - action: drop
