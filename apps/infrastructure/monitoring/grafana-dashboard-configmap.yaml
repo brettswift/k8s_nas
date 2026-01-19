@@ -453,14 +453,15 @@ data:
         {
           "datasource": "-- Grafana --",
           "gridPos": {
-            "h": 4,
+            "h": 3,
             "w": 24,
             "x": 0,
             "y": 0
           },
           "id": 1,
+          "description": "High-level landing page.\n\nHover panel titles (or use panel menu) for more details:\n- Cluster CPU % is averaged over the selected time range and measured vs total host CPU cores (machine_cpu_cores).\n- Top 5 bars are each pod’s average CPU usage over the selected time range as % of total cores (not normalized).\n- Error Log % is the percentage of logs matching common error patterns over the last 5 minutes.",
           "options": {
-            "content": "## Cluster Overview\\n\\nThis is a high-level landing page (no graphs).\\n\\n- **Cluster CPU (cores)**: average CPU core-equivalents used across the cluster for the selected time range. Example: **0.26 cores** means the workload used ~26% of one CPU core on average (not 0.26%).\\n- **Cluster CPU (% of cores)**: the same number expressed as a percentage of total cluster CPU cores.\\n- **Cluster Error Log %**: percentage of log lines matching common error patterns over the last 5 minutes.\\n- **Top CPU (relative)**: top 5 CPU consumers, normalized so the top consumer is always **100%**.",
+            "content": "**Cluster overview** — CPU % over range · Error log % (last 5m) · Top 5 CPU consumers (% of cores)",
             "mode": "markdown"
           },
           "title": "Overview",
@@ -471,59 +472,7 @@ data:
             "type": "prometheus",
             "uid": null
           },
-          "fieldConfig": {
-            "defaults": {
-              "decimals": 2,
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "cores"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 4
-          },
-          "id": 2,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "value"
-          },
-          "targets": [
-            {
-              "expr": "avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval]))[$__range:$__interval])",
-              "instant": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Cluster CPU (avg over selected time range, cores)",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": null
-          },
+          "description": "Average CPU usage over the selected time range, expressed as % of total host CPU cores (sum(machine_cpu_cores)).",
           "fieldConfig": {
             "defaults": {
               "decimals": 2,
@@ -551,11 +500,11 @@ data:
           },
           "gridPos": {
             "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 4
+            "w": 12,
+            "x": 0,
+            "y": 3
           },
-          "id": 5,
+          "id": 2,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -572,7 +521,7 @@ data:
           },
           "targets": [
             {
-              "expr": "100 * (avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval]))[$__range:$__interval]) / sum(machine_cpu_cores))",
+              "expr": "100 * (avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval]))[$__range:$__interval]) / scalar(sum(machine_cpu_cores)))",
               "instant": true,
               "refId": "A"
             }
@@ -585,6 +534,7 @@ data:
             "type": "loki",
             "uid": null
           },
+          "description": "Percentage of log lines matching common error patterns over the last 5 minutes (cluster-wide).",
           "fieldConfig": {
             "defaults": {
               "decimals": 2,
@@ -612,9 +562,9 @@ data:
           },
           "gridPos": {
             "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 4
+            "w": 12,
+            "x": 12,
+            "y": 3
           },
           "id": 3,
           "options": {
@@ -645,6 +595,7 @@ data:
             "type": "prometheus",
             "uid": null
           },
+          "description": "Top 5 CPU consumers over the selected time range, expressed as % of total host CPU cores. 100% means using all cluster CPU capacity.",
           "fieldConfig": {
             "defaults": {
               "decimals": 0,
@@ -658,7 +609,7 @@ data:
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 10
+            "y": 9
           },
           "id": 4,
           "options": {
@@ -678,13 +629,13 @@ data:
           },
           "targets": [
             {
-              "expr": "100 * (topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) / scalar(max(topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])))))",
+              "expr": "100 * (topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) / scalar(sum(machine_cpu_cores)))",
               "instant": true,
               "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A"
             }
           ],
-          "title": "Top 5 CPU Consumers (relative to top, avg over selected time range)",
+          "title": "Top 5 CPU Consumers (avg over selected time range, % of cores)",
           "type": "bargauge"
         }
       ],
