@@ -847,7 +847,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\"}, namespace)",
+            "definition": "label_values(namespace)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -857,7 +857,7 @@ data:
             "name": "namespace",
             "options": [],
             "query": {
-              "query": "label_values({job=\"loki.source.kubernetes.pods\"}, namespace)",
+              "query": "label_values(namespace)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -877,7 +877,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
+            "definition": "label_values({namespace=~\"$namespace\"}, app)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -887,7 +887,7 @@ data:
             "name": "application",
             "options": [],
             "query": {
-              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
+              "query": "label_values({namespace=~\"$namespace\"}, app)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -907,7 +907,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+            "definition": "label_values({namespace=~\"$namespace\",app=~\"$application\"}, pod)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -917,7 +917,7 @@ data:
             "name": "pod",
             "options": [],
             "query": {
-              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+              "query": "label_values({namespace=~\"$namespace\",app=~\"$application\"}, pod)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
