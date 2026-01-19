@@ -661,9 +661,9 @@ data:
           },
           "id": 5,
           "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
             "orientation": "horizontal",
             "reduceOptions": {
               "calcs": [
@@ -672,9 +672,9 @@ data:
               "fields": "",
               "values": false
             },
-            "showUnfilled": true,
-            "valueMode": "color"
+            "textMode": "auto"
           },
+          "pluginVersion": "12.3.1",
           "targets": [
             {
               "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\"} [$__range])) by (namespace))",
@@ -683,27 +683,8 @@ data:
               "refId": "A"
             }
           ],
+          "transformations": [],
           "title": "Top 5 Log Producers",
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "Value #A": "Log Count"
-                },
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true,
-                  "job": true
-                }
-              }
-            }
-          ],
           "type": "bargauge"
         }
       ],
