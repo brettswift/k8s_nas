@@ -897,7 +897,7 @@ data:
           "pluginVersion": "12.3.1",
           "targets": [
             {
-              "expr": "topk(5, sum by (line) (count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" | line_format \"{{.line}}\" [$__range])))",
+              "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" [$__range])) by (line))",
               "instant": true,
               "refId": "A"
             }
@@ -915,6 +915,14 @@ data:
                 "renameByName": {
                   "line": "Error Message",
                   "Value": "Count"
+                },
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "namespace": true,
+                  "app": true,
+                  "pod": true,
+                  "job": true
                 }
               }
             },
