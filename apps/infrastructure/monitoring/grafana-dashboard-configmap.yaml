@@ -629,24 +629,10 @@ data:
           },
           "targets": [
             {
-              "expr": "100 * (topk(5, sum(avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) by (namespace, app)) / scalar(sum(machine_cpu_cores)))",
+              "expr": "100 * (topk(5, sum(avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) by (namespace)) / scalar(sum(machine_cpu_cores)))",
               "instant": true,
-              "legendFormat": "{{namespace}}/{{app}}",
+              "legendFormat": "{{namespace}}",
               "refId": "A"
-            }
-          ],
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "pod_label_app": "app"
-                }
-              }
             }
           ],
           "title": "Top 5 CPU Consumers (avg over selected time range, % of cores)",
@@ -746,9 +732,9 @@ data:
           "pluginVersion": "12.3.1",
           "targets": [
             {
-              "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",app!=\"\"} [$__range])) by (namespace, app))",
+              "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\"} [$__range])) by (namespace))",
               "instant": true,
-              "legendFormat": "{{namespace}}/{{app}}",
+              "legendFormat": "{{namespace}}",
               "refId": "A"
             }
           ],
