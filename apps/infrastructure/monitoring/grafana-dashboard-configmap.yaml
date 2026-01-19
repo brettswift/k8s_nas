@@ -897,7 +897,8 @@ data:
           "pluginVersion": "12.3.1",
           "targets": [
             {
-              "expr": "topk(5, sum by (message) (count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" | regexp `(?P<message>.*)` [$__range])))",
+              "expr": "topk(5, sum by (message) (count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" | regexp `(?P<message>.+)` [$__range])))",
+              "instant": true,
               "refId": "A"
             }
           ],
@@ -990,7 +991,7 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 12,
+            "w": 24,
             "x": 0,
             "y": 16
           },
@@ -1026,9 +1027,9 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 16
+            "w": 24,
+            "x": 0,
+            "y": 24
           },
           "id": 4,
           "options": {
