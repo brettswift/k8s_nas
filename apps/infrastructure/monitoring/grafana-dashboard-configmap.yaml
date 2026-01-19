@@ -715,22 +715,18 @@ data:
           },
           "id": 5,
           "options": {
-            "cellHeight": "sm",
-            "footer": {
-              "countRows": false,
-              "fields": "",
-              "reducer": [
-                "sum"
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
               ],
-              "show": false
+              "fields": "",
+              "values": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Log Count"
-              }
-            ]
+            "textMode": "auto"
           },
           "pluginVersion": "12.3.1",
           "targets": [
@@ -741,24 +737,9 @@ data:
               "refId": "A"
             }
           ],
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "Value": "Log Count",
-                  "namespace": "Namespace",
-                  "app": "Application"
-                }
-              }
-            }
-          ],
+          "transformations": [],
           "title": "Top 5 Log Producers",
-          "type": "table"
+          "type": "stat"
         }
       ],
       "schemaVersion": 27,
