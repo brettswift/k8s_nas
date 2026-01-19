@@ -729,6 +729,15 @@ data:
             "showUnfilled": true,
             "valueMode": "color"
           },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "max": null,
+              "min": 0,
+              "unit": "short"
+            },
+            "overrides": []
+          },
           "pluginVersion": "12.3.1",
           "targets": [
             {
