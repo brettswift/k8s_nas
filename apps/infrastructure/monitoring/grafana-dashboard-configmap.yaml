@@ -730,20 +730,7 @@ data:
               "refId": "A"
             }
           ],
-          "transformations": [
-            {
-              "id": "reduce",
-              "options": {
-                "reducers": [
-                  {
-                    "id": "lastNotNull",
-                    "field": "Value"
-                  }
-                ],
-                "includeTimeField": false
-              }
-            }
-          ],
+          "transformations": [],
           "title": "Top 5 Log Producers",
           "type": "barchart"
         }
