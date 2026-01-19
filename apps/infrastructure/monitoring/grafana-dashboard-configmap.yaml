@@ -759,11 +759,177 @@ data:
             "type": "loki",
             "uid": null
           },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "displayMode": "list",
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Error Pattern"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 400
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Count"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 80
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Percentage"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  },
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "id": 4,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Count"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "topk(3, sum(count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" [$__range])) by (line))",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            },
+            {
+              "expr": "sum(count_over_time({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\" [$__range]))",
+              "format": "table",
+              "instant": true,
+              "refId": "B"
+            }
+          ],
+          "title": "Top 3 Most Common Errors",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "indexByName": {
+                  "Error Pattern": 0,
+                  "Count": 1,
+                  "Percentage": 2
+                },
+                "renameByName": {
+                  "line": "Error Pattern",
+                  "Value #A": "Count",
+                  "Value #B": "Total Errors"
+                }
+              }
+            },
+            {
+              "id": "formatString",
+              "options": {
+                "fields": [
+                  {
+                    "fieldName": "Error Pattern",
+                    "maxLength": 80
+                  }
+                ]
+              }
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Percentage",
+                "binary": {
+                  "left": "Count",
+                  "operator": "/",
+                  "reducer": "sum",
+                  "right": "Total Errors"
+                },
+                "mode": "binary",
+                "reduce": {
+                  "include": [
+                    "Total Errors"
+                  ],
+                  "reducer": "lastNotNull"
+                }
+              }
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Percentage",
+                "binary": {
+                  "left": "Percentage",
+                  "operator": "*",
+                  "reducer": "sum",
+                  "right": "100"
+                },
+                "mode": "binary"
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": null
+          },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 8
+            "y": 14
           },
           "id": 2,
           "options": {
@@ -799,7 +965,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 14
           },
           "id": 3,
           "options": {
