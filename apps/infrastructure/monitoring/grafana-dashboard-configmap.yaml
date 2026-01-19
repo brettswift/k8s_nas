@@ -460,7 +460,7 @@ data:
           },
           "id": 1,
           "options": {
-            "content": "## Cluster Overview\\n\\nThis is a high-level landing page (no graphs). It summarizes **cluster CPU**, **cluster-wide error log percentage**, and **top CPU consumers** for the selected time range.",
+            "content": "## Cluster Overview\\n\\nThis is a high-level landing page (no graphs).\\n\\n- **Cluster CPU (cores)**: average CPU core-equivalents used across the cluster for the selected time range. Example: **0.26 cores** means the workload used ~26% of one CPU core on average (not 0.26%).\\n- **Cluster CPU (% of cores)**: the same number expressed as a percentage of total cluster CPU cores.\\n- **Cluster Error Log %**: percentage of log lines matching common error patterns over the last 5 minutes.\\n- **Top CPU (relative)**: top 5 CPU consumers, normalized so the top consumer is always **100%**.",
             "mode": "markdown"
           },
           "title": "Overview",
@@ -490,7 +490,7 @@ data:
           },
           "gridPos": {
             "h": 6,
-            "w": 12,
+            "w": 8,
             "x": 0,
             "y": 4
           },
@@ -516,7 +516,68 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Cluster CPU Usage (avg over selected time range)",
+          "title": "Cluster CPU (avg over selected time range, cores)",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": null
+          },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 2,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 4
+          },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "value"
+          },
+          "targets": [
+            {
+              "expr": "100 * (avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval]))[$__range:$__interval]) / sum(machine_cpu_cores))",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Cluster CPU (avg over selected time range, % of cores)",
           "type": "stat"
         },
         {
@@ -551,8 +612,8 @@ data:
           },
           "gridPos": {
             "h": 6,
-            "w": 12,
-            "x": 12,
+            "w": 8,
+            "x": 16,
             "y": 4
           },
           "id": 3,
@@ -586,8 +647,10 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "decimals": 3,
-              "unit": "cores"
+              "decimals": 0,
+              "max": 100,
+              "min": 0,
+              "unit": "percent"
             },
             "overrides": []
           },
@@ -599,24 +662,30 @@ data:
           },
           "id": 4,
           "options": {
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "valueMode": "color"
           },
           "targets": [
             {
-              "expr": "topk(3, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval]))",
-              "format": "table",
+              "expr": "100 * (topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) / max(topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval]))))",
               "instant": true,
+              "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A"
             }
           ],
-          "title": "Top 3 CPU Consumers (avg over selected time range)",
-          "type": "table"
+          "title": "Top 5 CPU Consumers (relative to top, avg over selected time range)",
+          "type": "bargauge"
         }
       ],
       "schemaVersion": 27,
