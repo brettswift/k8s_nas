@@ -703,7 +703,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(rate({job=\"loki.source.kubernetes.pods\",app!=\"\"} |= \"error\" [5m])) by (namespace, app)",
+              "expr": "sum(rate({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\",app!=\"\"} |= \"error\" [5m])) by (namespace, app)",
               "interval": "",
               "legendFormat": "{{namespace}}/{{app}}",
               "refId": "A"
@@ -778,7 +778,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{job=\"loki.source.kubernetes.pods\"} |= \"error\"",
+              "expr": "{job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |= \"error\"",
               "refId": "A"
             }
           ],
@@ -814,7 +814,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{job=\"loki.source.kubernetes.pods\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
+              "expr": "{job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\",pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|failed|failure)\"",
               "refId": "A"
             }
           ],
