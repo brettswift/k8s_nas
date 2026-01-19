@@ -629,9 +629,9 @@ data:
           },
           "targets": [
             {
-              "expr": "100 * (topk(5, label_replace(avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval]), \"app\", \"$1\", \"pod\", \"^([^-]+).*\")) / scalar(sum(machine_cpu_cores)))",
+              "expr": "100 * (topk(5, avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod_label_app_kubernetes_io_name)[$__range:$__interval]) / scalar(sum(machine_cpu_cores)))",
               "instant": true,
-              "legendFormat": "{{app}}",
+              "legendFormat": "{{pod_label_app_kubernetes_io_name}}",
               "refId": "A"
             }
           ],
@@ -685,20 +685,54 @@ data:
           ],
           "transformations": [
             {
+              "id": "groupBy",
+              "options": {
+                "fields": {
+                  "Value": {
+                    "aggregations": ["max"],
+                    "operation": "aggregate"
+                  },
+                  "namespace": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "app": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  }
+                }
+              }
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Percent",
+                "mode": "reduceRow",
+                "reduce": {
+                  "include": [
+                    "Value"
+                  ],
+                  "reducer": "max"
+                },
+                "replaceFields": false,
+                "resultName": "MaxValue"
+              }
+            },
+            {
               "id": "calculateField",
               "options": {
                 "alias": "Percent",
                 "binary": {
                   "left": "Value",
                   "operator": "/",
-                  "reducer": "max"
+                  "reducer": "sum"
                 },
                 "mode": "binary",
                 "reduce": {
                   "include": [
-                    "Value"
+                    "MaxValue"
                   ],
-                  "reducer": "max"
+                  "reducer": "sum"
                 },
                 "replaceFields": false,
                 "resultName": "Percent"
