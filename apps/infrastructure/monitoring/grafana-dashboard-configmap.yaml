@@ -685,25 +685,6 @@ data:
           ],
           "transformations": [
             {
-              "id": "groupBy",
-              "options": {
-                "fields": {
-                  "Value": {
-                    "aggregations": ["max"],
-                    "operation": "aggregate"
-                  },
-                  "namespace": {
-                    "aggregations": [],
-                    "operation": "groupby"
-                  },
-                  "app": {
-                    "aggregations": [],
-                    "operation": "groupby"
-                  }
-                }
-              }
-            },
-            {
               "id": "calculateField",
               "options": {
                 "alias": "Percent",
