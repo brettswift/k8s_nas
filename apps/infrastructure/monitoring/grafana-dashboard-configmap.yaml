@@ -637,6 +637,91 @@ data:
           ],
           "title": "Top 5 CPU Consumers (avg over selected time range, % of cores)",
           "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": null
+          },
+          "description": "Top 5 log producers over the selected time range, normalized to show the top producer at 100%. Each bar represents that service's log volume relative to the top producer.",
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "max": 100,
+              "min": 0,
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 19
+          },
+          "id": 5,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",app!=\"\"} [$__range])) by (namespace, app))",
+              "instant": true,
+              "legendFormat": "{{namespace}}/{{app}}",
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Percent",
+                "binary": {
+                  "left": "Value",
+                  "operator": "/",
+                  "reducer": "sum"
+                },
+                "mode": "binary",
+                "reduce": {
+                  "include": [
+                    "Value"
+                  ],
+                  "reducer": "max"
+                },
+                "replaceFields": false,
+                "resultName": "Percent"
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Value": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "Percent": "Percent",
+                  "Time": "__name",
+                  "namespace": "namespace",
+                  "app": "app"
+                }
+              }
+            }
+          ],
+          "title": "Top 5 Log Producers (normalized, top = 100%)",
+          "type": "bargauge"
         }
       ],
       "schemaVersion": 27,
@@ -847,7 +932,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\"}, namespace)",
+            "definition": "label_values({job=~\"loki.source.kubernetes.pods\"}, namespace)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -877,7 +962,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
+            "definition": "label_values({job=~\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -887,7 +972,7 @@ data:
             "name": "application",
             "options": [],
             "query": {
-              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
+              "query": "label_values({job=~\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -907,7 +992,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+            "definition": "label_values({job=~\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -917,7 +1002,7 @@ data:
             "name": "pod",
             "options": [],
             "query": {
-              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+              "query": "label_values({job=~\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
