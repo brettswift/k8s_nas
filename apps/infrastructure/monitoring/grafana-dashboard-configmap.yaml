@@ -880,6 +880,13 @@ data:
           "title": "Top 3 Most Common Errors",
           "transformations": [
             {
+              "id": "extractFields",
+              "options": {
+                "format": "auto",
+                "source": "line"
+              }
+            },
+            {
               "id": "organize",
               "options": {
                 "excludeByName": {
@@ -1025,7 +1032,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"loki.source.kubernetes.pods\"}, instance)",
+            "definition": "label_values({job=\"loki.source.kubernetes.pods\"}, namespace)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -1035,7 +1042,7 @@ data:
             "name": "namespace",
             "options": [],
             "query": {
-              "query": "label_values(namespace)",
+              "query": "label_values({job=\"loki.source.kubernetes.pods\"}, namespace)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -1055,17 +1062,17 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"kubernetes/pods\",instance=~\"$namespace\"}, instance)",
+            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
             "description": null,
             "error": null,
             "hide": 0,
             "includeAll": true,
             "label": "Application",
-            "multi": false,
+            "multi": true,
             "name": "application",
             "options": [],
             "query": {
-              "query": "label_values({namespace=~\"$namespace\"}, app)",
+              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\"}, app)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
@@ -1085,7 +1092,7 @@ data:
               "type": "loki",
               "uid": null
             },
-            "definition": "label_values({job=\"kubernetes/pods\",instance=~\"$namespace\"}, instance)",
+            "definition": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
             "description": null,
             "error": null,
             "hide": 0,
@@ -1095,7 +1102,7 @@ data:
             "name": "pod",
             "options": [],
             "query": {
-              "query": "label_values({namespace=~\"$namespace\",app=~\"$application\"}, pod)",
+              "query": "label_values({job=\"loki.source.kubernetes.pods\",namespace=~\"$namespace\",app=~\"$application\"}, pod)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
