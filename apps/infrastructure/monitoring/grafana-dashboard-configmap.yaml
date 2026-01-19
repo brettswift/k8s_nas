@@ -763,7 +763,7 @@ data:
             "defaults": {
               "custom": {
                 "align": "auto",
-                "displayMode": "list",
+                "displayMode": "table",
                 "inspect": false
               },
               "mappings": [],
@@ -781,12 +781,18 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Error Pattern"
+                  "options": "Error Message"
                 },
                 "properties": [
                   {
                     "id": "custom.width",
-                    "value": 400
+                    "value": 600
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "auto"
+                    }
                   }
                 ]
               },
@@ -798,7 +804,11 @@ data:
                 "properties": [
                   {
                     "id": "custom.width",
-                    "value": 80
+                    "value": 100
+                  },
+                  {
+                    "id": "custom.align",
+                    "value": "center"
                   }
                 ]
               },
@@ -810,7 +820,7 @@ data:
                 "properties": [
                   {
                     "id": "custom.width",
-                    "value": 100
+                    "value": 120
                   },
                   {
                     "id": "unit",
@@ -819,19 +829,32 @@ data:
                   {
                     "id": "decimals",
                     "value": 1
+                  },
+                  {
+                    "id": "custom.align",
+                    "value": "center"
                   }
                 ]
               }
             ]
           },
           "gridPos": {
-            "h": 6,
+            "h": 8,
             "w": 24,
             "x": 0,
             "y": 8
           },
           "id": 4,
           "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
             "showHeader": true,
             "sortBy": [
               {
@@ -863,26 +886,15 @@ data:
                   "Time": true
                 },
                 "indexByName": {
-                  "Error Pattern": 0,
+                  "Error Message": 0,
                   "Count": 1,
                   "Percentage": 2
                 },
                 "renameByName": {
-                  "line": "Error Pattern",
+                  "line": "Error Message",
                   "Value #A": "Count",
                   "Value #B": "Total Errors"
                 }
-              }
-            },
-            {
-              "id": "formatString",
-              "options": {
-                "fields": [
-                  {
-                    "fieldName": "Error Pattern",
-                    "maxLength": 80
-                  }
-                ]
               }
             },
             {
