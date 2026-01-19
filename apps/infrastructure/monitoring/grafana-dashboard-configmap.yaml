@@ -646,52 +646,9 @@ data:
           "description": "Top 5 log producers over the selected time range. Shows total log count for each app.",
           "fieldConfig": {
             "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
               "decimals": 0,
-              "mappings": [],
               "max": null,
               "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
               "unit": "short"
             },
             "overrides": []
@@ -704,35 +661,44 @@ data:
           },
           "id": 5,
           "options": {
-            "barRadius": 0,
-            "barWidth": 0.97,
-            "groupWidth": 0.7,
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
             "orientation": "horizontal",
-            "stacking": "none",
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
             },
-            "xTickLabelRotation": 0,
-            "xTickLabelSpacing": 0
+            "showUnfilled": true,
+            "valueMode": "color"
           },
           "targets": [
             {
               "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",app!=\"\"} [$__range])) by (namespace, app))",
-              "instant": true,
+              "instant": false,
               "legendFormat": "{{namespace}}/{{app}}",
               "refId": "A"
             }
           ],
-          "transformations": [],
+          "transformations": [
+            {
+              "id": "reduce",
+              "options": {
+                "reducers": [
+                  {
+                    "id": "lastNotNull",
+                    "field": "Value"
+                  }
+                ],
+                "includeTimeField": false
+              }
+            }
+          ],
           "title": "Top 5 Log Producers",
-          "type": "barchart"
+          "type": "bargauge"
         }
       ],
       "schemaVersion": 27,
