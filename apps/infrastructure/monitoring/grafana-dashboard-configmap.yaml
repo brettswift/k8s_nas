@@ -732,12 +732,35 @@ data:
           "targets": [
             {
               "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",app!=\"\"} [$__range])) by (namespace, app))",
-              "instant": true,
+              "instant": false,
               "legendFormat": "{{namespace}}/{{app}}",
               "refId": "A"
             }
           ],
-          "transformations": [],
+          "transformations": [
+            {
+              "id": "reduce",
+              "options": {
+                "reducers": [
+                  {
+                    "id": "lastNotNull",
+                    "field": "Value"
+                  }
+                ],
+                "includeTimeField": false
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Value": "Log Count"
+                }
+              }
+            }
+          ],
           "title": "Top 5 Log Producers",
           "type": "stat"
         }
