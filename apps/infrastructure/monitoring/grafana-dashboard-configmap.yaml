@@ -629,9 +629,9 @@ data:
           },
           "targets": [
             {
-              "expr": "label_replace(label_replace(100 * (topk(5, sum(avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) by (namespace, pod)) / scalar(sum(machine_cpu_cores))), \"app\", \"$1\", \"pod\", \"([a-z0-9-]+)-[a-z0-9]+-[a-z0-9]+\"), \"app\", \"$1\", \"pod\", \"([a-z0-9-]+)\")",
+              "expr": "100 * (topk(5, sum(avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"POD\",container!=\"\"}[$__rate_interval])) by (namespace, pod)[$__range:$__interval])) by (namespace, pod_label_app)) / scalar(sum(machine_cpu_cores)))",
               "instant": true,
-              "legendFormat": "{{namespace}}/{{app}}",
+              "legendFormat": "{{namespace}}/{{pod_label_app}}",
               "refId": "A"
             }
           ],
