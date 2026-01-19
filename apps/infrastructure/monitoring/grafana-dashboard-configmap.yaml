@@ -675,7 +675,6 @@ data:
             "showUnfilled": true,
             "valueMode": "color"
           },
-          "pluginVersion": "12.3.1",
           "targets": [
             {
               "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\"} [$__range])) by (namespace))",
@@ -685,6 +684,26 @@ data:
             }
           ],
           "title": "Top 5 Log Producers",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "Value #A": "Log Count"
+                },
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "job": true
+                }
+              }
+            }
+          ],
           "type": "bargauge"
         }
       ],
