@@ -678,25 +678,12 @@ data:
           "targets": [
             {
               "expr": "topk(5, sum(count_over_time({job=\"loki.source.kubernetes.pods\",app!=\"\"} [$__range])) by (namespace, app))",
-              "instant": false,
-              "legendFormat": "{{namespace}}/{{app}}",
+              "instant": true,
+              "legendFormat": "{{app}}",
               "refId": "A"
             }
           ],
-          "transformations": [
-            {
-              "id": "reduce",
-              "options": {
-                "reducers": [
-                  {
-                    "id": "lastNotNull",
-                    "field": "Value"
-                  }
-                ],
-                "includeTimeField": false
-              }
-            }
-          ],
+          "transformations": [],
           "title": "Top 5 Log Producers (normalized, top = 100%)",
           "type": "bargauge"
         }
