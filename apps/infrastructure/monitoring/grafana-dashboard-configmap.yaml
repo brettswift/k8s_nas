@@ -643,69 +643,15 @@ data:
             "type": "loki",
             "uid": null
           },
-          "description": "Top 5 log producers over the selected time range. Shows total log count for each app.",
+          "description": "Top 5 log producers over the selected time range. Shows total log count for each namespace.",
           "fieldConfig": {
             "defaults": {
-              "custom": {
-                "align": "auto",
-                "cellOptions": {
-                  "type": "auto"
-                },
-                "inspect": false
-              },
               "decimals": 0,
-              "mappings": [],
               "max": null,
               "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
               "unit": "short"
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Log Count"
-                },
-                "properties": [
-                  {
-                    "id": "custom.width",
-                    "value": 150
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Namespace"
-                },
-                "properties": [
-                  {
-                    "id": "custom.width",
-                    "value": 150
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Application"
-                },
-                "properties": [
-                  {
-                    "id": "custom.width",
-                    "value": 200
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "gridPos": {
             "h": 10,
@@ -728,15 +674,6 @@ data:
             },
             "showUnfilled": true,
             "valueMode": "color"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "decimals": 0,
-              "max": null,
-              "min": 0,
-              "unit": "short"
-            },
-            "overrides": []
           },
           "pluginVersion": "12.3.1",
           "targets": [
