@@ -24,9 +24,15 @@ alwaysApply: true
    - Always check pod logs to ensure the change was successful
    - Verify the change is working before considering it complete
 
+4. **Never Assume / Wait and Confirm**:
+   - Never assume a push "worked" or delegate "check later" to the user
+   - If you need to verify something after an async action, use `sleep` and then run the verification
+   - After pushing: wait for ArgoCD to sync, then verify the cluster state matches the pushed manifest
+   - Do not run functional tests (e.g., dig, curl) until sync is complete; they are misleading if the cluster is about to change
+
 ## Testing Process
 
-4. **Cron Jobs and Scripts Testing**:
+5. **Cron Jobs and Scripts Testing**:
    - Use temporary test pods for API testing:
      a) `kubectl apply` a temporary test pod in the correct namespace with same service account/permissions
      b) `kubectl exec` commands into it to test the API interactively
@@ -36,6 +42,6 @@ alwaysApply: true
 
 ## Service Protection
 
-5. **Critical Service Confirmation**:
+6. **Critical Service Confirmation**:
    - If about to take Jellyfin or `/media` servers offline, confirm it's OK first
    - Never make changes that would disrupt media services without explicit approval

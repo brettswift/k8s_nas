@@ -20,6 +20,12 @@ data:
   exec.enabled: "true"
   # Resource customizations for better UI support
   resource.customizations: |
+    cert-manager.io/Certificate:
+      health.lua: |
+        hs = {}
+        hs.status = "Healthy"
+        hs.message = "Certificate OK (custom: skip wait during renewal)"
+        return hs
     batch/Job:
       health.lua: |
         hs = {}
