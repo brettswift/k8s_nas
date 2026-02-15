@@ -21,7 +21,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: blocky
-        image: spx01/blocky:v0.28
+        image: spx01/blocky:v0.28.2
         args:
           - --config=/config/config.yml
         ports:
