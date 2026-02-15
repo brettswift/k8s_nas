@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocky-config
+  namespace: dns
+data:
+  config.yml: |
+    upstreams:
+      groups:
+        default:
+          - 1.1.1.1
+          - 1.0.0.1
+      timeout: 2s
+
+    blocking:
+      blackLists:
+        ads:
+          - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+          - https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+          - https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt
+      clientGroupsBlock:
+        default:
+          - ads
+      blockType: zeroIp
+      blockTTL: 1m
+      loading:
+        refreshPeriod: 24h
+        strategy: blocking
+
+    bootstrapDns:
+      - 1.1.1.1
+      - 1.0.0.1
+
+    ports:
+      dns: 53
+      http: 4000
+
+    log:
+      level: info
+      format: text
