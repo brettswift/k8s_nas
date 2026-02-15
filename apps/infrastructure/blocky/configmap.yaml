@@ -32,7 +32,8 @@ data:
       - 1.0.0.1
 
     ports:
-      dns: 53
+      # Bind DNS to LAN IP only; avoids conflict with systemd-resolved on 127.0.0.53
+      dns: "10.1.0.20:53"
       http: 4000
 
     log:
