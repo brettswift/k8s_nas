@@ -45,14 +45,14 @@ spec:
             memory: 128Mi
         livenessProbe:
           httpGet:
-            path: /ready
+            path: /metrics
             port: 4000
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
         readinessProbe:
           httpGet:
-            path: /ready
+            path: /metrics
             port: 4000
           initialDelaySeconds: 5
           periodSeconds: 5

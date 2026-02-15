@@ -13,7 +13,7 @@ data:
       timeout: 2s
 
     blocking:
-      blackLists:
+      denylists:
         ads:
           - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
           - https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
