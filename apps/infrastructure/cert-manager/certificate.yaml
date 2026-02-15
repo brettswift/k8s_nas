@@ -5,6 +5,9 @@ kind: Certificate
 metadata:
   name: home-brettswift-com-dns
   namespace: kube-system
+  annotations:
+    # Don't block infrastructure sync during cert renewal
+    argocd.argoproj.io/ignore-healthcheck: "true"
 spec:
   secretName: home-brettswift-com-tls
   issuerRef:
