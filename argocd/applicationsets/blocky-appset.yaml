@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blocky
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: blocky
+    category: infrastructure
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: infrastructure
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: live
+    path: apps/infrastructure/blocky
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
