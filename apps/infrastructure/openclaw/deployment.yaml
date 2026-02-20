@@ -7,6 +7,7 @@ metadata:
     app: openclaw-gateway
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
   strategy:
     type: Recreate
   selector:
@@ -62,23 +63,11 @@ spec:
                   name: openclaw-gateway-token
                   key: token
                   optional: true
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-anthropic-api-key
-                  key: api-key
-                  optional: true
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: openclaw-telegram-bot-token
                   key: token
-                  optional: true
-            - name: BRAVE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-brave-api-key
-                  key: api-key
                   optional: true
             - name: HA_TOKEN
               valueFrom:
