@@ -62,6 +62,12 @@ spec:
                   name: openclaw-gateway-token
                   key: token
                   optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-anthropic-api-key
+                  key: api-key
+                  optional: true
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw

@@ -18,6 +18,16 @@ kubectl create secret generic openclaw-gateway-token \
 
 Then open the Control UI (see below), go to Settings, and paste this token.
 
+- **Anthropic API key** (for chat): The agent needs an Anthropic API key to power the Control UI chat. Create the secret:
+
+```bash
+kubectl create secret generic openclaw-anthropic-api-key \
+  --namespace openclaw \
+  --from-literal=api-key="sk-ant-api03-YOUR_KEY_HERE"
+```
+
+Replace `YOUR_KEY_HERE` with your key from [Anthropic Console](https://console.anthropic.com/). Restart the gateway pod after creating the secret.
+
 - **Optional**: Run the OpenClaw onboarding wizard once to create config and workspace under the PVC. You can do that by running the CLI image as a one-off job with the same PVC, or complete setup via the Control UI after the gateway is up.
 
 ## URLs
