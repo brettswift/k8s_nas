@@ -1,5 +1,3 @@
-# OpenClaw gateway — runs in k8s for now; you can move to Mac mini later.
-# Official image: ghcr.io/openclaw/openclaw (see docs.openclaw.ai/install/docker).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,6 +28,7 @@ spec:
             - node
             - dist/index.js
             - gateway
+            - --allow-unconfigured
             - --bind
             - "0.0.0.0"
             - --port
@@ -42,7 +41,6 @@ spec:
           env:
             - name: HOME
               value: /home/node
-            # Set via Secret openclaw-gateway-token (see README).
             - name: OPENCLAW_GATEWAY_TOKEN
               valueFrom:
                 secretKeyRef:
