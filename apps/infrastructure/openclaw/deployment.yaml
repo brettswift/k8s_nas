@@ -41,6 +41,8 @@ spec:
           env:
             - name: HOME
               value: /home/node
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=1536"
             - name: OPENCLAW_GATEWAY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -52,10 +54,10 @@ spec:
               mountPath: /home/node/.openclaw
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 250m
+              memory: 512Mi
             limits:
-              memory: 1Gi
+              memory: 2Gi
           livenessProbe:
             httpGet:
               path: /
