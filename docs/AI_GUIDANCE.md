@@ -50,6 +50,11 @@ ssh nas
 - **Developer**: implement changes via edits/commits; avoid breaking production. If a change causes issues, attempt up to 10 automated fixes; otherwise roll back cleanly.
 - **QA**: verify prior steps and new features using a function-based shell test script (e.g., `scripts/qa-tests.sh`). Each test is a function; call the relevant test at the bottom. New features must add corresponding tests and re-run the full script.
 
+## Network and DNS (critical for contributors)
+
+- **All IPs are local/private.** The cluster and ingress are at 10.1.0.20. DNS (Route53 via external-dns) resolves hostnames to this private IP. **Nothing is pointed at a public IP.** Services are only reachable from your local network / machine (e.g. on the same LAN or VPN), not from the public internet.
+- **New subdomain ingresses:** Use both external-dns annotations so the record is a CNAME to the main hostname (consistent with other services): `external-dns.alpha.kubernetes.io/hostname: <subdomain>.home.brettswift.com` and `external-dns.alpha.kubernetes.io/target: home.brettswift.com`. Without `target`, external-dns creates an A record to the ingress IP (still the same local IP); with `target`, it creates a CNAME to `home.brettswift.com`.
+
 ## Current Infrastructure
 
 - **Kubernetes**: k3s v1.33.6+k3s1 on Pop!_OS 24.04 LTS
