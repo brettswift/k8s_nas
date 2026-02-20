@@ -7,6 +7,8 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header Host 127.0.0.1;
       proxy_set_header X-Forwarded-Host $host;
@@ -22,14 +24,14 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - openclaw.home.brettswift.com
+        - home.brettswift.com
       secretName: home-brettswift-com-tls
   rules:
-    - host: openclaw.home.brettswift.com
+    - host: home.brettswift.com
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /openclaw(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: openclaw-gateway
