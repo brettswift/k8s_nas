@@ -1,3 +1,8 @@
+- AI:
+    - OpenClaw:
+        href: https://home.brettswift.com/openclaw/
+        description: Personal AI assistant
+        icon: openclaw.png
 - Development:
     - Demo App:
         href: https://home.brettswift.com/demo
