@@ -1,0 +1,14 @@
+# Persistent storage for OpenClaw config and workspace (~/.openclaw).
+# Required for gateway token, channels, and agent state.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openclaw-data
+  namespace: openclaw
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: omit to use cluster default

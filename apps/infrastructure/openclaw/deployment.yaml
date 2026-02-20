@@ -1,0 +1,78 @@
+# OpenClaw gateway — runs in k8s for now; you can move to Mac mini later.
+# Official image: ghcr.io/openclaw/openclaw (see docs.openclaw.ai/install/docker).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw-gateway
+  namespace: openclaw
+  labels:
+    app: openclaw-gateway
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: openclaw-gateway
+  template:
+    metadata:
+      labels:
+        app: openclaw-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: gateway
+          image: ghcr.io/openclaw/openclaw:main
+          args:
+            - node
+            - dist/index.js
+            - gateway
+            - --bind
+            - "0.0.0.0"
+            - --port
+            - "18789"
+          ports:
+            - containerPort: 18789
+              name: http
+            - containerPort: 18790
+              name: bridge
+          env:
+            - name: HOME
+              value: /home/node
+            # Set via Secret openclaw-gateway-token (see README).
+            - name: OPENCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-gateway-token
+                  key: token
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/.openclaw
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 18789
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 18789
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: openclaw-data
