@@ -3,6 +3,5 @@ resources:
   - blocky/
   - cert-manager/
   - external-dns/
-  - openclaw/
 # argocd/ removed - managed by argocd-config Application separately
 # monitoring/ removed - managed by monitoring Application separately
