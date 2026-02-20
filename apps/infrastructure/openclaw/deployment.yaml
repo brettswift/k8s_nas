@@ -21,6 +21,19 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+      initContainers:
+        - name: seed-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /data/openclaw.json ]; then
+                echo '{"gateway":{"controlUi":{"allowedOrigins":["https://home.brettswift.com","https://openclaw.home.brettswift.com"]}}}' > /data/openclaw.json
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: gateway
           image: ghcr.io/openclaw/openclaw:main
