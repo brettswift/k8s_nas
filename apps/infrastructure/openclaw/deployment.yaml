@@ -68,6 +68,12 @@ spec:
                   name: openclaw-anthropic-api-key
                   key: api-key
                   optional: true
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-telegram-bot-token
+                  key: token
+                  optional: true
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw

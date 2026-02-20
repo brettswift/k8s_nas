@@ -35,6 +35,226 @@ Replace `YOUR_KEY_HERE` with your key from [Anthropic Console](https://console.a
 - **Control UI**: https://openclaw.home.brettswift.com
 - **Docs**: https://docs.openclaw.ai
 
+## Telegram
+
+Use a Telegram bot so you can chat with OpenClaw from your phone. Default is **pairing**: only people you approve can DM the bot.
+
+### 1. Create the bot and get the token
+
+1. In Telegram, open a chat with **@BotFather** (official, check the handle).
+2. Send: `/newbot`
+3. Follow the prompts: choose a **name** (e.g. "My OpenClaw") and a **username** ending in `bot` (e.g. `my_openclaw_bot`). Must be unique.
+4. BotFather replies with a token like `123456789:ABCdefGHI...`. Copy and save it.
+
+### 2. Store the token in the cluster
+
+Create a Kubernetes secret (do not commit the token):
+
+```bash
+kubectl create secret generic openclaw-telegram-bot-token \
+  --namespace openclaw \
+  --from-literal=token="YOUR_BOT_TOKEN_FROM_BOTFATHER"
+```
+
+The deployment already has an optional `TELEGRAM_BOT_TOKEN` env that reads this secret.
+
+### 3. Enable Telegram in config
+
+In the Control UI: **Settings → Config → Raw**, merge this into `openclaw.json`:
+
+```json
+{
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "groups": { "*": { "requireMention": true } }
+    }
+  }
+}
+```
+
+- **`dmPolicy: "pairing"`** – New users get a one-time code; you approve them (see step 5).
+- Omit `botToken` in config when using the secret; the gateway uses `TELEGRAM_BOT_TOKEN` from the env.
+
+Click **Apply**. The gateway will restart and load Telegram.
+
+### 4. Open a chat with your bot
+
+In Telegram, search for your bot by its username (e.g. `@my_openclaw_bot`) and send any message (e.g. "Hi"). The bot will reply that pairing is required and show a **pairing code**.
+
+### 5. Approve the pairing (from your machine)
+
+List pending Telegram pairings:
+
+```bash
+export KUBECONFIG=~/.kube/config-nas
+kubectl exec -n openclaw deploy/openclaw-gateway -- node dist/index.js pairing list telegram
+```
+
+Approve using the code the user (or you) received in Telegram:
+
+```bash
+kubectl exec -n openclaw deploy/openclaw-gateway -- node dist/index.js pairing approve telegram <CODE>
+```
+
+After approval, that Telegram user can DM the bot and chat with OpenClaw.
+
+### 6. Optional: allow a specific user without pairing
+
+To allow a Telegram user by ID (no pairing):
+
+1. Get your Telegram user ID (e.g. DM the bot once and read logs, or use a helper bot; see OpenClaw Telegram docs).
+2. In config, set `dmPolicy: "allowlist"` and add your ID:
+
+```json
+"channels": {
+  "telegram": {
+    "enabled": true,
+    "dmPolicy": "allowlist",
+    "allowFrom": ["YOUR_TELEGRAM_USER_ID"],
+    "groups": { "*": { "requireMention": true } }
+  }
+}
+```
+
+### 7. Optional: groups
+
+To use the bot in groups, add it to the group in Telegram. By default the bot only replies when **mentioned** (e.g. `@my_openclaw_bot`). To change that, configure `channels.telegram.groups` (see [OpenClaw Telegram docs](https://docs.openclaw.ai/channels/telegram)).
+
+## Skills (e.g. Home Assistant)
+
+Skills teach OpenClaw how to use tools (e.g. talk to Home Assistant). You can install them from the Control UI or via ClawHub.
+
+### Option 1: Control UI (manage only)
+
+The Control UI **Settings → Skills** tab lists already-installed/bundled skills. You can enable/disable them and set API keys there. It does **not** search or install from ClawHub; use the CLI (Option 2) to install new skills.
+
+### Option 2: Home Assistant skill via ClawHub (CLI in pod)
+
+You need a **Home Assistant URL** and a **long-lived access token** (Home Assistant → Profile → Security → Long-Lived Access Tokens).
+
+**Install the skill into the gateway’s data:**
+
+```bash
+./scripts/openclaw-install-skill.sh home-assistant
+# or any slug: ./scripts/openclaw-install-skill.sh weather
+```
+
+(If you see “Rate limit exceeded”, wait 10–15 minutes and retry.) To find slugs: `clawhub search "home assistant"` in a one-off node pod.
+
+**Configure the skill** in OpenClaw (Control UI → Config → Raw). Add under `skills.entries`:
+
+```json
+"skills": {
+  "entries": {
+    "home-assistant": {
+      "enabled": true,
+      "env": {
+        "HA_URL": "http://YOUR_HA_HOST:8123",
+        "HA_TOKEN": "YOUR_LONG_LIVED_TOKEN"
+      }
+    }
+  }
+}
+```
+
+Use your real Home Assistant URL (e.g. `http://10.1.0.20:8123` if HA runs on the same host, or your HA hostname). Prefer storing the token in a Kubernetes secret and injecting it via the deployment instead of putting it in config (so it isn’t saved in the PVC in plain text). Restart the gateway after config changes so the skill is loaded.
+
+The one-off pod mounts the same PVC as the gateway; `--workdir /data/workspace` makes the skill land in `workspace/skills`, which OpenClaw loads. Restart the gateway (or start a new session) after installing.
+
+## Local models on the host (GPU)
+
+OpenClaw runs in a pod; the model server must run on the **host** (the k8s node at 10.1.0.20) so it can use the GPU. The pod reaches the host via the node IP.
+
+### 1. Install Ollama on the host
+
+SSH to the host and install Ollama:
+
+```bash
+ssh nas   # or ssh bswift@10.1.0.20
+
+# Install Ollama (Linux)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Expose on all interfaces so the pod can reach it (required)
+export OLLAMA_HOST=0.0.0.0
+# Make persistent: add to ~/.bashrc or create /etc/systemd/system/ollama.service.d/override.conf
+```
+
+For a systemd-managed Ollama service:
+
+```bash
+sudo mkdir -p /etc/systemd/system/ollama.service.d
+echo -e '[Service]\nEnvironment="OLLAMA_HOST=0.0.0.0"' | sudo tee /etc/systemd/system/ollama.service.d/override.conf
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
+### 2. Pull models and use GPU
+
+Ollama uses the GPU automatically when available. Pull models on the host:
+
+```bash
+ollama pull llama3.2
+ollama pull mistral
+# List: ollama list
+```
+
+### 3. Wire OpenClaw to the host’s Ollama
+
+The pod must use the **host IP** (10.1.0.20), not `localhost`.
+
+**In the Control UI:**
+
+1. Open https://openclaw.home.brettswift.com
+2. In the left sidebar, expand **Settings** (click the chevron if collapsed)
+3. Click **Config**
+4. Click the **Raw** button (top of the config area) to switch from Form view to raw JSON
+5. Merge the JSON below into the existing config in the **Raw JSON5** editor. If the file is empty or minimal, paste this as the full config. If you already have `models` or `agents` sections, merge the `providers` and `fallbacks` into them.
+6. Click **Apply** to save and restart the gateway with the new config.
+
+```json
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "ollama-host": {
+        "baseUrl": "http://10.1.0.20:11434/v1",
+        "apiKey": "ollama",
+        "api": "openai-responses",
+        "models": [
+          {
+            "id": "llama3.2",
+            "name": "Llama 3.2 (Host GPU)",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-5",
+        "fallbacks": ["ollama-host/llama3.2", "anthropic/claude-opus-4-6"]
+      }
+    }
+  }
+}
+```
+
+Adjust `id` to match your `ollama list` output. Use `models.mode: "merge"` so hosted models stay as fallbacks.
+
+### 4. Alternatives: vLLM, LM Studio
+
+- **vLLM** (best performance): Run on host, bind to `0.0.0.0:8000`, use `baseUrl: "http://10.1.0.20:8000/v1"`.
+- **LM Studio**: Run on host, enable local server (default port 1234), use `baseUrl: "http://10.1.0.20:1234/v1"`.
+
 ## Moving to Mac mini later
 
 - **Option A**: Copy the PVC contents (e.g. via a temporary pod that mounts the PVC and streams a tarball, or backup/restore). Then run OpenClaw on the Mac (native install or Docker) and point it at the same config/workspace.
