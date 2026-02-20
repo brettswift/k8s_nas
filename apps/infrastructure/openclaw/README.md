@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-- **Gateway token**: Create a Kubernetes Secret with your gateway token so the Control UI can authenticate. If you don’t have a token yet, generate one and create the secret:
+- **Gateway token**: The secret supplies the token to the gateway (server-side). The Control UI runs in the browser and cannot read cluster secrets, so you must paste the same token in Settings → Auth. If you don’t have a token yet, generate one and create the secret:
 
 ```bash
 # Generate a token (e.g. 32 bytes hex)
@@ -22,7 +22,7 @@ Then open the Control UI (see below), go to Settings, and paste this token.
 
 ## URLs
 
-- **Control UI**: https://home.brettswift.com/openclaw/
+- **Control UI**: https://openclaw.home.brettswift.com
 - **Docs**: https://docs.openclaw.ai
 
 ## Moving to Mac mini later
