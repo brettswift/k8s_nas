@@ -1,0 +1,30 @@
+# Exposes OpenClaw Control UI at https://home.brettswift.com/openclaw/
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openclaw-ingress
+  namespace: openclaw
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - home.brettswift.com
+      secretName: home-brettswift-com-tls
+  rules:
+    - host: home.brettswift.com
+      http:
+        paths:
+          - path: /openclaw(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: openclaw-gateway
+                port:
+                  number: 80
