@@ -134,6 +134,16 @@ The Control UI **Settings → Skills** tab lists already-installed/bundled skill
 
 You need a **Home Assistant URL** and a **long-lived access token** (Home Assistant → Profile → Security → Long-Lived Access Tokens).
 
+Create a Kubernetes secret for the Home Assistant token (recommended for UI-safe config editing):
+
+```bash
+kubectl create secret generic openclaw-home-assistant-token \
+  --namespace openclaw \
+  --from-literal=token="YOUR_LONG_LIVED_TOKEN"
+```
+
+The deployment reads this secret into the `HA_TOKEN` environment variable.
+
 **Install the skill into the gateway’s data:**
 
 ```bash
@@ -152,16 +162,82 @@ You need a **Home Assistant URL** and a **long-lived access token** (Home Assist
       "enabled": true,
       "env": {
         "HA_URL": "http://YOUR_HA_HOST:8123",
-        "HA_TOKEN": "YOUR_LONG_LIVED_TOKEN"
+        "HA_TOKEN": "${HA_TOKEN}"
       }
     }
   }
 }
 ```
 
-Use your real Home Assistant URL (e.g. `http://10.1.0.20:8123` if HA runs on the same host, or your HA hostname). Prefer storing the token in a Kubernetes secret and injecting it via the deployment instead of putting it in config (so it isn’t saved in the PVC in plain text). Restart the gateway after config changes so the skill is loaded.
+Use your real Home Assistant URL (e.g. `http://10.1.0.20:8123` if HA runs on the same host, or your HA hostname). Keep `HA_TOKEN` as `${HA_TOKEN}` in config so UI edits stay portable and do not write secrets to disk. Restart the gateway after config changes so the skill is loaded.
 
 The one-off pod mounts the same PVC as the gateway; `--workdir /data/workspace` makes the skill land in `workspace/skills`, which OpenClaw loads. Restart the gateway (or start a new session) after installing.
+
+## Tool profile: safe but powerful (research)
+
+To let the bot **research** (web search, fetch pages, remember things) and **do useful things** (send messages, use sessions, optional browser) without **dangerous** tools (no shell exec, no file read/write, no gateway restart, no node control), use a profile above `minimal` and deny the risky groups.
+
+Merge this into your config (Settings → Config → Raw, then Apply):
+
+```json
+{
+  "tools": {
+    "profile": "messaging",
+    "allow": [
+      "group:web",
+      "group:memory",
+      "image"
+    ],
+    "deny": [
+      "group:runtime",
+      "group:fs",
+      "group:automation",
+      "group:nodes",
+      "browser",
+      "canvas"
+    ],
+    "web": {
+      "search": {
+        "enabled": true
+      },
+      "fetch": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+The **green web-search control** in the UI often only enables when a Brave Search API key is present. Set it via env (recommended): create a secret and add it to the deployment:
+
+```bash
+kubectl create secret generic openclaw-brave-api-key -n openclaw --from-literal=api-key="YOUR_BRAVE_KEY"
+```
+
+The deployment already has optional `BRAVE_API_KEY` from secret `openclaw-brave-api-key`. After creating the secret, restart the gateway so web search (and the UI control) work. Key from [Brave Search API](https://brave.com/search/api/) (Data for Search plan).
+
+**What this gives:**
+
+| Allowed | Purpose |
+| --- | --- |
+| `group:messaging` + session tools | Send messages, list/send to sessions, session_status |
+| `group:web` | `web_search`, `web_fetch` (research) |
+| `group:memory` | `memory_search`, `memory_get` (remember across chats) |
+| `image` | Analyze images with the image model |
+
+**What’s denied:**
+
+| Denied | Reason |
+| --- | --- |
+| `group:runtime` | `exec`, `process` (no shell commands) |
+| `group:fs` | `read`, `write`, `edit`, `apply_patch` (no file access) |
+| `group:automation` | `cron`, `gateway` (no cron, no config/restart) |
+| `group:nodes` | No paired-node control (camera, run, etc.) |
+| `browser`, `canvas` | No browser automation or Canvas (remove from `deny` if you want research via browser) |
+
+**Web tools:** `web_fetch` works without a key. `web_search` requires a Brave API key (`BRAVE_API_KEY` env or `tools.web.search.apiKey`); see [Brave Search](https://docs.openclaw.ai/brave-search).
+
+To allow the **browser** for research (e.g. JS-heavy sites), remove `"browser"` from the `deny` array. To allow **file read-only** in the workspace, you could switch to `profile: "coding"` and `deny: ["group:runtime", "write", "edit", "apply_patch", "group:automation", "group:nodes", "browser", "canvas"]` so only `read` is allowed.
 
 ## Local models on the host (GPU)
 
@@ -259,6 +335,28 @@ Adjust `id` to match your `ollama list` output. Use `models.mode: "merge"` so ho
 
 - **Option A**: Copy the PVC contents (e.g. via a temporary pod that mounts the PVC and streams a tarball, or backup/restore). Then run OpenClaw on the Mac (native install or Docker) and point it at the same config/workspace.
 - **Option B**: Run `openclaw onboard` on the Mac and reconfigure channels/skills there. Use the same gateway token if you want to reuse the same “instance” identity.
+
+## Config UI: can't save
+
+If **Apply** in Settings → Config doesn’t persist (e.g. with tool presets set to **minimal** or after editing the form):
+
+1. **Use Raw JSON** – Switch to **Settings → Config → Raw** and click **Apply** from there. The form view can sometimes send a payload the gateway rejects; Raw applies your JSON directly.
+2. **Fix redacted values** – If the Raw editor shows `__OPENCLAW_REDACTED__` or `__OPENCLAW_REDACTED__-host`, replace them with real values (e.g. `ollama`, `ollama-host`, or your model ref) before saving, or the gateway may reject or mis-load the config.
+3. **Rate limit** – Config apply is limited to 3 requests per 60 seconds. If save seems to do nothing, wait a minute and try again.
+4. **Edit on the pod** – If the UI still won’t save, edit the config file on the gateway and restart:
+
+```bash
+export KUBECONFIG=~/.kube/config-nas
+
+# Dump current config
+kubectl exec -n openclaw deploy/openclaw-gateway -- cat /home/node/.openclaw/openclaw.json > /tmp/openclaw.json
+
+# Edit /tmp/openclaw.json locally, then push it back (replace <pod-name> with the actual pod name)
+kubectl cp /tmp/openclaw.json openclaw/$(kubectl get pod -n openclaw -l app=openclaw-gateway -o jsonpath='{.items[0].metadata.name}'):/home/node/.openclaw/openclaw.json
+
+# Restart so the gateway picks up the file
+kubectl rollout restart deployment/openclaw-gateway -n openclaw
+```
 
 ## GitOps
 

@@ -74,6 +74,18 @@ spec:
                   name: openclaw-telegram-bot-token
                   key: token
                   optional: true
+            - name: BRAVE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-brave-api-key
+                  key: api-key
+                  optional: true
+            - name: HA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-home-assistant-token
+                  key: token
+                  optional: true
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw
