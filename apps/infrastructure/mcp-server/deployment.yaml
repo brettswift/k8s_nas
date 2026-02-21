@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: mcp-server
-        image: homeassistant-ai/ha-mcp:latest
+        image: ghcr.io/homeassistant-ai/ha-mcp:latest
         imagePullPolicy: IfNotPresent
         command:
         - ha-mcp-web
