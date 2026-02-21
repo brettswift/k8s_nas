@@ -4,18 +4,18 @@ This deploys a Home Assistant MCP server at `https://mcp.home.brettswift.com`.
 
 ## What this deployment does
 
-- Runs `homeassistant-ai/ha-mcp` in namespace `mcp`
+- Runs `homeassistant-ai/ha-mcp` in namespace `homeautomation`
 - Exposes it through NGINX Ingress on subdomain `mcp.home.brettswift.com`
 - Uses in-cluster Home Assistant URL: `http://homeassistant.homeautomation.svc.cluster.local:8123`
 
 ## Required secret
 
-Create a long-lived Home Assistant token secret in the `mcp` namespace:
+Create a long-lived Home Assistant token secret in the `homeautomation` namespace:
 
 ```bash
 export KUBECONFIG=~/.kube/config-nas
 kubectl create secret generic mcp-homeassistant-token \
-  --namespace mcp \
+  --namespace homeautomation \
   --from-literal=token="YOUR_HOME_ASSISTANT_LONG_LIVED_TOKEN"
 ```
 
