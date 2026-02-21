@@ -7,6 +7,7 @@
 **Critical Constraints:**
 
 - **Remote cluster only** - Target the k3s server at `10.1.0.20` (no local k3d/kind setup exists)
+- **Local network only** - All IPs are private (10.1.0.20). DNS resolves to this IP. Services are reachable only from your local machine/LAN, not from the public internet. See `docs/AI_GUIDANCE.md` (Network and DNS).
 - **GitOps workflow required** - Make changes through Git commits and ArgoCD sync (not `kubectl apply`)
 - **Protect secrets** - Use kubectl secrets or sealed secrets; never commit credentials
 
