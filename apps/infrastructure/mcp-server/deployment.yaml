@@ -21,7 +21,10 @@ spec:
         image: ghcr.io/homeassistant-ai/ha-mcp:latest
         imagePullPolicy: IfNotPresent
         command:
-        - ha-mcp-sse
+        - fastmcp
+        args:
+        - run
+        - /app/config/fastmcp-sse.json
         ports:
         - name: http
           containerPort: 8087
@@ -36,6 +39,10 @@ spec:
               optional: true
         - name: BACKUP_HINT
           value: normal
+        volumeMounts:
+        - name: mcp-config
+          mountPath: /app/config
+          readOnly: true
         resources:
           requests:
             cpu: 100m
@@ -56,3 +63,7 @@ spec:
           periodSeconds: 20
           timeoutSeconds: 5
           failureThreshold: 3
+      volumes:
+      - name: mcp-config
+        configMap:
+          name: mcp-server-config
