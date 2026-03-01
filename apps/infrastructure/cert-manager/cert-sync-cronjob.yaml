@@ -21,12 +21,13 @@ spec:
             - -c
             - |
               set -e
-              SOURCE_NS="argocd"
+              # Cert is issued by cert-manager into kube-system; sync to all namespaces with ingresses
+              SOURCE_NS="kube-system"
               SECRET_NAME="home-brettswift-com-tls"
-              
+
               # Get all namespaces that need the cert (ingress references)
               TARGET_NS=$(kubectl get ingress -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.spec.tls[0].secretName}{"\n"}{end}' | grep "$SECRET_NAME" | cut -f1 | sort -u)
-              
+
               echo "Syncing secret from $SOURCE_NS to:"
               echo "$TARGET_NS"
               echo ""
