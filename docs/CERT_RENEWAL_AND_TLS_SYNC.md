@@ -74,4 +74,4 @@ After changing the cron to use kube-system, deploy via GitOps (commit and push t
 
 ---
 
-*Verified: curl to https://home.brettswift.com/jellyfin/ returns 302 with valid SSL after running the above process. Add "Confirmed by user on &lt;date&gt;" once you have verified in browser.*
+*Verified: curl to https://home.brettswift.com/jellyfin/ returns 302 with valid SSL after running the above process. Confirmed by user on 2026-03-01 (working on TV).*
