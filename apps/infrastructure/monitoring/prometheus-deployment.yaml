@@ -43,11 +43,17 @@ spec:
           mountPath: /etc/prometheus/
         - name: prometheus-storage-volume
           mountPath: /prometheus/
+        - name: alertrules-volume
+          mountPath: /etc/prometheus/rules/
       volumes:
       - name: prometheus-config-volume
         configMap:
           defaultMode: 420
           name: prometheus-config
+      - name: alertrules-volume
+        configMap:
+          defaultMode: 420
+          name: prometheus-alertrules
       - name: prometheus-storage-volume
         persistentVolumeClaim:
           claimName: prometheus-data
