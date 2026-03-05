@@ -2,25 +2,11 @@ resources:
 - namespace.yaml
 # Prometheus - enabled for basic CPU/memory graphs
 - prometheus-configmap.yaml
-- prometheus-alertrules-configmap.yaml
 - prometheus-pvc.yaml
 - prometheus-deployment.yaml
 - prometheus-service.yaml
 - prometheus-serviceaccount.yaml
 - prometheus-ingress.yaml
-# kube-state-metrics - for pod/deployment status alerts
-- kube-state-metrics-serviceaccount.yaml
-- kube-state-metrics-clusterrole.yaml
-- kube-state-metrics-clusterrolebinding.yaml
-- kube-state-metrics-deployment.yaml
-- kube-state-metrics-service.yaml
-# Alertmanager + ntfy bridge
-- alertmanager-configmap.yaml
-- alertmanager-deployment.yaml
-- alertmanager-service.yaml
-- alertmanager-ntfy-bridge-configmap.yaml
-- alertmanager-ntfy-bridge-deployment.yaml
-- alertmanager-ntfy-bridge-service.yaml
 # Grafana - enable for Loki UI
 - grafana-configmap.yaml
 - grafana-dashboard-configmap.yaml
