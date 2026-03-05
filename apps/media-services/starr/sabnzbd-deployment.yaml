@@ -121,25 +121,27 @@ spec:
         livenessProbe:
           exec:
             command:
-            - ping
-            - -c
-            - "1"
-            - www.google.com
+            - wget
+            - -q
+            - -O-
+            - --timeout=3
+            - http://127.0.0.1:9999
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 5
         readinessProbe:
           exec:
             command:
-            - ping
-            - -c
-            - "1"
-            - www.google.com
-          initialDelaySeconds: 10
+            - wget
+            - -q
+            - -O-
+            - --timeout=3
+            - http://127.0.0.1:9999
+          initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 5
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
