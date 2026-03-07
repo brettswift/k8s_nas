@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-ntfy-bridge
+  namespace: monitoring
+  labels:
+    app: alertmanager-ntfy-bridge
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+    app: alertmanager-ntfy-bridge

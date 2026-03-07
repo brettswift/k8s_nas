@@ -10,8 +10,13 @@ data:
       evaluation_interval: 15s
 
     rule_files:
-      # - "first_rules.yml"
-      # - "second_rules.yml"
+      - "/etc/prometheus/rules/alerts.yml"
+
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager.monitoring.svc.cluster.local:9093
 
     scrape_configs:
       # Kubernetes API server
@@ -139,3 +144,9 @@ data:
           regex: (.+)
           target_label: __metrics_path__
           replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+      # kube-state-metrics
+      - job_name: 'kube-state-metrics'
+        static_configs:
+        - targets:
+          - kube-state-metrics.monitoring.svc.cluster.local:8080

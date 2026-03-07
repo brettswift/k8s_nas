@@ -2,6 +2,7 @@ resources:
 - namespace.yaml
 # Prometheus - enabled for basic CPU/memory graphs
 - prometheus-configmap.yaml
+- prometheus-alertrules-configmap.yaml
 - prometheus-pvc.yaml
 - prometheus-deployment.yaml
 - prometheus-service.yaml
@@ -25,6 +26,21 @@ resources:
 - alloy-clusterrole.yaml
 - alloy-clusterrolebinding.yaml
 - alloy-daemonset.yaml
+# kube-state-metrics for pod/deployment metrics
+- kube-state-metrics-serviceaccount.yaml
+- kube-state-metrics-clusterrole.yaml
+- kube-state-metrics-clusterrolebinding.yaml
+- kube-state-metrics-deployment.yaml
+- kube-state-metrics-service.yaml
+# Alertmanager for alert routing
+- alertmanager-configmap.yaml
+- alertmanager-deployment.yaml
+- alertmanager-service.yaml
+- alertmanager-ingress.yaml
+# ntfy.sh bridge for push notifications
+- alertmanager-ntfy-bridge-configmap.yaml
+- alertmanager-ntfy-bridge-deployment.yaml
+- alertmanager-ntfy-bridge-service.yaml
 # Uptime Kuma - starting fresh
 - uptime-kuma/
 # Netdata - removed: requires cloud login even in older versions
