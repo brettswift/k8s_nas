@@ -151,14 +151,10 @@ How an external bot (outside the cluster) can access alarms, logs, and cluster s
 - **Phase 3 – AI triage:** Local model (e.g. ollama) + suppression DB to reduce alert noise
 - **Phase 4 – Capacity planning:** Node CPU/RAM/disk dashboards, disk usage alerts (80%, 90%)
 
-## Related Documents – Consolidate or Archive
+## Related Documents
 
-These docs overlap with this plan. **Recommendation:** Treat this plan as the single source of truth. Archive or delete the others to avoid confusion.
+| Document | Notes |
+|----------|-------|
+| `docs/tech-spec-epic-2.md` | Epic 2 acceptance criteria, APIs, NFRs – keep for story/AC tracking if using epic workflow |
 
-| Document | Content | Recommendation |
-|----------|---------|----------------|
-| `Monitoring-Proposal-1.md` (root) | Phase 1–4 vision, Gotify/Pushover, AI triage | **Archive** – Phase 3/4 captured above; push choice (ntfy) decided |
-| `docs/monitoring-design.md` | Detailed design, dashboards, ntfy throttling, resource overhead | **Archive** – Useful reference; implementation details merged into this plan |
-| `docs/tech-spec-epic-2.md` | Epic 2 acceptance criteria, APIs, NFRs | **Keep** – For story/AC tracking if using epic workflow; otherwise archive |
-
-To archive: move to `docs/archive/` or add `_archived` suffix. To delete: remove after confirming nothing unique is lost.
+*Previously consolidated and removed: `Monitoring-Proposal-1.md`, `docs/monitoring-design.md`*
