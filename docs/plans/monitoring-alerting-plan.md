@@ -71,6 +71,57 @@ Add Prometheus alert rules, Alertmanager, and ntfy.sh push notifications to the 
 | `alertmanager-ntfy-bridge-*.yaml` | New (3 files) |
 | `kustomization.yaml` | Add all new resources |
 
+## External Bot Access
+
+How an external bot (outside the cluster) can access alarms, logs, and cluster status after implementation.
+
+### 1. Alarms
+
+| Method | Endpoint | Auth | Notes |
+|--------|----------|------|-------|
+| **Alertmanager API** | `GET https://home.brettswift.com/alertmanager/api/v2/alerts` | Add Basic Auth or API key via ingress | Returns active alerts as JSON |
+| **Prometheus API** | `GET https://home.brettswift.com/prometheus/api/v1/alerts` | Same as Prometheus UI | All firing alerts |
+| **ntfy.sh subscribe** | `GET https://ntfy.sh/k8s-nas-critical` (SSE stream) | None (public topic) | Long-polling; bot receives pushes as they occur |
+
+**Recommendation:** Expose Alertmanager via ingress with auth, or have the bot subscribe to ntfy.sh topics (SSE).
+
+### 2. Log Queries
+
+| Method | Endpoint | Auth | Notes |
+|--------|----------|------|-------|
+| **Loki API** | `POST https://home.brettswift.com/loki/loki/api/v1/query_range` | Add auth on ingress | LogQL queries; Loki must be exposed |
+| **Grafana API** | `POST /api/ds/query` (datasource proxy) | Grafana API key | Indirect; Grafana runs the query against Loki |
+
+**Current state:** Loki is typically not exposed. Add ingress for Loki (e.g. `/loki`) and protect it.
+
+**Recommendation:** Expose Loki behind ingress with auth; bot calls Loki query API directly.
+
+### 3. Cluster Status
+
+| Method | Endpoint | Auth | Notes |
+|--------|----------|------|-------|
+| **Prometheus API** | `GET /api/v1/query?query=<PromQL>` | Same as Prometheus UI | Metrics (pods, CPU, memory, etc.) |
+| **Prometheus API** | `GET /api/v1/query_range` | Same | Time-series for graphs |
+| **Grafana API** | Dashboard JSON, panel data | Grafana API key | Pre-built dashboards |
+| **Kubernetes API** | `https://<cluster>:6443` | Kubeconfig/token | Full cluster access; generally not exposed externally |
+
+**Recommendation:** Use Prometheus for cluster status. Already exposed; has the metrics needed (e.g. `kube_pod_status_phase`, `kube_deployment_status_replicas_ready`).
+
+### Summary for a Bot
+
+| Need | Primary Option | Secondary |
+|------|----------------|-----------|
+| Alarms | ntfy.sh SSE subscribe | Alertmanager REST API |
+| Logs | Loki query API (after ingress) | Grafana datasource API |
+| Cluster status | Prometheus query API | Grafana API |
+
+### Auth and Exposure Notes
+
+- **Prometheus:** Already at `https://home.brettswift.com/prometheus`; add auth (Basic Auth, OAuth) on ingress if needed.
+- **Alertmanager:** Add ingress + auth when deployed.
+- **Loki:** Add ingress (e.g. `https://home.brettswift.com/loki`) + auth.
+- **ntfy.sh:** No auth; anyone with topic name can subscribe. Use private/authenticated ntfy if secrecy needed.
+
 ## References
 
 - `Monitoring-Proposal-1.md` – Phase 2 alerting, push services
