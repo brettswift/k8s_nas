@@ -1,0 +1,20 @@
+name: Backup live to live-backup
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily at 6am UTC
+  workflow_dispatch: # manual trigger
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: live
+      - run: git push origin live:live-backup
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
