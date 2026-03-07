@@ -1,6 +1,6 @@
 ---
 name: pr-deploy-workflow
-description: Outlines how to create PRs, deploy changes, and what to verify for the k8s_nas GitOps repo. Use when creating pull requests, deploying to live, pushing changes, or verifying deployments.
+description: Use when the user says /deploy or /rollback, or when creating PRs, pushing changes to the k8s_nas cluster, or recovering from a bad deploy.
 ---
 
 # PR and Deploy Workflow (k8s_nas)
@@ -9,109 +9,66 @@ description: Outlines how to create PRs, deploy changes, and what to verify for 
 
 This repo uses GitOps: ArgoCD tracks the `live` branch. All deployments go through Git; never `kubectl apply` directly (except temporary test pods).
 
-## PR Workflow
+---
 
-### 1. Create a Branch
+## /deploy Command
 
-```bash
-git checkout -b feat/my-feature   # or fix/my-fix
-```
-
-### 2. Make Changes and Commit
-
-- Commit on your branch
-- Push: `git push origin feat/my-feature`
-
-### 3. Open a PR
-
-- Target branch: `live`
-- PR: `feat/my-feature` → `live`
-
-### 4. Before Merge
-
-- [ ] Changes reviewed (self or others)
-- [ ] No direct `kubectl apply` of persistent resources
-- [ ] Critical services (Jellyfin, `/media`) – confirm OK if touching
-
-## Deploy Workflow
-
-### Option A: Direct Push to Live (bypass PR)
+When the user says `/deploy`, push the current branch to `live`:
 
 ```bash
-git push origin <branch>:live
+git push origin <current-branch>:live
 ```
 
-Use when you have approval or are the sole maintainer. Still verify after push.
-
-### Option B: Merge PR to Live
-
-1. Merge PR (only you should have merge permission)
-2. `live` updates automatically
-3. ArgoCD syncs from `live`
-
-### Deploy Command
+Then wait ~30 seconds for ArgoCD to sync and verify via HTTP:
 
 ```bash
-git push origin <your-branch>:live
+curl -sI https://home.brettswift.com/<affected-service>
 ```
 
-Example: `git push origin feat/monitoring:live`
+- Expect `200` or `301/302` — anything else indicates a problem
+- If unreachable, report failure and tell the user to check ArgoCD manually
 
-## Post-Deploy Verification Checklist
+---
 
-**Do not assume the push worked. Verify.**
+## /rollback Command
 
-### 1. ArgoCD Sync
+When the user says `/rollback`, execute this flow:
 
-- Check ArgoCD UI or: `argocd app list` / `kubectl get applications -A`
-- Confirm apps are `Synced` and `Healthy`
-- If out of sync: trigger manual sync in ArgoCD
+### Restore from live-backup (preferred)
 
-### 2. Pod Status
+`live-backup` is automatically updated daily at 6am UTC. It represents the last known-good state.
 
 ```bash
-export KUBECONFIG=~/.kube/config-nas   # or your cluster config
-kubectl get pods -A | grep -v Running
+git push origin live-backup:live --force
 ```
 
-- Resolve any `CrashLoopBackOff`, `ImagePullBackOff`, `Pending`
+### Verify rollback
 
-### 3. Service Verification
-
-- **Homepage:** `curl -sI https://home.brettswift.com` (or your URL)
-- **Jellyfin:** Check UI loads
-- **Changed app:** Hit its endpoint or UI
-
-### 4. Logs (if issues)
+Wait ~30 seconds for ArgoCD to sync, then check via HTTP:
 
 ```bash
-kubectl logs -n <namespace> <pod> --tail=50
+curl -sI https://home.brettswift.com
 ```
 
-## Rollback
+- Expect `200` — if still broken, report and ask the user to check ArgoCD manually
 
-If a deploy breaks things:
-
-```bash
-# Restore from live-backup (daily backup branch)
-git push origin live-backup:live
-```
-
-Or revert a specific commit:
+### Alternative: revert a specific commit
 
 ```bash
 git revert <commit> --no-edit
 git push origin HEAD:live
 ```
 
-## Key Rules (from dev.mdc)
+---
 
-- **Always GitOps:** `git push <branch>:live` – never `kubectl apply` for persistent resources
-- **Verify:** Wait for ArgoCD sync, then check pods and services
-- **Critical services:** Confirm before taking Jellyfin or `/media` offline
-- **Test pods:** Use temporary `kubectl apply` test pods for API testing, then destroy them
+## Key Rules
+
+- **Always GitOps:** `git push <branch>:live` — never `kubectl apply` for persistent resources
+- **Verify every deploy:** Wait for ArgoCD sync (~30s), then HTTP check the affected service
+- **Critical services:** Confirm before touching Jellyfin or `/media`
+- **No kubectl:** The bot has no cluster access — verification is HTTP-only
 
 ## Backup
 
-- `live-backup` branch is updated daily (6am UTC) via `.github/workflows/backup-live.yml`
-- Manual backup: Actions → "Backup live to live-backup" → Run workflow
+- `live-backup` updated daily (6am UTC) via `.github/workflows/backup-live.yml`
+- Manual trigger: GitHub Actions → "Backup live to live-backup" → Run workflow
