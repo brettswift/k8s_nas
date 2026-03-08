@@ -1,10 +1,8 @@
-name: Build f1-predictor image
+name: Build f1-predictor dev image
 
 on:
   push:
-    branches: [live]
-    paths:
-      - "apps/f1-predictor/**"
+    branches: [f1-dev]
   workflow_dispatch:
 
 jobs:
@@ -32,4 +30,4 @@ jobs:
           context: apps/f1-predictor
           file: apps/f1-predictor/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/f1-predictor:latest
+          tags: ghcr.io/${{ github.repository_owner }}/f1-predictor:dev
