@@ -1,0 +1,125 @@
+# Tag and changelog on PR merge to live only
+# Merged = it worked. Direct pushes to live are not tagged.
+
+name: Semver Tag on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [live]
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PR_DEPLOY_TOKEN }}
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch live and merge commit
+        run: |
+          git fetch origin live
+          git checkout -B live origin/live
+
+      - name: Compute next version
+        id: version
+        run: |
+          LATEST=$(git tag -l 'v*' --sort=-v:refname 2>/dev/null | head -1)
+          if [ -z "$LATEST" ]; then
+            NEXT="v1.0.0"
+            echo "next=$NEXT" >> $GITHUB_OUTPUT
+            echo "bump=initial" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Parse major.minor.patch
+          MAJOR=$(echo "$LATEST" | sed 's/v\([0-9]*\).*/\1/')
+          MINOR=$(echo "$LATEST" | sed 's/v[0-9]*\.\([0-9]*\).*/\1/')
+          PATCH=$(echo "$LATEST" | sed 's/v[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/')
+
+          # Heuristic: minor if new app dir or feat in title, else patch
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.merge_commit_sha }}"
+          FILES=$(git diff --name-only "$BASE" "$HEAD" 2>/dev/null || true)
+          TITLE="${{ github.event.pull_request.title }}"
+
+          BUMP="patch"
+          if echo "$FILES" | grep -qE '^apps/[^/]+/[^/]+/'; then
+            # New top-level dir under apps/ (e.g. apps/media-services/new-app/)
+            NEW_DIRS=$(echo "$FILES" | sed 's|^\(apps/[^/]*/[^/]*\)/.*|\1|' | sort -u)
+            for d in $NEW_DIRS; do
+              if [ ! -d "$d" ]; then continue; fi
+              # Check if this path existed before
+              if ! git ls-tree "$BASE" "$d" >/dev/null 2>&1; then
+                BUMP="minor"
+                break
+              fi
+            done
+          fi
+          if echo "$TITLE" | grep -qiE 'feat|feature'; then
+            BUMP="minor"
+          fi
+
+          if [ "$BUMP" = "minor" ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEXT="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag (on merge commit)
+        run: |
+          git tag -a "${{ steps.version.outputs.next }}" -m "Release ${{ steps.version.outputs.next }}"
+          git push origin "${{ steps.version.outputs.next }}"
+
+      - name: Update CHANGELOG
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          VERSION="${{ steps.version.outputs.next }}"
+
+          ENTRY="## [$VERSION] - $DATE
+
+- $PR_TITLE [#$PR_NUM]($PR_URL)
+"
+
+          if [ ! -f CHANGELOG.md ]; then
+            printf '# Changelog\n\nAll notable changes. Versions created when PRs are merged to live.\n\n' > CHANGELOG.md
+          fi
+
+          # Insert new entry after header (first 4 lines), before existing versions
+          HEADER=$(head -4 CHANGELOG.md)
+          REST=$(tail -n +5 CHANGELOG.md)
+          printf '%s\n%s\n%s' "$HEADER" "$ENTRY" "$REST" > CHANGELOG.md
+
+      - name: Commit and push changelog
+        run: |
+          git add CHANGELOG.md
+          git diff --staged --quiet || git commit -m "chore: release ${{ steps.version.outputs.next }}"
+          git push origin live
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '📦 **Released ${{ steps.version.outputs.next }}**\n\nChangelog updated and tag pushed.'
+            })
