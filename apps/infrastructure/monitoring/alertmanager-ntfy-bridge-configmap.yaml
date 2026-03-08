@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-ntfy-bridge-config
+  namespace: monitoring
+data:
+  NTFY_BASE_URL: "https://ntfy.sh"
+  NTFY_TOPIC_CRITICAL: "k8s-nas-critical"
+  NTFY_TOPIC_WARNINGS: "k8s-nas-warnings"
+  NTFY_TOPIC_INFO: "k8s-nas-alerts"
+  NTFY_TOPIC_DEFAULT: "k8s-nas-alerts"

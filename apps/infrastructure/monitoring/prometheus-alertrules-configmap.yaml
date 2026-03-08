@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alertrules
+  namespace: monitoring
+data:
+  alerts.yml: |
+    groups:
+    - name: pod-health
+      rules:
+      - alert: PodCrashLoopBackOff
+        expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is in CrashLoopBackOff"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in CrashLoopBackOff state for more than 2 minutes."
+      
+      - alert: PodHighRestarts
+        expr: increase(kube_pod_container_status_restarts_total{namespace=~"media|homepage|qbittorrent"}[1h]) >= 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has high restart count"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last hour."
+      
+      - alert: ImagePullBackOff
+        expr: kube_pod_container_status_waiting_reason{reason="ImagePullBackOff"} == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is in ImagePullBackOff"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} cannot pull its image."
+
+    - name: deployment-health
+      rules:
+      - alert: JellyfinDown
+        expr: kube_deployment_status_replicas_ready{deployment="jellyfin", namespace="media"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Jellyfin is down"
+          description: "Jellyfin deployment in media namespace has 0 ready replicas for more than 3 minutes."
+      
+      - alert: HomepageDown
+        expr: kube_deployment_status_replicas_ready{deployment="homepage", namespace="homepage"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Homepage is down"
+          description: "Homepage deployment in homepage namespace has 0 ready replicas for more than 3 minutes."
+      
+      - alert: SABnzbdDown
+        expr: kube_deployment_status_replicas_ready{deployment="sabnzbd", namespace="media"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SABnzbd is down"
+          description: "SABnzbd deployment in media namespace has 0 ready replicas for more than 5 minutes."
+      
+      - alert: DeploymentReplicasMismatch
+        expr: kube_deployment_status_replicas_ready != kube_deployment_spec_replicas
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} replica mismatch"
+          description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} ready replicas but {{ $labels.kube_deployment_spec_replicas }} are expected."
+
+    - name: cronjob-health
+      rules:
+      - alert: CronJobFailed
+        expr: kube_job_failed{job_name=~"cert-sync.*|uptime-sync.*"} > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CronJob {{ $labels.cronjob }} failed"
+          description: "CronJob {{ $labels.cronjob }} in namespace {{ $labels.namespace }} has failed jobs."

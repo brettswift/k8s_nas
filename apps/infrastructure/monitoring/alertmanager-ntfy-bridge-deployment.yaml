@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-ntfy-bridge
+  namespace: monitoring
+  labels:
+    app: alertmanager-ntfy-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager-ntfy-bridge
+  template:
+    metadata:
+      labels:
+        app: alertmanager-ntfy-bridge
+    spec:
+      containers:
+      - name: bridge
+        image: python:3.11-slim
+        command: ["python3", "-c"]
+        args:
+          - |
+            import os
+            import json
+            import http.client
+            from urllib.parse import urlparse
+            from http.server import HTTPServer, BaseHTTPRequestHandler
+            import threading
+
+            NTFY_BASE_URL = os.environ.get('NTFY_BASE_URL', 'https://ntfy.sh')
+            TOPICS = {
+                'critical': os.environ.get('NTFY_TOPIC_CRITICAL', 'k8s-nas-critical'),
+                'warnings': os.environ.get('NTFY_TOPIC_WARNINGS', 'k8s-nas-warnings'),
+                'info': os.environ.get('NTFY_TOPIC_INFO', 'k8s-nas-alerts'),
+                'default': os.environ.get('NTFY_TOPIC_DEFAULT', 'k8s-nas-alerts')
+            }
+
+            def send_ntfy(topic, title, message, priority=3, tags=None):
+                """Send notification to ntfy.sh"""
+                try:
+                    parsed = urlparse(NTFY_BASE_URL)
+                    if parsed.scheme == 'https':
+                        conn = http.client.HTTPSConnection(parsed.netloc, timeout=10)
+                    else:
+                        conn = http.client.HTTPConnection(parsed.netloc, timeout=10)
+                    
+                    headers = {
+                        'Title': title,
+                        'Priority': str(priority)
+                    }
+                    if tags:
+                        headers['Tags'] = ','.join(tags)
+                    
+                    conn.request('POST', f'/{topic}', body=message.encode('utf-8'), headers=headers)
+                    response = conn.getresponse()
+                    conn.close()
+                    return response.status == 200
+                except Exception as e:
+                    print(f"Error sending to ntfy: {e}")
+                    return False
+
+            class WebhookHandler(BaseHTTPRequestHandler):
+                def log_message(self, format, *args):
+                    print(f"[Webhook] {format % args}")
+
+                def do_post(self):
+                    try:
+                        path = self.path.strip('/')
+                        content_length = int(self.headers.get('Content-Length', 0))
+                        body = self.rfile.read(content_length).decode('utf-8')
+                        data = json.loads(body)
+                        
+                        # Determine topic from path
+                        if path.startswith('webhook/'):
+                            severity = path.split('/')[-1]
+                            topic = TOPICS.get(severity, TOPICS['default'])
+                        else:
+                            topic = TOPICS['default']
+                        
+                        # Parse Alertmanager payload
+                        alerts = data.get('alerts', [])
+                        status = data.get('status', 'firing')
+                        
+                        for alert in alerts:
+                            labels = alert.get('labels', {})
+                            annotations = alert.get('annotations', {})
+                            
+                            alertname = labels.get('alertname', 'Unknown Alert')
+                            severity = labels.get('severity', 'unknown')
+                            summary = annotations.get('summary', '')
+                            description = annotations.get('description', '')
+                            
+                            # Set priority based on severity
+                            priority_map = {'critical': 5, 'warning': 3, 'info': 1}
+                            priority = priority_map.get(severity, 3)
+                            
+                            # Set tags
+                            tags = [severity, 'k8s']
+                            if status == 'resolved':
+                                tags.append('resolved')
+                                title = f"✅ RESOLVED: {alertname}"
+                            else:
+                                title = f"🚨 {alertname}"
+                            
+                            message = f"{summary}\n\n{description}" if description else summary
+                            
+                            send_ntfy(topic, title, message, priority, tags)
+                        
+                        self.send_response(200)
+                        self.end_headers()
+                        self.wfile.write(b'OK')
+                    except Exception as e:
+                        print(f"Error handling webhook: {e}")
+                        self.send_response(500)
+                        self.end_headers()
+                        self.wfile.write(f'Error: {e}'.encode())
+
+                def do_get(self):
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(b'Alertmanager ntfy bridge is running')
+
+            if __name__ == '__main__':
+                server = HTTPServer(('0.0.0.0', 5000), WebhookHandler)
+                print(f"Starting Alertmanager ntfy bridge on port 5000")
+                print(f"NTFY base URL: {NTFY_BASE_URL}")
+                print(f"Topics: {TOPICS}")
+                server.serve_forever()
+        ports:
+        - containerPort: 5000
+          name: http
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+        envFrom:
+        - configMapRef:
+            name: alertmanager-ntfy-bridge-config
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 3
+          periodSeconds: 5
