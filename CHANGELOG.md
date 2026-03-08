@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/brettswift/k8s_nas/compare/v1.0.0...v1.0.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** use A record (direct IP) instead of CNAME for f1 subdomains ([40aaf18](https://github.com/brettswift/k8s_nas/commit/40aaf1818407fc7893b3cd074455ba7cb5eb8695))
+
 # 1.0.0 (2026-03-08)
 
 
