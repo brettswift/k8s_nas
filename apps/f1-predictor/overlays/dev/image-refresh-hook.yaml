@@ -22,9 +22,21 @@ spec:
         - |
           set -e
           REPO="${IMAGE#ghcr.io/}"
-          if [ -z "$GITHUB_TOKEN" ] && [ -f /tmp/ghcr/.dockerconfigjson ]; then
-            GITHUB_TOKEN=$(sed -n 's/.*"password"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/ghcr/.dockerconfigjson)
+          CREDENTIALS=""
+          if [ -f /tmp/ghcr/.dockerconfigjson ]; then
+            GHCR_USER=$(sed -n 's/.*"username"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/ghcr/.dockerconfigjson | head -1)
+            GHCR_PASS=$(sed -n 's/.*"password"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/ghcr/.dockerconfigjson | head -1)
+            [ -n "$GHCR_USER" ] && [ -n "$GHCR_PASS" ] && CREDENTIALS="$GHCR_USER:$GHCR_PASS"
           fi
+          get_registry_digest() {
+            if [ -n "$CREDENTIALS" ]; then
+              TOKEN=$(curl -sf -u "$CREDENTIALS" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>/dev/null | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              [ -z "$TOKEN" ] && TOKEN=$(curl -sf -u "$CREDENTIALS" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>/dev/null | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              [ -n "$TOKEN" ] && curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null
+            else
+              curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null
+            fi
+          }
           echo "Image refresh: checking $REPO:$TAG vs deployment $DEPLOYMENT"
           for i in $(seq 1 20); do
             CURRENT=$(kubectl get pods -l app=f1-predictor -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null || true)
@@ -40,11 +52,7 @@ spec:
               continue
             fi
             CURRENT_DIGEST="${CURRENT#*@}"
-            if [ -n "$GITHUB_TOKEN" ]; then
-              REGISTRY_RESP=$(curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null || true)
-            else
-              REGISTRY_RESP=$(curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null || true)
-            fi
+            REGISTRY_RESP=$(get_registry_digest)
             REGISTRY_DIGEST=$(echo "$REGISTRY_RESP" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
             [ -z "$REGISTRY_DIGEST" ] && echo "Could not get registry digest (attempt $i), waiting..." && sleep 15 && continue
             if [ "$CURRENT_DIGEST" != "$REGISTRY_DIGEST" ]; then
