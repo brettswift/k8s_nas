@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/brettswift/k8s_nas/compare/v1.1.0...v1.1.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** only 2 URLs - f1.home (dev, CNAME to home), f1.brettswift.com (prod); remove home subdomain ([b129c3d](https://github.com/brettswift/k8s_nas/commit/b129c3d16ace70ffc55229962b59b43d911283bf))
+
 # [1.1.0](https://github.com/brettswift/k8s_nas/compare/v1.0.4...v1.1.0) (2026-03-08)
 
 

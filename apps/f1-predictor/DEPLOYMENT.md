@@ -6,9 +6,8 @@ End-to-end documentation of the dev/prod deployment flow, build process, and Arg
 
 | Environment | Branch | URL | Namespace | ArgoCD App |
 |-------------|--------|-----|-----------|------------|
-| Prod (home) | live | https://f1.home.brettswift.com | f1-predictor | f1-predictor |
-| Dev | f1-dev | https://f1-dev.home.brettswift.com | f1-predictor-dev | f1-predictor-dev |
-| Prod (external) | — | https://f1.brettswift.com | prod | — |
+| Dev | f1-dev | https://f1.home.brettswift.com | f1-predictor-dev | f1-predictor-dev |
+| Prod | live | https://f1.brettswift.com | f1-predictor | f1-predictor |
 
 ## Image Tagging (Git SHA)
 
@@ -24,7 +23,7 @@ Separate workflows per environment:
 
 | Branch | Workflow | Trigger |
 |--------|----------|---------|
-| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` except `overlays/home/kustomization.yaml` |
+| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` except `overlays/prod/kustomization.yaml` |
 | f1-dev | `build-f1-predictor-dev.yml` | Any push to f1-dev except `overlays/dev/kustomization.yaml` |
 
 1. **Trigger:** Push to `live` or `f1-dev` (path filters avoid loops when the workflow pushes manifest updates).
@@ -40,23 +39,22 @@ Separate workflows per environment:
 
 ## ArgoCD
 
-- **f1-predictor:** `apps/f1-predictor/overlays/home`, branch `live`
+- **f1-predictor:** `apps/f1-predictor/overlays/prod`, branch `live`
 - **f1-predictor-dev:** `apps/f1-predictor/overlays/dev`, branch `f1-dev`
 
-Each app points directly at its overlay path and branch. No shared root kustomization.
+Each app points directly at its overlay path and branch.
 
 ## Promoting Dev → Prod
 
 1. Merge `f1-dev` into `live`
 2. Build workflow runs on the merge commit
-3. Updates `overlays/home` with the new SHA
+3. Updates `overlays/prod` with the new SHA
 4. ArgoCD syncs, deploys the same code that was in dev
 
 ## Overlays
 
-- **overlays/home:** Prod for home lab (f1.home.brettswift.com)
-- **overlays/dev:** Dev (f1-dev.home.brettswift.com)
-- **overlays/prod:** External prod (f1.brettswift.com, different cluster)
+- **overlays/dev:** Dev (f1.home.brettswift.com, CNAME to home.brettswift.com)
+- **overlays/prod:** Prod (f1.brettswift.com, external-dns discovers)
 
 Each overlay has `images:` in kustomization to override the base image tag. The build workflow updates `newTag` with the SHA.
 
@@ -64,16 +62,13 @@ Each overlay has `images:` in kustomization to override the base image tag. The 
 
 Managed via external-dns annotations in ingress manifests:
 
-- **Home prod:** `f1.home.brettswift.com` → same IP as `home.brettswift.com` (A record, `target: 68.147.109.77`)
-- **Dev:** `f1-dev.home.brettswift.com` → same IP as home (A record)
-- **External prod:** `f1.brettswift.com` → external cluster ingress IP (no target annotation; external-dns discovers)
-
-Update the `target` annotation in home/dev overlays if your server uses a different public IP.
+- **Dev:** `f1.home.brettswift.com` → CNAME to `home.brettswift.com`
+- **Prod:** `f1.brettswift.com` → external-dns discovers ingress IP
 
 ## TLS
 
-- **Home/Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
-- **External prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)
+- **Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
+- **Prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)
 
 ## GHCR
 

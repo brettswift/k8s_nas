@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: https://github.com/brettswift/k8s_nas.git
     targetRevision: live
-    path: apps/f1-predictor/overlays/home
+    path: apps/f1-predictor/overlays/prod
   destination:
     server: https://kubernetes.default.svc
     namespace: f1-predictor

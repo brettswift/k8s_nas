@@ -1,20 +1,20 @@
 # F1 Predictor
 
-F1 prediction web app with separate dev and prod environments.
+F1 prediction web app with dev and prod environments.
 
 ## Environments
 
 | Environment | Branch | URL | Namespace |
 |-------------|--------|-----|-----------|
-| Prod (home) | live | https://f1.home.brettswift.com | f1-predictor |
-| Dev | f1-dev | https://f1-dev.home.brettswift.com | f1-predictor-dev |
-| Prod (external) | — | https://f1.brettswift.com | prod |
+| Dev | f1-dev | https://f1.home.brettswift.com | f1-predictor-dev |
+| Prod | live | https://f1.brettswift.com | f1-predictor |
 
 Images are tagged with the **short git hash** (e.g. `a1b2c3d`). See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full build and deploy flow.
 
 ## Configuration
 
 Environment variables:
+
 - `ENVIRONMENT`: `dev` or `prod` - controls DEV badge display
 - `API_BASE_URL`: External API base URL (empty for no external API)
 - `USE_STUB_API`: `true` or `false` - use stub API for testing
@@ -27,9 +27,8 @@ Built by GitHub Actions, tagged with git SHA. See [DEPLOYMENT.md](./DEPLOYMENT.m
 
 Managed via external-dns annotations in ingress manifests:
 
-- **Home prod:** `f1.home.brettswift.com` → same IP as `home.brettswift.com` (A record, `target: 68.147.109.77`)
-- **Dev:** `f1-dev.home.brettswift.com` → same IP as home (A record)
-- **External prod:** `f1.brettswift.com` → external cluster ingress IP (external-dns discovers; no target annotation)
+- **Dev:** `f1.home.brettswift.com` → CNAME to `home.brettswift.com`
+- **Prod:** `f1.brettswift.com` → external-dns discovers ingress IP
 
 ### DNS Troubleshooting
 
@@ -44,5 +43,5 @@ If domains don't resolve:
 
 ## TLS
 
-- **Home/Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
-- **External prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)
+- **Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
+- **Prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)

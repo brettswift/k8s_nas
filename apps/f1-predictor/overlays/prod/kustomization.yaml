@@ -1,9 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: prod
-
-namePrefix: f1-
+namespace: f1-predictor
 
 resources:
 - namespace.yaml
@@ -13,3 +11,8 @@ resources:
 
 patches:
 - path: deployment-patch.yaml
+
+images:
+- name: ghcr.io/brettswift/f1-predictor:latest
+  newName: ghcr.io/brettswift/f1-predictor
+  newTag: latest
