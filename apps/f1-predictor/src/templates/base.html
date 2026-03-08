@@ -226,6 +226,9 @@
     <header>
         <div class="container">
             <a href="{{ url_for('home') }}" class="logo">F1 <span>Predictor</span></a>
+            {% if environment == 'dev' %}
+            <span style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px;">DEV</span>
+            {% endif %}
             <nav>
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('races') }}">Races</a>
