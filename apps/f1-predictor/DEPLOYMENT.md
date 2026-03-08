@@ -11,7 +11,7 @@ Build process, ArgoCD setup, and deployment details. For the full dev→prod wor
 
 ## Image Tagging (Git SHA)
 
-Images are tagged with the **short git hash** (e.g. `a1b2c3d`), not `:latest` or `:dev`. This:
+Images are tagged with the **short git hash** (e.g. `a1b2c3d`), never `:latest` or `:dev`. Overlays use placeholder `sha-required` until the build workflow sets the real SHA. This:
 
 - Ensures dev and prod run the same code when you promote (merge f1-dev → live)
 - Forces deploy to fail (ImagePullBackOff) until the build completes, then succeeds

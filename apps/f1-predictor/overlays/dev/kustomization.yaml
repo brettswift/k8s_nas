@@ -8,7 +8,8 @@ resources:
 - ../../base
 - ingress.yaml
 
+# newTag replaced by build workflow with git SHA; placeholder ensures ImagePullBackOff until build runs
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
   newName: ghcr.io/brettswift/f1-predictor
-  newTag: e043fbf
+  newTag: sha-required
