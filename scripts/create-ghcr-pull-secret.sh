@@ -3,10 +3,9 @@
 # Requires: PAT with read:packages scope.
 #
 # Usage:
+#   GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh all
 #   GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh <namespace>
 #   GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor media
-#
-# Multiple namespaces: pass each as an argument.
 
 set -e
 
@@ -16,11 +15,17 @@ if [ -z "$GH_PULL_IMAGES_TOKEN" ]; then
 fi
 
 if [ $# -eq 0 ]; then
-  echo "Usage: GH_PULL_IMAGES_TOKEN=ghp_xxx $0 <namespace> [namespace ...]"
+  echo "Usage: GH_PULL_IMAGES_TOKEN=ghp_xxx $0 all | <namespace> [namespace ...]"
   exit 1
 fi
 
-for NAMESPACE in "$@"; do
+if [ "$1" = "all" ]; then
+  NAMESPACES=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}')
+else
+  NAMESPACES="$*"
+fi
+
+for NAMESPACE in $NAMESPACES; do
   kubectl create secret docker-registry ghcr-pull \
     --docker-server=ghcr.io \
     --docker-username=brettswift \

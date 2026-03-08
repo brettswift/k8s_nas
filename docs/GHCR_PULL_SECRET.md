@@ -7,12 +7,10 @@ Apps that use images from GitHub Container Registry (ghcr.io) need an imagePullS
 Create a PAT with **`read:packages`** scope only. Then run:
 
 ```bash
-GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh <namespace>
-```
+# All namespaces
+GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh all
 
-**Multiple namespaces:**
-
-```bash
+# Specific namespace(s)
 GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor media
 ```
 
