@@ -6,5 +6,6 @@ namespace: f1-predictor-dev
 namePrefix: dev-
 
 resources:
+- namespace.yaml
 - ../../base
 - ingress.yaml
