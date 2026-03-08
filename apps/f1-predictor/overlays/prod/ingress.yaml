@@ -2,7 +2,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: f1-predictor-ingress-subdomain
-  namespace: f1-predictor-prod
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
@@ -30,7 +29,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: f1-predictor-ingress-path
-  namespace: f1-predictor-prod
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
@@ -53,4 +51,3 @@ spec:
             name: f1-predictor
             port:
               number: 80
-
