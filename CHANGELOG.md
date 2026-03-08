@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/brettswift/k8s_nas/compare/v1.1.2...v1.1.3) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** add external IP target for f1.brettswift.com DNS (NAT'd network) ([397c3e1](https://github.com/brettswift/k8s_nas/commit/397c3e1c7c7a646a8c3b363bd1a2665b3245de5e))
+
 ## [1.1.2](https://github.com/brettswift/k8s_nas/compare/v1.1.1...v1.1.2) (2026-03-08)
 
 
