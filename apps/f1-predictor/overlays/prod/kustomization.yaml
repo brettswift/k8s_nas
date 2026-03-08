@@ -6,6 +6,7 @@ namespace: f1-predictor-prod
 namePrefix: prod-
 
 resources:
+- namespace.yaml
 - ../../base
 - ingress.yaml
 

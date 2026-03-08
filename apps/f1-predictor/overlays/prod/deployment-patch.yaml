@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f1-predictor
+spec:
+  template:
+    spec:
+      containers:
+      - name: f1-predictor
+        env:
+        - name: ENVIRONMENT
+          value: "prod"
