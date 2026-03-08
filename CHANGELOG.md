@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/brettswift/k8s_nas/compare/v1.0.3...v1.0.4) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1-dev:** add workflow that runs on any f1-dev push (except overlay-only) to set hash ([cbd0702](https://github.com/brettswift/k8s_nas/commit/cbd070240116cd9d28026deaeb8e5a50affa68c1))
+
 ## [1.0.3](https://github.com/brettswift/k8s_nas/compare/v1.0.2...v1.0.3) (2026-03-08)
 
 
