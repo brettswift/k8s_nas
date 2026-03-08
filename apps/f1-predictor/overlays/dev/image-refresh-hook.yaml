@@ -52,17 +52,25 @@ spec:
               continue
             fi
             CURRENT_DIGEST="${CURRENT#*@}"
+            echo "Pod image digest: $CURRENT_DIGEST (sanity check: can read pod)"
             REGISTRY_RESP=$(get_registry_digest)
             REGISTRY_DIGEST=$(echo "$REGISTRY_RESP" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
-            [ -z "$REGISTRY_DIGEST" ] && echo "Could not get registry digest (attempt $i), waiting..." && sleep 15 && continue
-            if [ "$CURRENT_DIGEST" != "$REGISTRY_DIGEST" ]; then
-              echo "Digest changed ($CURRENT_DIGEST -> $REGISTRY_DIGEST), triggering rollout restart"
+            if [ -z "$REGISTRY_DIGEST" ]; then
+              echo "Could not get image from registry for $TAG (current pod: $CURRENT_DIGEST) - possible GHCR auth issue (attempt $i/20)"
+              sleep 15
+              continue
+            fi
+            echo "Registry digest for $TAG: $REGISTRY_DIGEST"
+            if [ "$CURRENT_DIGEST" = "$REGISTRY_DIGEST" ]; then
+              echo "Digests match: no rollout needed"
+            else
+              echo "Digests differ. Pod=$CURRENT_DIGEST Registry=$REGISTRY_DIGEST. Triggering rollout restart"
               kubectl rollout restart deployment/$DEPLOYMENT
               kubectl rollout status deployment/$DEPLOYMENT --timeout=300s
               echo "Rollout complete"
               exit 0
             fi
-            echo "Digest unchanged, waiting (attempt $i/20)"
+            echo "Waiting (attempt $i/20)"
             sleep 15
           done
           echo "No digest change detected within timeout; exiting 0"
