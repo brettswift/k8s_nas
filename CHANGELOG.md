@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/brettswift/k8s_nas/compare/v1.2.5...v1.2.6) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** add verbose logging to image-refresh hook for GHCR auth debug ([20b80e8](https://github.com/brettswift/k8s_nas/commit/20b80e89e6defe217b1fbd6f71ec69cb10acf490))
+
 ## [1.2.5](https://github.com/brettswift/k8s_nas/compare/v1.2.4...v1.2.5) (2026-03-08)
 
 
