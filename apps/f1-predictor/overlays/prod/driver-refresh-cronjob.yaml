@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: f1-driver-refresh
+  namespace: prod
+spec:
+  schedule: "0 2 * * 0"  # Every Sunday at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: refresh
+            image: curlimages/curl:latest
+            command:
+            - sh
+            - -c
+            - |
+              curl -X POST \
+                -H "Authorization: Bearer ${DRIVER_REFRESH_SECRET}" \
+                http://f1-predictor/admin/refresh-drivers
+            env:
+            - name: DRIVER_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: f1-predictor-secret
+                  key: driver-refresh-secret
+                  optional: true
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: f1-predictor-secret
+  namespace: prod
+type: Opaque
+stringData:
+  driver-refresh-secret: "change-me-in-production"

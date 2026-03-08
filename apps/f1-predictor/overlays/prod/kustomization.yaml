@@ -9,6 +9,7 @@ resources:
 - namespace.yaml
 - ../../base
 - ingress.yaml
+- driver-refresh-cronjob.yaml
 
 patches:
 - path: deployment-patch.yaml
