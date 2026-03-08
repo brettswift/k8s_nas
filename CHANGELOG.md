@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/brettswift/k8s_nas/compare/v1.0.4...v1.1.0) (2026-03-08)
+
+
+### Features
+
+* **f1:** wildcard cert for *.brettswift.com, prod overlay uses it, remove target IP ([079b211](https://github.com/brettswift/k8s_nas/commit/079b2114765d55f308d92a671977a2b48f26ce53))
+
 ## [1.0.4](https://github.com/brettswift/k8s_nas/compare/v1.0.3...v1.0.4) (2026-03-08)
 
 
