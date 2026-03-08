@@ -49,6 +49,9 @@ k8s_nas is a Kubernetes-based Network Attached Storage (NAS) media server infras
 - **[Deployment Guide](./deployment-guide.md)**  
   Production deployment procedures, server setup, SSL configuration, and maintenance.
 
+- **[GHCR Pull Secret](./GHCR_PULL_SECRET.md)**  
+  One-time setup for apps that pull private images from ghcr.io. Use for any app with a GitHub Actions Docker build.
+
 ### Existing Documentation
 
 - **[PRD.md](../PRD.md)** - Product Requirements Document
