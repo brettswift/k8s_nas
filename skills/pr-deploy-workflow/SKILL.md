@@ -9,66 +9,93 @@ description: Use when the user says /deploy or /rollback, or when creating PRs, 
 
 This repo uses GitOps: ArgoCD tracks the `live` branch. All deployments go through Git; never `kubectl apply` directly (except temporary test pods).
 
+Deployments are handled via **PR comments** using GitHub Actions.
+
 ---
 
-## /deploy Command
+## Automated Deployment via PR Comments
 
-When the user says `/deploy`, push the current branch to `live`:
+### Step 1: Create a PR
+
+Push your feature branch and open a PR against `live`:
 
 ```bash
-git push origin <current-branch>:live
+git checkout -b feat/BUD-XX_description
+git add .
+git commit -m "feat(BUD-XX): description"
+git push origin feat/BUD-XX_description
 ```
 
-Then wait ~30 seconds for ArgoCD to sync and verify via HTTP:
+### Step 2: Comment /deploy on the PR
+
+In the PR, comment:
+```
+/deploy
+```
+
+The GitHub Action will:
+1. Backup current `live` → `live-backup`
+2. Push your PR branch → `live`
+3. Post a success/failure comment
+
+### Step 3: Verify deployment
+
+Wait ~30 seconds for ArgoCD to sync, then verify:
 
 ```bash
 curl -sI https://home.brettswift.com/<affected-service>
 ```
 
-- Expect `200` or `301/302` — anything else indicates a problem
-- If unreachable, report failure and tell the user to check ArgoCD manually
+- Expect `200` or `301/302`
+- If issues, comment `/rollback` on the PR to restore
 
 ---
 
 ## /rollback Command
 
-When the user says `/rollback`, execute this flow:
+If deployment fails, comment on the PR:
+```
+/rollback
+```
 
-### Restore from live-backup (preferred)
+The GitHub Action will:
+1. Backup current `live` → `live-pre-rollback`
+2. Restore `live-backup` → `live`
+3. Post confirmation comment
 
-`live-backup` is automatically updated daily at 6am UTC. It represents the last known-good state.
+---
+
+## Manual /deploy (Fallback)
+
+If GitHub Actions is unavailable, manually push:
+
+```bash
+git push origin <current-branch>:live
+```
+
+Or for rollback:
 
 ```bash
 git push origin live-backup:live --force
-```
-
-### Verify rollback
-
-Wait ~30 seconds for ArgoCD to sync, then check via HTTP:
-
-```bash
-curl -sI https://home.brettswift.com
-```
-
-- Expect `200` — if still broken, report and ask the user to check ArgoCD manually
-
-### Alternative: revert a specific commit
-
-```bash
-git revert <commit> --no-edit
-git push origin HEAD:live
 ```
 
 ---
 
 ## Key Rules
 
+- **Use PR comments:** Comment `/deploy` or `/rollback` on PRs — GitHub Actions handles the rest
 - **Always GitOps:** `git push <branch>:live` — never `kubectl apply` for persistent resources
 - **Verify every deploy:** Wait for ArgoCD sync (~30s), then HTTP check the affected service
 - **Critical services:** Confirm before touching Jellyfin or `/media`
 - **No kubectl:** The bot has no cluster access — verification is HTTP-only
+- **One PR per story:** Use branch naming like `feat/BUD-XX_description`
 
-## Backup
+## Backup Strategy
 
-- `live-backup` updated daily (6am UTC) via `.github/workflows/backup-live.yml`
+**Automated backups during deploy:**
+- `/deploy` backs up `live` → `live-backup` before deploying
+- `/rollback` backs up `live` → `live-pre-rollback` before restoring
+
+**Daily backup:**
+- `live-backup` updated daily at 6am UTC via `.github/workflows/backup-live.yml`
 - Manual trigger: GitHub Actions → "Backup live to live-backup" → Run workflow
