@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/brettswift/k8s_nas/compare/v1.2.1...v1.2.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** image-refresh hook RBAC add pods get/list; log phase/reason when no pod ready ([db343e4](https://github.com/brettswift/k8s_nas/commit/db343e42f0c3ebbb1eda1b25a2674c49287ef8f4))
+
 ## [1.2.1](https://github.com/brettswift/k8s_nas/compare/v1.2.0...v1.2.1) (2026-03-08)
 
 
