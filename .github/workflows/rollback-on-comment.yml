@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PR_TOKEN }}
+          token: ${{ secrets.PR_DEPLOY_TOKEN }}
       
       - name: Configure Git
         run: |
@@ -55,7 +55,7 @@ jobs:
         if: success() && steps.check-backup.outputs.exists == 'true'
         run: |
           curl -s -X POST \
-            -H "Authorization: token ${{ secrets.PR_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
             -d '{"body": "↩️ **Rollback successful!**\n\n- Restored `live-backup` to `live`\n- Previous state saved to `live-pre-rollback`\n- ArgoCD will auto-sync within ~30 seconds"}'
@@ -64,7 +64,7 @@ jobs:
         if: steps.check-backup.outputs.exists == 'false'
         run: |
           curl -s -X POST \
-            -H "Authorization: token ${{ secrets.PR_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
             -d '{"body": "⚠️ **Rollback failed: No backup available**\n\nThe `live-backup` branch does not exist. The daily backup runs at 6am UTC."}'
@@ -74,7 +74,7 @@ jobs:
         if: failure() && steps.check-backup.outputs.exists == 'true'
         run: |
           curl -s -X POST \
-            -H "Authorization: token ${{ secrets.PR_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
             -d '{"body": "❌ **Rollback failed!**\n\nCheck the [Actions logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."}'
