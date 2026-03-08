@@ -10,16 +10,7 @@ F1 prediction web app with separate dev and prod environments.
 | Dev | f1-dev | https://f1-dev.home.brettswift.com | f1-predictor-dev |
 | Prod (external) | — | https://f1.brettswift.com | prod |
 
-**Dev** uses image tag `:dev`; prod uses `:latest`. ArgoCD deploys from branch.
-
-## Deployment
-
-### ArgoCD (GitOps)
-
-- **f1-predictor**: `apps/f1-predictor/overlays/home`, branch `live`
-- **f1-predictor-dev**: `apps/f1-predictor/overlays/dev`, branch `f1-dev`
-
-To iterate on dev: create branch `f1-dev`, push changes. Build workflow pushes `:dev` image.
+Images are tagged with the **short git hash** (e.g. `a1b2c3d`). See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full build and deploy flow.
 
 ## Configuration
 
@@ -30,7 +21,7 @@ Environment variables:
 
 ## Image
 
-Image built by GitHub Actions → `ghcr.io/brettswift/f1-predictor:latest`. See [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md) for one-time setup.
+Built by GitHub Actions, tagged with git SHA. See [DEPLOYMENT.md](./DEPLOYMENT.md) and [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md).
 
 ## DNS
 
