@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/brettswift/k8s_nas/compare/v1.0.1...v1.0.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1-dev:** use :latest until build runs, doc ImagePullBackOff limitation ([1831b46](https://github.com/brettswift/k8s_nas/commit/1831b4624f9916609ea90f626cb7fe2efe37c410))
+
 ## [1.0.1](https://github.com/brettswift/k8s_nas/compare/v1.0.0...v1.0.1) (2026-03-08)
 
 
