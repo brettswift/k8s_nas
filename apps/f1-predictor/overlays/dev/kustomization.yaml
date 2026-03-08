@@ -8,8 +8,7 @@ resources:
 - ../../base
 - ingress.yaml
 
-# Use :latest until build workflow runs and replaces with SHA
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
   newName: ghcr.io/brettswift/f1-predictor
-  newTag: latest
+  newTag: dev
