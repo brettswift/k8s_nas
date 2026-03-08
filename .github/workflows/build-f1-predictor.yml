@@ -13,10 +13,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set SHA and update manifest
+        id: sha
+        run: |
+          SHA=$(git rev-parse --short ${{ github.sha }})
+          echo "short=$SHA" >> $GITHUB_OUTPUT
+          if [ "${{ github.ref_name }}" = "live" ]; then
+            OVERLAY=overlays/home
+          else
+            OVERLAY=overlays/dev
+          fi
+          sed -i "s/newTag: .*/newTag: $SHA/" apps/f1-predictor/$OVERLAY/kustomization.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/f1-predictor/$OVERLAY/kustomization.yaml
+          git commit -m "chore(f1): set image tag to $SHA [skip ci]"
+          git push
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -34,4 +53,4 @@ jobs:
           context: apps/f1-predictor
           file: apps/f1-predictor/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/f1-predictor:${{ github.ref_name == 'live' && 'latest' || 'dev' }}
+          tags: ghcr.io/${{ github.repository_owner }}/f1-predictor:${{ steps.sha.outputs.short }}
