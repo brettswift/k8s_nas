@@ -1,6 +1,6 @@
 # F1 Predictor Deployment
 
-End-to-end documentation of the dev/prod deployment flow, build process, and ArgoCD setup.
+Build process, ArgoCD setup, and deployment details. For the full dev→prod workflow (PR flow, testing, promote), see [WORKFLOW.md](./WORKFLOW.md).
 
 ## Overview
 
