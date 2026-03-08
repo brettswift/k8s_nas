@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/brettswift/k8s_nas/compare/v1.1.3...v1.2.0) (2026-03-08)
+
+
+### Features
+
+* **f1:** event-driven image refresh with :dev/:live and PostSync hook ([f64980b](https://github.com/brettswift/k8s_nas/commit/f64980babaceade50de848a55b8588990bea9bfc))
+
 ## [1.1.3](https://github.com/brettswift/k8s_nas/compare/v1.1.2...v1.1.3) (2026-03-08)
 
 
