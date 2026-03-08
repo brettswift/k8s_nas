@@ -11,4 +11,4 @@ resources:
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
   newName: ghcr.io/brettswift/f1-predictor
-  newTag: cbd0702
+  newTag: 717e002
