@@ -75,7 +75,7 @@ Managed via external-dns annotations in ingress manifests:
 - Images: `ghcr.io/brettswift/f1-predictor:dev` and `ghcr.io/brettswift/f1-predictor:live`
 - GHCR storage and bandwidth are free for container images
 
-**PostSync hook and private GHCR:** The image-refresh hook calls the GHCR manifest API. If the package is private, that request may return 401. To fix: create a secret (e.g. `ghcr-token`) with a `GITHUB_TOKEN` or `CR_TOKEN` key (PAT with `read:packages`), and in the hook Job add an `env` entry that sets `GITHUB_TOKEN` from that secret. The script already uses `GITHUB_TOKEN` when present for the `Authorization: Bearer` header.
+**PostSync hook and private GHCR:** The hook uses the same `ghcr-pull` secret as the deployment (created with `GH_PULL_IMAGES_TOKEN`; see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md)). It mounts the secret and reads the token from `.dockerconfigjson` for the manifest API. No separate secret is needed.
 
 ### Verifying the image-refresh hook
 
@@ -96,9 +96,11 @@ kubectl logs job/image-refresh -n f1-predictor
   - `Digest unchanged, waiting (attempt 1/20)` … then after up to 20×15s: `No digest change detected within timeout; exiting 0`
   - Or, if the registry digest changed: `Digest changed (sha256:… -> sha256:…), triggering rollout restart` then `Rollout complete`
 
-**If the hook can’t reach GHCR (e.g. private repo, no token):** You’ll see repeated `Could not get registry digest (attempt N), waiting…` and then `No digest change detected within timeout; exiting 0`. Add `GITHUB_TOKEN` from a secret as above.
+**If the hook can’t reach GHCR (private repo):** You’ll see repeated `Could not get registry digest (attempt N), waiting…`. Ensure the `ghcr-pull` secret exists in the namespace (same one used for image pull; see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md)). The hook reads the token from that secret for the manifest API.
 
 **If no Job appears:** Sync may have failed earlier (e.g. project whitelist). Check Argo CD app sync status and sync errors.
+
+**Hook runs every ~2 min:** The hook runs once per Argo CD sync. Argo CD’s default app resync is ~2 min, so with automated sync the hook runs that often. To run it only when you deploy: switch the f1 app to manual sync and sync after pushes, or increase the controller’s `--app-resync` (e.g. in argocd-cm or application-controller deployment) for the cluster.
 
 **"No running pod yet" repeatedly:** The hook needs a pod with a resolved `imageID` (i.e. Running or at least past image pull). It will wait up to ~20×15s. After the next sync the hook will log `phase=` and `reason=` (e.g. `phase=Pending`, `reason=ContainerCreating` or `reason=ImagePullBackOff`). Fix the deployment so a pod reaches Running:
 
