@@ -2,19 +2,20 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: f1-predictor-ingress-subdomain
+  namespace: f1-predictor
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    external-dns.alpha.kubernetes.io/hostname: f1-dev.home.brettswift.com
+    external-dns.alpha.kubernetes.io/hostname: f1.home.brettswift.com
     external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - f1-dev.home.brettswift.com
+    - f1.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
-  - host: f1-dev.home.brettswift.com
+  - host: f1.home.brettswift.com
     http:
       paths:
       - path: /
@@ -29,6 +30,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: f1-predictor-ingress-path
+  namespace: f1-predictor
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
@@ -44,7 +46,7 @@ spec:
   - host: home.brettswift.com
     http:
       paths:
-      - path: /f1-predictor-dev(/|$)(.*)
+      - path: /f1-predictor(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:

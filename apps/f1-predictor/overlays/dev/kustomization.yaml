@@ -3,9 +3,12 @@ kind: Kustomization
 
 namespace: f1-predictor-dev
 
-namePrefix: dev-
-
 resources:
 - namespace.yaml
 - ../../base
 - ingress.yaml
+
+images:
+- name: ghcr.io/brettswift/f1-predictor:latest
+  newName: ghcr.io/brettswift/f1-predictor
+  newTag: dev

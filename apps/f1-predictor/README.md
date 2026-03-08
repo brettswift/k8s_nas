@@ -4,29 +4,22 @@ F1 prediction web app with separate dev and prod environments.
 
 ## Environments
 
-| Environment | URL | Ingress | Namespace |
-|-------------|-----|---------|-----------|
-| Dev | https://f1.home.brettswift.com | `overlays/dev/ingress.yaml` | `f1-predictor-dev` |
-| Prod | https://f1.brettswift.com | `overlays/prod/ingress.yaml` | `f1-predictor-prod` |
+| Environment | Branch | URL | Namespace |
+|-------------|--------|-----|-----------|
+| Prod (home) | live | https://f1.home.brettswift.com | f1-predictor |
+| Dev | f1-dev | https://f1-dev.home.brettswift.com | f1-predictor-dev |
+| Prod (external) | — | https://f1.brettswift.com | prod |
 
-**Dev environment** displays a "DEV" badge in the header. Prod does not.
+**Dev** uses image tag `:dev`; prod uses `:latest`. ArgoCD deploys from branch.
 
 ## Deployment
 
-### Dev (f1.home.brettswift.com)
-```bash
-kubectl apply -k overlays/dev/
-```
+### ArgoCD (GitOps)
 
-### Prod (f1.brettswift.com)
-```bash
-kubectl apply -k overlays/prod/
-```
+- **f1-predictor**: `apps/f1-predictor/overlays/home`, branch `live`
+- **f1-predictor-dev**: `apps/f1-predictor/overlays/dev`, branch `f1-dev`
 
-### ArgoCD
-Two separate ArgoCD applications should be created:
-- **f1-predictor-dev**: Path `apps/f1-predictor/overlays/dev`
-- **f1-predictor-prod**: Path `apps/f1-predictor/overlays/prod`
+To iterate on dev: create branch `f1-dev`, push changes. Build workflow pushes `:dev` image.
 
 ## Configuration
 
@@ -42,10 +35,10 @@ Image built by GitHub Actions → `ghcr.io/brettswift/f1-predictor:latest`. See 
 ## DNS
 
 Route53 entries are managed via external-dns annotations in the ingress manifests:
-- Dev: `f1.home.brettswift.com` → `home.brettswift.com`
-- Prod: `f1.brettswift.com` → `home.brettswift.com`
 
-The public IP assumes port forwarding is configured on the router.
+- Home prod: `f1.home.brettswift.com` → `home.brettswift.com` (CNAME)
+- Dev: `f1-dev.home.brettswift.com` → `home.brettswift.com` (CNAME)
+- External prod: `f1.brettswift.com` → `68.147.109.77` (A record)
 
 ### DNS Troubleshooting
 
