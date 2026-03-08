@@ -1,19 +1,11 @@
 # F1 Predictor
 
-Local image only – no remote registry. Build on the cluster node.
+Image built by GitHub Actions → `ghcr.io/brettswift/f1-predictor:latest`. Code only, no manual node steps.
 
-## Build (on the node)
-
-```bash
-# From repo root
-cd apps/f1-predictor
-docker build -t f1-predictor:latest .
-```
-
-For k3s (containerd): import into k3s so the node can use it:
+## One-time: GHCR pull secret (private package)
 
 ```bash
-docker save f1-predictor:latest | sudo k3s ctr images import -
+GITHUB_PAT=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor
 ```
 
-`imagePullPolicy: Never` – Kubernetes uses the locally cached image.
+PAT needs `read:packages` scope. Or make the package public: GitHub → Packages → f1-predictor → Package settings → Change visibility.
