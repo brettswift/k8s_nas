@@ -38,17 +38,17 @@ jobs:
       - name: Backup current live before rollback
         if: steps.check-backup.outputs.exists == 'true'
         run: |
-          git fetch origin live:live-current 2>/dev/null || echo "No live branch to backup"
+          git fetch origin live
           if git show-ref --verify --quiet refs/remotes/origin/live; then
-            git push origin live:live-pre-rollback --force 2>/dev/null || true
+            git push origin origin/live:live-pre-rollback --force 2>/dev/null || true
             echo "✅ Current live backed up to live-pre-rollback"
           fi
       
       - name: Rollback live-backup to live
         if: steps.check-backup.outputs.exists == 'true'
         run: |
-          git fetch origin live-backup:backup-branch
-          git push origin backup-branch:live --force
+          git fetch origin live-backup
+          git push origin origin/live-backup:live --force
           echo "✅ Restored live-backup → live"
       
       - name: Comment success on PR

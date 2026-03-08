@@ -35,8 +35,8 @@ jobs:
       
       - name: Backup current live to live-backup
         run: |
-          git fetch origin live:live
-          git push origin live:live-backup --force
+          git fetch origin live
+          git push origin origin/live:live-backup --force
           echo "✅ Backed up live → live-backup"
       
       - name: Deploy PR branch to live
