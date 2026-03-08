@@ -1,12 +1,13 @@
-name: Build f1-predictor image
+name: Build f1-predictor prod image
 
+# Runs when f1 changes on live, EXCEPT overlay-only (avoids loop when workflow pushes manifest)
 on:
   push:
-    branches: [live, f1-dev]
+    branches: [live]
     paths:
-      - "apps/f1-predictor/Dockerfile"
-      - "apps/f1-predictor/requirements.txt"
-      - "apps/f1-predictor/src/**"
+      - "apps/f1-predictor/**"
+    paths-ignore:
+      - "apps/f1-predictor/overlays/home/kustomization.yaml"
   workflow_dispatch:
 
 jobs:
@@ -25,15 +26,10 @@ jobs:
         run: |
           SHA=$(git rev-parse --short ${{ github.sha }})
           echo "short=$SHA" >> $GITHUB_OUTPUT
-          if [ "${{ github.ref_name }}" = "live" ]; then
-            OVERLAY=overlays/home
-          else
-            OVERLAY=overlays/dev
-          fi
-          sed -i "s/newTag: .*/newTag: $SHA/" apps/f1-predictor/$OVERLAY/kustomization.yaml
+          sed -i "s/newTag: .*/newTag: $SHA/" apps/f1-predictor/overlays/home/kustomization.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/f1-predictor/$OVERLAY/kustomization.yaml
+          git add apps/f1-predictor/overlays/home/kustomization.yaml
           git commit -m "chore(f1): set image tag to $SHA [skip ci]"
           git push
 

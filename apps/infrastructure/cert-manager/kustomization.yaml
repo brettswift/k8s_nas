@@ -6,6 +6,7 @@ resources:
   # HTTP-01 won't work because Let's Encrypt can't reach 10.0.0.20
   - clusterissuer.yaml
   - certificate.yaml
+  - certificate-brettswift-com.yaml
   # Secret sync automation (copies cert secret to all namespaces with ingresses)
   - cert-sync-serviceaccount.yaml
   - cert-sync-cronjob.yaml
