@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: f1-race-scheduler
+  namespace: f1-predictor
+spec:
+  # Run every day at 6 AM to check for upcoming races
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: f1-predictor  # Needs permission to create CronJobs
+          containers:
+          - name: scheduler
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Installing Python and dependencies..."
+              apt-get update -qq && apt-get install -y -qq python3 python3-pip > /dev/null
+              pip3 install requests -q
+              
+              echo "Running scheduler..."
+              cd /app/cron && python3 scheduler.py
+            volumeMounts:
+            - name: app-code
+              mountPath: /app
+          volumes:
+          - name: app-code
+            persistentVolumeClaim:
+              claimName: f1-predictor-data
+---
+# RBAC for scheduler to create CronJobs
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: f1-predictor
+  namespace: f1-predictor
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: f1-predictor-cronjob-manager
+  namespace: f1-predictor
+rules:
+- apiGroups: ["batch"]
+  resources: ["cronjobs", "jobs"]
+  verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: f1-predictor-cronjob-binding
+  namespace: f1-predictor
+subjects:
+- kind: ServiceAccount
+  name: f1-predictor
+  namespace: f1-predictor
+roleRef:
+  kind: Role
+  name: f1-predictor-cronjob-manager
+  apiGroup: rbac.authorization.k8s.io
