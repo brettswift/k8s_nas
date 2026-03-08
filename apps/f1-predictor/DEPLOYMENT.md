@@ -78,8 +78,12 @@ Managed via external-dns annotations in ingress manifests:
 
 ## Manual Build
 
+If the build did not auto-trigger (e.g. only kustomization changed), run manually:
+
 - **Prod:** Actions → Build f1-predictor prod image → Run workflow
 - **Dev:** Actions → Build f1-predictor dev image → Run workflow
+
+The kustomization files are in `paths-ignore` to avoid loops when the workflow pushes; a change that only touches them will not trigger a build.
 
 ## ImagePullBackOff
 
