@@ -106,7 +106,7 @@ def init_db():
     
     db.commit()
     seed_drivers_2025(db)
-    seed_races_2025(db)
+    seed_races_2026(db)
 
 def seed_drivers_2025(db):
     """Seed 2025 F1 driver grid."""
@@ -142,33 +142,33 @@ def seed_drivers_2025(db):
         )
         db.commit()
 
-def seed_races_2025(db):
-    """Seed 2025 F1 race calendar."""
+def seed_races_2026(db):
+    """Seed 2026 F1 race calendar."""
     races = [
-        ("Australian Grand Prix", 1, "2025-03-16 01:00:00"),
-        ("Chinese Grand Prix", 2, "2025-03-23 08:00:00"),
-        ("Japanese Grand Prix", 3, "2025-04-06 06:00:00"),
-        ("Bahrain Grand Prix", 4, "2025-04-13 16:00:00"),
-        ("Saudi Arabian Grand Prix", 5, "2025-04-20 17:00:00"),
-        ("Miami Grand Prix", 6, "2025-05-04 20:00:00"),
-        ("Emilia Romagna Grand Prix", 7, "2025-05-18 14:00:00"),
-        ("Monaco Grand Prix", 8, "2025-05-25 14:00:00"),
-        ("Canadian Grand Prix", 9, "2025-06-15 14:00:00"),
-        ("Spanish Grand Prix", 10, "2025-06-22 14:00:00"),
-        ("Austrian Grand Prix", 11, "2025-06-29 14:00:00"),
-        ("British Grand Prix", 12, "2025-07-06 14:00:00"),
-        ("Belgian Grand Prix", 13, "2025-07-27 14:00:00"),
-        ("Hungarian Grand Prix", 14, "2025-08-03 14:00:00"),
-        ("Dutch Grand Prix", 15, "2025-08-31 14:00:00"),
-        ("Italian Grand Prix", 16, "2025-09-07 14:00:00"),
-        ("Azerbaijan Grand Prix", 17, "2025-09-21 13:00:00"),
-        ("Singapore Grand Prix", 18, "2025-10-05 13:00:00"),
-        ("United States Grand Prix", 19, "2025-10-19 14:00:00"),
-        ("Mexico City Grand Prix", 20, "2025-10-26 14:00:00"),
-        ("Brazilian Grand Prix", 21, "2025-11-09 14:00:00"),
-        ("Las Vegas Grand Prix", 22, "2025-11-22 18:00:00"),
-        ("Qatar Grand Prix", 23, "2025-11-30 14:00:00"),
-        ("Abu Dhabi Grand Prix", 24, "2025-12-07 13:00:00"),
+        ("Australian Grand Prix", 1, "2026-03-15 01:00:00"),
+        ("Chinese Grand Prix", 2, "2026-03-22 08:00:00"),
+        ("Japanese Grand Prix", 3, "2026-04-05 06:00:00"),
+        ("Bahrain Grand Prix", 4, "2026-04-12 16:00:00"),
+        ("Saudi Arabian Grand Prix", 5, "2026-04-19 17:00:00"),
+        ("Miami Grand Prix", 6, "2026-05-03 20:00:00"),
+        ("Emilia Romagna Grand Prix", 7, "2026-05-17 14:00:00"),
+        ("Monaco Grand Prix", 8, "2026-05-24 14:00:00"),
+        ("Canadian Grand Prix", 9, "2026-06-14 14:00:00"),
+        ("Spanish Grand Prix", 10, "2026-06-21 14:00:00"),
+        ("Austrian Grand Prix", 11, "2026-06-28 14:00:00"),
+        ("British Grand Prix", 12, "2026-07-05 14:00:00"),
+        ("Belgian Grand Prix", 13, "2026-07-26 14:00:00"),
+        ("Hungarian Grand Prix", 14, "2026-08-02 14:00:00"),
+        ("Dutch Grand Prix", 15, "2026-08-30 14:00:00"),
+        ("Italian Grand Prix", 16, "2026-09-06 14:00:00"),
+        ("Azerbaijan Grand Prix", 17, "2026-09-20 13:00:00"),
+        ("Singapore Grand Prix", 18, "2026-10-04 13:00:00"),
+        ("United States Grand Prix", 19, "2026-10-18 14:00:00"),
+        ("Mexico City Grand Prix", 20, "2026-10-25 14:00:00"),
+        ("Brazilian Grand Prix", 21, "2026-11-08 14:00:00"),
+        ("Las Vegas Grand Prix", 22, "2026-11-21 18:00:00"),
+        ("Qatar Grand Prix", 23, "2026-11-29 14:00:00"),
+        ("Abu Dhabi Grand Prix", 24, "2026-12-06 13:00:00"),
     ]
     
     # Check if races already exist
@@ -281,14 +281,17 @@ def home():
     # Get user's prediction for next race if exists
     user_prediction = None
     if next_race:
-        user_prediction = db.execute('''
-            SELECT p.*, d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
-            FROM predictions p
-            JOIN drivers d1 ON p.p1_driver_id = d1.id
-            JOIN drivers d2 ON p.p2_driver_id = d2.id
-            JOIN drivers d3 ON p.p3_driver_id = d3.id
-            WHERE p.user_id = ? AND p.race_id = ?
-        ''', (user['session_id'], next_race['id'])).fetchone()
+        try:
+            user_prediction = db.execute('''
+                SELECT p.*, d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
+                FROM predictions p
+                JOIN drivers d1 ON p.p1_driver_id = d1.id
+                JOIN drivers d2 ON p.p2_driver_id = d2.id
+                JOIN drivers d3 ON p.p3_driver_id = d3.id
+                WHERE p.user_id = ? AND p.race_id = ?
+            ''', (user['session_id'], next_race['id'])).fetchone()
+        except Exception:
+            user_prediction = None
     
     # Get user's total score
     total_score = db.execute('''
