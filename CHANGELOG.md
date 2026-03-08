@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/brettswift/k8s_nas/compare/v1.2.0...v1.2.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **argocd:** allow Role and RoleBinding in apps project for f1 image-refresh hook ([61bd07b](https://github.com/brettswift/k8s_nas/commit/61bd07bb4653ebb25b5e32fc347426112ba912fe))
+
 # [1.2.0](https://github.com/brettswift/k8s_nas/compare/v1.1.3...v1.2.0) (2026-03-08)
 
 
