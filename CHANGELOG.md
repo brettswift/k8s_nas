@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/brettswift/k8s_nas/compare/v1.2.4...v1.2.5) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** improve image-refresh hook logging - pod digest, registry digest, match status ([ccc626f](https://github.com/brettswift/k8s_nas/commit/ccc626f8c09c1e092155f38e7937cafb0e987c98))
+
 ## [1.2.4](https://github.com/brettswift/k8s_nas/compare/v1.2.3...v1.2.4) (2026-03-08)
 
 
