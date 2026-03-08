@@ -1,0 +1,72 @@
+name: Deploy on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  deploy:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PR_DEPLOY_TOKEN }}
+      
+      - name: Get PR branch info
+        id: get-branch
+        run: |
+          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}")
+          BRANCH=$(echo "$PR_DATA" | jq -r .head.ref)
+          FORK_REPO=$(echo "$PR_DATA" | jq -r .head.repo.full_name)
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "fork_repo=$FORK_REPO" >> $GITHUB_OUTPUT
+          echo "PR branch: $BRANCH from $FORK_REPO"
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Backup current live to live-backup
+        run: |
+          git fetch origin live
+          git push origin origin/live:live-backup --force
+          echo "✅ Backed up live → live-backup"
+      
+      - name: Deploy PR branch to live
+        run: |
+          # Add fork as remote if different from origin
+          if [ "${{ steps.get-branch.outputs.fork_repo }}" != "${{ github.repository }}" ]; then
+            git remote add fork https://github.com/${{ steps.get-branch.outputs.fork_repo }}.git
+            git fetch fork ${{ steps.get-branch.outputs.branch }}:pr-branch
+          else
+            git fetch origin ${{ steps.get-branch.outputs.branch }}:pr-branch
+          fi
+          git push origin pr-branch:live --force
+          echo "✅ Deployed ${{ steps.get-branch.outputs.branch }} → live"
+      
+      - name: Comment success on PR
+        if: success()
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "🚀 **Deployed successfully!**\n\n- Branch `${{ steps.get-branch.outputs.branch }}` pushed to `live`\n- Previous `live` backed up to `live-backup`\n- ArgoCD will auto-sync within ~30 seconds"}'
+      
+      - name: Comment failure on PR
+        if: failure()
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.PR_DEPLOY_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "❌ **Deploy failed!**\n\nCheck the [Actions logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."}'
