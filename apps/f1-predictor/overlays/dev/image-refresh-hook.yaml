@@ -27,12 +27,23 @@ spec:
             GHCR_USER=$(sed -n 's/.*"username"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/ghcr/.dockerconfigjson | head -1)
             GHCR_PASS=$(sed -n 's/.*"password"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /tmp/ghcr/.dockerconfigjson | head -1)
             [ -n "$GHCR_USER" ] && [ -n "$GHCR_PASS" ] && CREDENTIALS="$GHCR_USER:$GHCR_PASS"
+            echo "[verbose] ghcr-pull mount: found, user=$GHCR_USER" >&2
+          else
+            echo "[verbose] ghcr-pull mount: not found at /tmp/ghcr/.dockerconfigjson" >&2
           fi
           get_registry_digest() {
             if [ -n "$CREDENTIALS" ]; then
-              TOKEN=$(curl -sf -u "$CREDENTIALS" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>/dev/null | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-              [ -z "$TOKEN" ] && TOKEN=$(curl -sf -u "$CREDENTIALS" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>/dev/null | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-              [ -n "$TOKEN" ] && curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null
+              TOKEN_RESP=$(curl -sSf -u "$CREDENTIALS" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>/tmp/curl.err || true)
+              TOKEN=$(echo "$TOKEN_RESP" | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              [ -z "$TOKEN" ] && TOKEN=$(echo "$TOKEN_RESP" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              if [ -z "$TOKEN" ]; then
+                echo "[verbose] token endpoint: no token (curl_err=$(cat /tmp/curl.err 2>/dev/null | head -1), resp_len=${#TOKEN_RESP})" >&2
+                return
+              fi
+              echo "[verbose] token endpoint: OK (token length=${#TOKEN})" >&2
+              MANIFEST_OUT=$(curl -sSf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/tmp/curl.err || true)
+              [ -z "$MANIFEST_OUT" ] && [ -s /tmp/curl.err ] && echo "[verbose] manifest curl err: $(cat /tmp/curl.err)" >&2
+              echo "$MANIFEST_OUT"
             else
               curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null
             fi
