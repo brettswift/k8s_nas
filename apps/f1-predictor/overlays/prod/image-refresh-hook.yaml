@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: image-refresh
+  namespace: f1-predictor
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  activeDeadlineSeconds: 330
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: image-refresh
+      restartPolicy: Never
+      containers:
+      - name: image-refresh
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          REPO="${IMAGE#ghcr.io/}"
+          echo "Image refresh: checking $REPO:$TAG vs deployment $DEPLOYMENT"
+          for i in $(seq 1 20); do
+            CURRENT=$(kubectl get pods -l app=f1-predictor -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null || true)
+            [ -z "$CURRENT" ] && echo "No running pod yet, waiting..." && sleep 15 && continue
+            CURRENT_DIGEST="${CURRENT#*@}"
+            if [ -n "$GITHUB_TOKEN" ]; then
+              REGISTRY_RESP=$(curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null || true)
+            else
+              REGISTRY_RESP=$(curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null || true)
+            fi
+            REGISTRY_DIGEST=$(echo "$REGISTRY_RESP" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
+            [ -z "$REGISTRY_DIGEST" ] && echo "Could not get registry digest (attempt $i), waiting..." && sleep 15 && continue
+            if [ "$CURRENT_DIGEST" != "$REGISTRY_DIGEST" ]; then
+              echo "Digest changed ($CURRENT_DIGEST -> $REGISTRY_DIGEST), triggering rollout restart"
+              kubectl rollout restart deployment/$DEPLOYMENT
+              kubectl rollout status deployment/$DEPLOYMENT --timeout=300s
+              echo "Rollout complete"
+              exit 0
+            fi
+            echo "Digest unchanged, waiting (attempt $i/20)"
+            sleep 15
+          done
+          echo "No digest change detected within timeout; exiting 0"
+          exit 0
+        env:
+        - name: IMAGE
+          value: "ghcr.io/brettswift/f1-predictor"
+        - name: TAG
+          value: "live"
+        - name: DEPLOYMENT
+          value: "f1-predictor"

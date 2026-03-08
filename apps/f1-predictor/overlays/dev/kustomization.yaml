@@ -7,9 +7,10 @@ resources:
 - namespace.yaml
 - ../../base
 - ingress.yaml
+- image-refresh-hook.yaml
+- image-refresh-rbac.yaml
 
-# newTag replaced by build workflow with git SHA; placeholder ensures ImagePullBackOff until build runs
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
   newName: ghcr.io/brettswift/f1-predictor
-  newTag: sha-required
+  newTag: dev

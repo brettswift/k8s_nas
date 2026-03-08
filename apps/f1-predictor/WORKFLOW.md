@@ -9,15 +9,18 @@ flowchart TB
   subgraph dev [Dev Flow]
     A[Create PR to f1-dev] --> B[Push changes]
     B --> C[Build workflow runs]
-    C --> D[Image built with SHA]
+    C --> D[Image pushed as :dev]
     D --> E[ArgoCD syncs f1-predictor-dev]
-    E --> F[Test at f1.home.brettswift.com]
+    E --> F[PostSync hook polls, restarts if digest changed]
+    F --> G[Test at f1.home.brettswift.com]
   end
   subgraph prod [Prod Flow]
-    F --> G[PR approved, merge to live]
-    G --> H[Build workflow runs]
-    H --> I[ArgoCD syncs f1-predictor]
-    I --> J[Live at f1.brettswift.com]
+    G --> H[PR approved, merge to live]
+    H --> I[Build workflow runs]
+    I --> J[Image pushed as :live]
+    J --> K[ArgoCD syncs f1-predictor]
+    K --> L[PostSync hook polls, restarts if digest changed]
+    L --> M[Live at f1.brettswift.com]
   end
 ```
 
@@ -51,19 +54,15 @@ Open a PR: `feat/my-change` → `f1-dev`.
 When you push to f1-dev (or when the PR is merged):
 
 - **Workflow:** `build-f1-predictor-dev.yml`
-- **Trigger:** Any push to f1-dev except changes to `overlays/dev/kustomization.yaml`
-- **Actions:**
-  1. Extracts short SHA from the commit
-  2. Updates `overlays/dev/kustomization.yaml` with `newTag: <sha>`
-  3. Pushes the manifest update
-  4. Builds the Docker image
-  5. Pushes `ghcr.io/brettswift/f1-predictor:<sha>` to GHCR
+- **Trigger:** Any push to f1-dev
+- **Actions:** Builds the Docker image and pushes `ghcr.io/brettswift/f1-predictor:dev` to GHCR (no git commits)
 
 ### 3. ArgoCD syncs dev
 
 - ArgoCD app `f1-predictor-dev` tracks `f1-dev` branch
 - Path: `apps/f1-predictor/overlays/dev`
-- On push, ArgoCD syncs and deploys the new image to namespace `f1-predictor-dev`
+- Overlay uses fixed tag `:dev`; deployment has `imagePullPolicy: Always`
+- On sync, a **PostSync hook** runs: it polls the registry digest for `:dev` vs the running pod digest; if they differ, it runs `kubectl rollout restart` and waits for rollout; otherwise it exits after ~20×15s. The hook always exits 0 and is deleted before the next sync.
 - Dev is live at **https://f1.home.brettswift.com**
 
 ### 4. Test in dev
@@ -77,11 +76,10 @@ When you push to f1-dev (or when the PR is merged):
 When dev is verified:
 
 1. Merge the PR: `f1-dev` → `live`
-2. **Workflow:** `build-f1-predictor-prod.yml` runs
-3. **Trigger:** Any change under `apps/f1-predictor/**` except `overlays/prod/kustomization.yaml`
-4. Workflow updates `overlays/prod/kustomization.yaml` with the new SHA and builds
-5. ArgoCD app `f1-predictor` syncs from `live`
-6. Prod deploys at **https://f1.brettswift.com**
+2. **Workflow:** `build-f1-predictor-prod.yml` runs (trigger: any change under `apps/f1-predictor/**` on `live`)
+3. Workflow builds and pushes `ghcr.io/brettswift/f1-predictor:live` (no git commits)
+4. ArgoCD app `f1-predictor` syncs from `live`; PostSync hook polls registry for `:live` and restarts deployment if digest changed
+5. Prod deploys at **https://f1.brettswift.com**
 
 ### 6. Optional: Manual build
 
@@ -99,31 +97,21 @@ If the build did not trigger (e.g. only docs changed):
 
 ArgoCD never tracks feature branches. It tracks `f1-dev` and `live` only.
 
-## Image tagging (Git SHA)
+## Image tagging (mutable :dev / :live)
 
-Images use the short git hash, not `:latest` or `:dev`:
+Images use fixed mutable tags:
 
-- Ensures dev and prod run identical code when you promote
-- ArgoCD sees the new tag before the image exists → brief ImagePullBackOff → retry succeeds once build completes
-- Same SHA in dev and prod after merge
+- **Dev:** `ghcr.io/brettswift/f1-predictor:dev`
+- **Prod:** `ghcr.io/brettswift/f1-predictor:live`
 
-## Path filters (avoid loops)
-
-Workflows push manifest updates. Path filters prevent infinite loops:
-
-| Workflow | paths-ignore |
-|----------|--------------|
-| build-f1-predictor-dev | `overlays/dev/kustomization.yaml` |
-| build-f1-predictor-prod | `overlays/prod/kustomization.yaml` |
-
-When the workflow commits a kustomization change, that commit does not re-trigger the workflow.
+There are no GHA commits; overlays always reference `:dev` or `:live`. New builds overwrite the same tag. The PostSync hook detects digest changes and triggers a rollout restart so new images are picked up after ArgoCD sync.
 
 ## Troubleshooting
 
 ### Build did not run
 
-- **Dev:** Push must touch `apps/f1-predictor/` and not be *only* `overlays/dev/kustomization.yaml`
-- **Prod:** Push to live must touch `apps/f1-predictor/` and not be *only* `overlays/prod/kustomization.yaml`
+- **Dev:** Any push to f1-dev triggers the dev build
+- **Prod:** Push to live with changes under `apps/f1-predictor/**` triggers the prod build
 - Trigger manually via Actions → Run workflow
 
 ### ImagePullBackOff
@@ -138,11 +126,17 @@ When the workflow commits a kustomization change, that commit does not re-trigge
 - Manual sync: ArgoCD UI → f1-predictor or f1-predictor-dev → Sync
 - Check: `kubectl get applications -n argocd`
 
+### PostSync hook / image not updating
+
+- Hook runs after each sync; it polls up to ~20×15s for a digest change, then restarts the deployment if needed
+- Hook always exits 0; check job logs: `kubectl logs job/image-refresh -n f1-predictor-dev` (or `-n f1-predictor`)
+- For private GHCR, ensure the hook can read the manifest (see DEPLOYMENT.md)
+
 ### Dev and prod show different versions
 
-- Dev: from `f1-dev` branch
-- Prod: from `live` branch
-- After merging f1-dev → live, prod build runs and catches up
+- Dev: `:dev` image from f1-dev builds
+- Prod: `:live` image from live builds
+- After merging f1-dev → live, prod build runs and pushes new `:live`; next sync + hook will roll out the new image
 
 ## Related docs
 

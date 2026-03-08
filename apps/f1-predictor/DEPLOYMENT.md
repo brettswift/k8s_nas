@@ -2,6 +2,10 @@
 
 Build process, ArgoCD setup, and deployment details. For the full dev→prod workflow (PR flow, testing, promote), see [WORKFLOW.md](./WORKFLOW.md).
 
+## Design: event-driven image refresh
+
+Deployment uses **mutable tags** (`:dev` / `:live`) and an **ArgoCD PostSync hook** to roll out new images without GHA committing to the repo. The hook polls the GHCR manifest digest; when it differs from the running pod, it runs a rollout restart. Full design and implemented artifacts: [Event-driven image refresh plan](../../docs/plans/f1-predictor-event-driven-image-refresh.md).
+
 ## Overview
 
 | Environment | Branch | URL | Namespace | ArgoCD App |
@@ -9,13 +13,14 @@ Build process, ArgoCD setup, and deployment details. For the full dev→prod wor
 | Dev | f1-dev | https://f1.home.brettswift.com | f1-predictor-dev | f1-predictor-dev |
 | Prod | live | https://f1.brettswift.com | f1-predictor | f1-predictor |
 
-## Image Tagging (Git SHA)
+## Image Tagging (mutable :dev / :live)
 
-Images are tagged with the **short git hash** (e.g. `a1b2c3d`), never `:latest` or `:dev`. Overlays use placeholder `sha-required` until the build workflow sets the real SHA. This:
+Images use fixed mutable tags; there are **no GHA commits** to the repo:
 
-- Ensures dev and prod run the same code when you promote (merge f1-dev → live)
-- Forces deploy to fail (ImagePullBackOff) until the build completes, then succeeds
-- Avoids ArgoCD syncing before the image exists
+- **Dev:** `ghcr.io/brettswift/f1-predictor:dev`
+- **Prod:** `ghcr.io/brettswift/f1-predictor:live`
+
+Overlays set `newTag: dev` or `newTag: live` in kustomization. Each new build overwrites the same tag. The deployment uses `imagePullPolicy: Always` and a PostSync hook detects digest changes and triggers a rollout restart.
 
 ## Build Flow
 
@@ -23,19 +28,14 @@ Separate workflows per environment:
 
 | Branch | Workflow | Trigger |
 |--------|----------|---------|
-| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` except `overlays/prod/kustomization.yaml` |
-| f1-dev | `build-f1-predictor-dev.yml` | Any push to f1-dev except `overlays/dev/kustomization.yaml` |
+| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` |
+| f1-dev | `build-f1-predictor-dev.yml` | Any push to f1-dev |
 
-1. **Trigger:** Push to `live` or `f1-dev` (path filters avoid loops when the workflow pushes manifest updates).
+1. **Trigger:** Push to `live` or `f1-dev` (and for prod, path must be under `apps/f1-predictor/**`).
 
-2. **Workflow steps:**
-   - Extracts short SHA from the triggering commit
-   - Updates the overlay's `newTag` in `kustomization.yaml` and pushes
-   - ArgoCD syncs on that push → deployment tries to pull `image:SHA` → ImagePullBackOff
-   - Builds image, tags with SHA, pushes to GHCR
-   - Kubernetes retries → image exists → pod starts
+2. **Workflow steps:** Checkout, build image, push to GHCR with tag `:dev` or `:live`. No manifest updates or git pushes.
 
-3. **Order matters:** Manifest is updated first, then build. ArgoCD sees the new tag before the image exists, so deploy fails until the build completes.
+3. **Deploy:** ArgoCD syncs the overlay (fixed tag). A **PostSync hook** Job runs: it polls the GHCR manifest for the tag, compares digest to the running pod; if different, it runs `kubectl rollout restart deployment/f1-predictor` and waits for rollout. Hook runs up to ~20×15s then exits 0; it is deleted before the next sync.
 
 ## ArgoCD
 
@@ -47,16 +47,15 @@ Each app points directly at its overlay path and branch.
 ## Promoting Dev → Prod
 
 1. Merge `f1-dev` into `live`
-2. Build workflow runs on the merge commit
-3. Updates `overlays/prod` with the new SHA
-4. ArgoCD syncs, deploys the same code that was in dev
+2. Build workflow runs and pushes `:live`
+3. ArgoCD syncs; PostSync hook detects new digest and restarts the deployment
 
 ## Overlays
 
 - **overlays/dev:** Dev (f1.home.brettswift.com, CNAME to home.brettswift.com)
 - **overlays/prod:** Prod (f1.brettswift.com, external-dns discovers)
 
-Each overlay has `images:` in kustomization to override the base image tag. The build workflow updates `newTag` with the SHA.
+Each overlay has `images:` with fixed `newTag: dev` or `newTag: live`, plus an image-refresh PostSync hook and RBAC (ServiceAccount `image-refresh`, Role/RoleBinding for deployment get/patch).
 
 ## DNS
 
@@ -73,18 +72,18 @@ Managed via external-dns annotations in ingress manifests:
 ## GHCR
 
 - One-time setup: create `ghcr-pull` secret in each namespace: `f1-predictor`, `f1-predictor-dev` (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md))
-- Images: `ghcr.io/brettswift/f1-predictor:<sha>`
+- Images: `ghcr.io/brettswift/f1-predictor:dev` and `ghcr.io/brettswift/f1-predictor:live`
 - GHCR storage and bandwidth are free for container images
+
+**PostSync hook and private GHCR:** The image-refresh hook calls the GHCR manifest API. If the package is private, that request may return 401. To fix: create a secret (e.g. `ghcr-token`) with a `GITHUB_TOKEN` or `CR_TOKEN` key (PAT with `read:packages`), and in the hook Job add an `env` entry that sets `GITHUB_TOKEN` from that secret. The script already uses `GITHUB_TOKEN` when present for the `Authorization: Bearer` header.
 
 ## Manual Build
 
-If the build did not auto-trigger (e.g. only kustomization changed), run manually:
+If the build did not auto-trigger, run manually:
 
 - **Prod:** Actions → Build f1-predictor prod image → Run workflow
 - **Dev:** Actions → Build f1-predictor dev image → Run workflow
 
-The kustomization files are in `paths-ignore` to avoid loops when the workflow pushes; a change that only touches them will not trigger a build.
-
 ## ImagePullBackOff
 
-Kubernetes image pull backoff is hard-coded in the kubelet (0, 10, 20, 40, 80, 160, 300s) and cannot be configured. To get the hash on f1-dev: push any change to `apps/f1-predictor/` (except the dev overlay kustomization) to trigger the build. The workflow updates the manifest with the SHA, then builds.
+If the image does not exist yet (e.g. first deploy or build still running), wait for the workflow to finish; kubelet will retry. Check pods: `kubectl get pods -n f1-predictor-dev` or `-n f1-predictor`.
