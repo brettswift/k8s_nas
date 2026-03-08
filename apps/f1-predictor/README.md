@@ -25,11 +25,11 @@ Built by GitHub Actions, tagged with git SHA. See [DEPLOYMENT.md](./DEPLOYMENT.m
 
 ## DNS
 
-Route53 entries use **A records** (direct IP) via external-dns. Update the `target` annotation if your server IP differs:
+Managed via external-dns annotations in ingress manifests:
 
-- Home prod: `f1.home.brettswift.com` → `68.147.109.77`
-- Dev: `f1-dev.home.brettswift.com` → `68.147.109.77`
-- External prod: `f1.brettswift.com` → `68.147.109.77`
+- **Home prod:** `f1.home.brettswift.com` → same IP as `home.brettswift.com` (A record, `target: 68.147.109.77`)
+- **Dev:** `f1-dev.home.brettswift.com` → same IP as home (A record)
+- **External prod:** `f1.brettswift.com` → external cluster ingress IP (external-dns discovers; no target annotation)
 
 ### DNS Troubleshooting
 
@@ -41,3 +41,8 @@ If domains don't resolve:
    ```
 
 2. **Local DNS** (router, Pi-hole, /etc/hosts): Add records pointing to the same IP as `home.brettswift.com` (e.g. `10.1.0.20`).
+
+## TLS
+
+- **Home/Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
+- **External prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)

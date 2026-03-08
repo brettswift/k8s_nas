@@ -30,11 +30,13 @@ If not available:
 
 ## Manual Trigger
 
-To manually fetch results:
+To manually fetch results (prod):
 ```bash
 kubectl exec -it deployment/f1-predictor -n f1-predictor -- \
   python3 /app/cron/fetch_race_results.py
 ```
+
+For dev: use namespace `f1-predictor-dev`.
 
 ## API Source
 
