@@ -58,11 +58,13 @@ Each overlay has `images:` in kustomization to override the base image tag. The 
 
 ## DNS
 
-Managed via external-dns annotations in ingress manifests:
+Managed via external-dns annotations in ingress manifests. Uses **A records** (direct IP) so f1 subdomains don't inherit wrong IP from home.brettswift.com CNAME chain:
 
-- Home prod: `f1.home.brettswift.com` → `home.brettswift.com` (CNAME)
-- Dev: `f1-dev.home.brettswift.com` → `home.brettswift.com` (CNAME)
+- Home prod: `f1.home.brettswift.com` → `68.147.109.77` (A record)
+- Dev: `f1-dev.home.brettswift.com` → `68.147.109.77` (A record)
 - External prod: `f1.brettswift.com` → `68.147.109.77` (A record)
+
+Update the `target` annotation in each overlay if your server uses a different public IP.
 
 ## GHCR
 

@@ -25,11 +25,11 @@ Built by GitHub Actions, tagged with git SHA. See [DEPLOYMENT.md](./DEPLOYMENT.m
 
 ## DNS
 
-Route53 entries are managed via external-dns annotations in the ingress manifests:
+Route53 entries use **A records** (direct IP) via external-dns. Update the `target` annotation if your server IP differs:
 
-- Home prod: `f1.home.brettswift.com` → `home.brettswift.com` (CNAME)
-- Dev: `f1-dev.home.brettswift.com` → `home.brettswift.com` (CNAME)
-- External prod: `f1.brettswift.com` → `68.147.109.77` (A record)
+- Home prod: `f1.home.brettswift.com` → `68.147.109.77`
+- Dev: `f1-dev.home.brettswift.com` → `68.147.109.77`
+- External prod: `f1.brettswift.com` → `68.147.109.77`
 
 ### DNS Troubleshooting
 

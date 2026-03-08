@@ -1,14 +1,14 @@
 #!/bin/bash
-# Create Route53 CNAME for f1.home.brettswift.com (bypass if external-dns hasn't created it)
+# Create Route53 A record for f1.home.brettswift.com (bypass if external-dns hasn't created it)
 # Run after: assume brettswift-mgmt (or with AWS credentials for Route53)
 
 set -e
 
 HOSTED_ZONE_ID="Z1A5BHLIT8EGDS"
 SUBDOMAIN="f1.home.brettswift.com"
-TARGET="home.brettswift.com"
+TARGET_IP="${1:-68.147.109.77}"
 
-echo "Creating Route53 CNAME: $SUBDOMAIN -> $TARGET"
+echo "Creating Route53 A record: $SUBDOMAIN -> $TARGET_IP"
 
 CHANGE_BATCH=$(cat <<EOF
 {
@@ -16,9 +16,9 @@ CHANGE_BATCH=$(cat <<EOF
     "Action": "UPSERT",
     "ResourceRecordSet": {
       "Name": "${SUBDOMAIN}.",
-      "Type": "CNAME",
+      "Type": "A",
       "TTL": 300,
-      "ResourceRecords": [{"Value": "${TARGET}."}]
+      "ResourceRecords": [{"Value": "${TARGET_IP}"}]
     }
   }]
 }
@@ -31,4 +31,4 @@ aws route53 change-resource-record-sets \
   --query 'ChangeInfo.Id' \
   --output text
 
-echo "Done. DNS may take a few minutes to propagate. Test: dig $SUBDOMAIN"
+echo "Done. Pass IP as arg to override (default: 68.147.109.77). Test: dig $SUBDOMAIN"
