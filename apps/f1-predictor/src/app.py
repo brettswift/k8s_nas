@@ -105,14 +105,16 @@ def init_db():
     ''')
     
     db.commit()
-    seed_drivers_2025(db)
+    seed_drivers_2026(db)
     seed_races_2026(db)
 
-def seed_drivers_2025(db):
-    """Seed 2025 F1 driver grid."""
+def seed_drivers_2026(db):
+    """Seed 2026 F1 driver grid."""
+    # 2026 grid with confirmed changes:
+    # - Tsunoda promoted to Red Bull, Lawson demoted to Racing Bulls
     drivers = [
         (1, "Max Verstappen", "Red Bull Racing", 1),
-        (2, "Liam Lawson", "Red Bull Racing", 30),
+        (2, "Yuki Tsunoda", "Red Bull Racing", 22),
         (3, "Lewis Hamilton", "Ferrari", 44),
         (4, "Charles Leclerc", "Ferrari", 16),
         (5, "Lando Norris", "McLaren", 4),
@@ -127,7 +129,7 @@ def seed_drivers_2025(db):
         (14, "Carlos Sainz", "Williams", 55),
         (15, "Nico Hulkenberg", "Kick Sauber", 27),
         (16, "Gabriel Bortoleto", "Kick Sauber", 5),
-        (17, "Yuki Tsunoda", "Racing Bulls", 22),
+        (17, "Liam Lawson", "Racing Bulls", 30),
         (18, "Isack Hadjar", "Racing Bulls", 6),
         (19, "Esteban Ocon", "Haas", 31),
         (20, "Oliver Bearman", "Haas", 87),
