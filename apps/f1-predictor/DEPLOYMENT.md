@@ -75,3 +75,7 @@ Update the `target` annotation in each overlay if your server uses a different p
 ## Manual Build
 
 Actions → Build f1-predictor image → Run workflow → select branch.
+
+## ImagePullBackOff
+
+Kubernetes image pull backoff is hard-coded in the kubelet (0, 10, 20, 40, 80, 160, 300s) and cannot be configured from the deployment. To avoid pull failures, ensure the build runs before ArgoCD syncs (the workflow updates the manifest first, then builds). Dev overlay uses `:latest` until the first build on f1-dev runs.
