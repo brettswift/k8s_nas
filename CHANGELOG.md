@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/brettswift/k8s_nas/compare/v1.2.2...v1.2.3) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** use ghcr-pull secret for image-refresh hook (private GHCR); doc sync frequency ([7b5df08](https://github.com/brettswift/k8s_nas/commit/7b5df083c1347d1c4b27fcde8847e1ee03472119))
+
 ## [1.2.2](https://github.com/brettswift/k8s_nas/compare/v1.2.1...v1.2.2) (2026-03-08)
 
 
