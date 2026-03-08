@@ -25,7 +25,17 @@ spec:
           echo "Image refresh: checking $REPO:$TAG vs deployment $DEPLOYMENT"
           for i in $(seq 1 20); do
             CURRENT=$(kubectl get pods -l app=f1-predictor -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null || true)
-            [ -z "$CURRENT" ] && echo "No running pod yet, waiting..." && sleep 15 && continue
+            if [ -z "$CURRENT" ]; then
+              PHASE=$(kubectl get pods -l app=f1-predictor -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
+              REASON=$(kubectl get pods -l app=f1-predictor -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason}' 2>/dev/null || true)
+              if [ -n "$PHASE" ]; then
+                echo "No running pod yet (phase=$PHASE, reason=$REASON), waiting..."
+              else
+                echo "No running pod yet (no pods with label app=f1-predictor), waiting..."
+              fi
+              sleep 15
+              continue
+            fi
             CURRENT_DIGEST="${CURRENT#*@}"
             if [ -n "$GITHUB_TOKEN" ]; then
               REGISTRY_RESP=$(curl -sf -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/$REPO/manifests/$TAG" -D - -o /dev/null 2>/dev/null || true)

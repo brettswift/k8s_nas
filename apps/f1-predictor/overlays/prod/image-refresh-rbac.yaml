@@ -10,6 +10,9 @@ metadata:
   name: image-refresh
   namespace: f1-predictor
 rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
 - apiGroups: ["apps"]
   resources: ["deployments"]
   verbs: ["get", "patch"]

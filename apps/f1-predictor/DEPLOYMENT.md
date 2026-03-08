@@ -77,6 +77,38 @@ Managed via external-dns annotations in ingress manifests:
 
 **PostSync hook and private GHCR:** The image-refresh hook calls the GHCR manifest API. If the package is private, that request may return 401. To fix: create a secret (e.g. `ghcr-token`) with a `GITHUB_TOKEN` or `CR_TOKEN` key (PAT with `read:packages`), and in the hook Job add an `env` entry that sets `GITHUB_TOKEN` from that secret. The script already uses `GITHUB_TOKEN` when present for the `Authorization: Bearer` header.
 
+### Verifying the image-refresh hook
+
+After an Argo CD sync, a PostSync Job runs once per overlay. To confirm it ran and what it did:
+
+```bash
+# Dev
+kubectl logs job/image-refresh -n f1-predictor-dev
+
+# Prod
+kubectl logs job/image-refresh -n f1-predictor
+```
+
+**If the hook is working and no new image was pushed:** You may see no Job (it’s deleted before the next sync). Right after a sync you should see logs like:
+
+- `Image refresh: checking brettswift/f1-predictor:dev vs deployment f1-predictor` (or `:live` in prod)
+- Either:
+  - `Digest unchanged, waiting (attempt 1/20)` … then after up to 20×15s: `No digest change detected within timeout; exiting 0`
+  - Or, if the registry digest changed: `Digest changed (sha256:… -> sha256:…), triggering rollout restart` then `Rollout complete`
+
+**If the hook can’t reach GHCR (e.g. private repo, no token):** You’ll see repeated `Could not get registry digest (attempt N), waiting…` and then `No digest change detected within timeout; exiting 0`. Add `GITHUB_TOKEN` from a secret as above.
+
+**If no Job appears:** Sync may have failed earlier (e.g. project whitelist). Check Argo CD app sync status and sync errors.
+
+**"No running pod yet" repeatedly:** The hook needs a pod with a resolved `imageID` (i.e. Running or at least past image pull). It will wait up to ~20×15s. After the next sync the hook will log `phase=` and `reason=` (e.g. `phase=Pending`, `reason=ContainerCreating` or `reason=ImagePullBackOff`). Fix the deployment so a pod reaches Running:
+
+- **No pods at all:** Deployment not created or replica 0; check Argo CD sync.
+- **phase=Pending, reason=ContainerCreating:** Image still pulling; wait or check `kubectl describe pod -n f1-predictor -l app=f1-predictor` for pull errors.
+- **phase=Pending, reason=ImagePullBackOff:** Image missing or pull secret wrong. Ensure `ghcr.io/brettswift/f1-predictor:live` (or `:dev`) exists and the `ghcr-pull` secret exists in the namespace (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md)).
+- **CrashLoopBackOff:** App is exiting; check app logs.
+
+Once a pod is Running, the next sync’s hook will see its digest and either report "Digest unchanged" or trigger a rollout restart.
+
 ## Manual Build
 
 If the build did not auto-trigger, run manually:
