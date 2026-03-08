@@ -8,13 +8,26 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    external-dns.alpha.kubernetes.io/hostname: f1.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
     - home.brettswift.com
+    - f1.home.brettswift.com
     secretName: home-brettswift-com-tls
   rules:
+  - host: f1.home.brettswift.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: f1-predictor
+            port:
+              number: 80
   - host: home.brettswift.com
     http:
       paths:

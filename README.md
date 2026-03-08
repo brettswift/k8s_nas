@@ -4,17 +4,22 @@ A clean Kubernetes setup with ArgoCD ApplicationSets for label-driven GitOps dep
 
 ## Quick Start
 
-1. **Start the cluster:**
+1. **Set kubeconfig** (production server):
+   ```bash
+   export KUBECONFIG=~/.kube/config-nas
+   ```
+
+2. **Start the cluster:**
    ```bash
    ./start_k8s.sh
    ```
 
-2. **Access ArgoCD:**
+3. **Access ArgoCD:**
    - URL: https://localhost:8080 (port forward)
    - Username: `admin` or `bswift`
    - Password: `8480`
 
-3. **Deploy applications:**
+4. **Deploy applications:**
    ```bash
    # Enable a service (e.g., sample-hello)
    kubectl label cluster local-cluster sample-hello-enabled=true
@@ -23,7 +28,7 @@ A clean Kubernetes setup with ArgoCD ApplicationSets for label-driven GitOps dep
    git push origin feat/application_sets:dev
    ```
 
-4. **Stop the cluster:**
+5. **Stop the cluster:**
    ```bash
    ./stop_k8s.sh
    ```
