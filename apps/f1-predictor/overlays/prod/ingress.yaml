@@ -7,7 +7,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     external-dns.alpha.kubernetes.io/hostname: f1.brettswift.com
-    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: 68.147.109.77
 spec:
   ingressClassName: nginx
   tls:
@@ -53,3 +53,4 @@ spec:
             name: f1-predictor
             port:
               number: 80
+
