@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/brettswift/k8s_nas/compare/v1.1.1...v1.1.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** use sha-required placeholder, never latest/dev - forces ImagePullBackOff until build runs ([abe082e](https://github.com/brettswift/k8s_nas/commit/abe082e0e35f406ea1aa4ed9fe4bc5c98d0b5810))
+
 ## [1.1.1](https://github.com/brettswift/k8s_nas/compare/v1.1.0...v1.1.1) (2026-03-08)
 
 
