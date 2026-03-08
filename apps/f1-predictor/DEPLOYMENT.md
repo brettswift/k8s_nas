@@ -96,7 +96,7 @@ kubectl logs job/image-refresh -n f1-predictor
   - `Digest unchanged, waiting (attempt 1/20)` … then after up to 20×15s: `No digest change detected within timeout; exiting 0`
   - Or, if the registry digest changed: `Digest changed (sha256:… -> sha256:…), triggering rollout restart` then `Rollout complete`
 
-**If the hook can’t reach GHCR (private repo):** You’ll see repeated `Could not get registry digest (attempt N), waiting…`. Ensure the `ghcr-pull` secret exists in the namespace (same one used for image pull; see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md)). The hook reads the token from that secret for the manifest API.
+**If the hook can’t reach GHCR (private repo):** You’ll see `[verbose] ghcr-pull mount: not found` or `Could not get image from registry...`. The `ghcr-pull` secret must exist in the namespace. Run: `GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor f1-predictor-dev` (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md)).
 
 **If no Job appears:** Sync may have failed earlier (e.g. project whitelist). Check Argo CD app sync status and sync errors.
 

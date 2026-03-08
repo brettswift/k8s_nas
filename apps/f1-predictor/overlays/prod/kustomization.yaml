@@ -8,8 +8,6 @@ resources:
 - ../../base
 - ingress.yaml
 - driver-refresh-cronjob.yaml
-- image-refresh-hook.yaml
-- image-refresh-rbac.yaml
 
 patches:
 - path: deployment-patch.yaml

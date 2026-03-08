@@ -1,0 +1,107 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: image-refresh
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  activeDeadlineSeconds: 120
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: image-refresh
+      restartPolicy: Never
+      containers:
+      - name: image-refresh
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+
+          REPO="${IMAGE#ghcr.io/}"
+          echo "=== Image refresh: $REPO:$TAG ==="
+
+          # --- 1. Read pod digest ---
+          POD_IMAGE_ID=$(kubectl get pods -l app=f1-predictor \
+            -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null || true)
+          if [ -z "$POD_IMAGE_ID" ]; then
+            echo "No running pod found. Nothing to compare. Exiting."
+            exit 0
+          fi
+          POD_DIGEST="${POD_IMAGE_ID#*@}"
+          echo "Pod digest: $POD_DIGEST"
+
+          # --- 2. Get GHCR credentials from ghcr-pull secret ---
+          CREDENTIALS=""
+          if [ -f /tmp/ghcr/.dockerconfigjson ]; then
+            GHCR_USER=$(cat /tmp/ghcr/.dockerconfigjson | sed -n 's/.*"username"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+            GHCR_PASS=$(cat /tmp/ghcr/.dockerconfigjson | sed -n 's/.*"password"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+            if [ -n "$GHCR_USER" ] && [ -n "$GHCR_PASS" ]; then
+              CREDENTIALS="$GHCR_USER:$GHCR_PASS"
+              echo "GHCR auth: using ghcr-pull secret (user=$GHCR_USER)"
+            else
+              echo "GHCR auth: ghcr-pull mounted but could not parse credentials"
+            fi
+          else
+            echo "GHCR auth: ghcr-pull secret not mounted (does it exist in this namespace?)"
+            echo "Skipping registry check. Exiting."
+            exit 0
+          fi
+
+          # --- 3. Get bearer token from GHCR token endpoint ---
+          TOKEN_RESP=$(curl -sf -u "$CREDENTIALS" \
+            "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>&1 || true)
+          TOKEN=$(echo "$TOKEN_RESP" | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+          if [ -z "$TOKEN" ]; then
+            echo "GHCR token endpoint failed. Response: $TOKEN_RESP"
+            echo "Cannot check registry. Exiting."
+            exit 0
+          fi
+          echo "GHCR token: OK"
+
+          # --- 4. Get registry digest for tag ---
+          HEADERS=$(curl -sf \
+            -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://ghcr.io/v2/$REPO/manifests/$TAG" \
+            -D - -o /dev/null 2>&1 || true)
+          REGISTRY_DIGEST=$(echo "$HEADERS" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
+          if [ -z "$REGISTRY_DIGEST" ]; then
+            echo "Could not get digest for $REPO:$TAG from registry."
+            echo "Response headers: $HEADERS"
+            echo "Exiting."
+            exit 0
+          fi
+          echo "Registry digest for :$TAG: $REGISTRY_DIGEST"
+
+          # --- 5. Compare and act ---
+          if [ "$POD_DIGEST" = "$REGISTRY_DIGEST" ]; then
+            echo "Digests match. No restart needed."
+          else
+            echo "Digests differ! Restarting deployment/$DEPLOYMENT"
+            kubectl rollout restart deployment/$DEPLOYMENT
+            kubectl rollout status deployment/$DEPLOYMENT --timeout=90s
+            echo "Rollout complete."
+          fi
+        env:
+        - name: IMAGE
+          value: "ghcr.io/brettswift/f1-predictor"
+        - name: TAG
+          value: "live"
+        - name: DEPLOYMENT
+          value: "f1-predictor"
+        volumeMounts:
+        - name: ghcr-pull
+          mountPath: /tmp/ghcr
+          readOnly: true
+      volumes:
+      - name: ghcr-pull
+        secret:
+          secretName: ghcr-pull
+          optional: true
+          items:
+          - key: .dockerconfigjson
+            path: .dockerconfigjson

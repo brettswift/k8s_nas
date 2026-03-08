@@ -5,3 +5,5 @@ resources:
 - pvc.yaml
 - deployment.yaml
 - service.yaml
+- image-refresh-hook.yaml
+- image-refresh-rbac.yaml

@@ -7,8 +7,15 @@ resources:
 - namespace.yaml
 - ../../base
 - ingress.yaml
-- image-refresh-hook.yaml
-- image-refresh-rbac.yaml
+
+patches:
+- target:
+    kind: Job
+    name: image-refresh
+  patch: |
+    - op: replace
+      path: /spec/template/spec/containers/0/env/1/value
+      value: "dev"
 
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
