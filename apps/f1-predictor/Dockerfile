@@ -1,4 +1,5 @@
 # F1 Predictor App
+# trigger: image-refresh
 FROM python:3.11-slim
 
 WORKDIR /app
