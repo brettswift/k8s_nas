@@ -15,6 +15,20 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['DATABASE'] = os.environ.get('DATABASE_PATH', '/data/f1_predictions.db')
 
+# Environment configuration
+app.config['ENVIRONMENT'] = os.environ.get('ENVIRONMENT', 'dev')
+app.config['API_BASE_URL'] = os.environ.get('API_BASE_URL', '')
+app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 'true'
+
+# Context processor to make environment available to all templates
+@app.context_processor
+def inject_environment():
+    return dict(
+        environment=app.config['ENVIRONMENT'],
+        api_base_url=app.config['API_BASE_URL'],
+        use_stub_api=app.config['USE_STUB_API']
+    )
+
 # Database helpers
 def get_db():
     """Get database connection for current request."""
