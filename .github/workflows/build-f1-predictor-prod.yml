@@ -7,7 +7,7 @@ on:
     paths:
       - "apps/f1-predictor/**"
     paths-ignore:
-      - "apps/f1-predictor/overlays/home/kustomization.yaml"
+      - "apps/f1-predictor/overlays/prod/kustomization.yaml"
   workflow_dispatch:
 
 jobs:
@@ -26,10 +26,10 @@ jobs:
         run: |
           SHA=$(git rev-parse --short ${{ github.sha }})
           echo "short=$SHA" >> $GITHUB_OUTPUT
-          sed -i "s/newTag: .*/newTag: $SHA/" apps/f1-predictor/overlays/home/kustomization.yaml
+          sed -i "s/newTag: .*/newTag: $SHA/" apps/f1-predictor/overlays/prod/kustomization.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/f1-predictor/overlays/home/kustomization.yaml
+          git add apps/f1-predictor/overlays/prod/kustomization.yaml
           git commit -m "chore(f1): set image tag to $SHA [skip ci]"
           git push
 

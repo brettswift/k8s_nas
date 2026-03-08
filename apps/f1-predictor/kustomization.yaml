@@ -3,4 +3,4 @@ kind: Kustomization
 
 # Default for local kustomize build; ArgoCD uses overlays/home and overlays/dev directly
 resources:
-- overlays/home
+- overlays/prod
