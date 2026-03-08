@@ -13,7 +13,7 @@ metadata:
 spec:
   project: apps
   source:
-    repoURL: git@github.com:brettswift/k8s_nas.git
+    repoURL: https://github.com/brettswift/k8s_nas.git
     targetRevision: live
     path: apps/f1-predictor
   destination:
