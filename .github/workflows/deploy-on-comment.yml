@@ -19,14 +19,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Get PR branch name
+      - name: Get PR branch info
         id: get-branch
         run: |
           PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}")
           BRANCH=$(echo "$PR_DATA" | jq -r .head.ref)
+          FORK_REPO=$(echo "$PR_DATA" | jq -r .head.repo.full_name)
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          echo "PR branch: $BRANCH"
+          echo "fork_repo=$FORK_REPO" >> $GITHUB_OUTPUT
+          echo "PR branch: $BRANCH from $FORK_REPO"
       
       - name: Configure Git
         run: |
@@ -41,7 +43,13 @@ jobs:
       
       - name: Deploy PR branch to live
         run: |
-          git fetch origin ${{ steps.get-branch.outputs.branch }}:pr-branch
+          # Add fork as remote if different from origin
+          if [ "${{ steps.get-branch.outputs.fork_repo }}" != "${{ github.repository }}" ]; then
+            git remote add fork https://github.com/${{ steps.get-branch.outputs.fork_repo }}.git
+            git fetch fork ${{ steps.get-branch.outputs.branch }}:pr-branch
+          else
+            git fetch origin ${{ steps.get-branch.outputs.branch }}:pr-branch
+          fi
           git push origin pr-branch:live --force
           echo "✅ Deployed ${{ steps.get-branch.outputs.branch }} → live"
       
