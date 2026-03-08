@@ -21,29 +21,17 @@ spec:
             - -c
             - |
               set -e
-              # Cert is issued by cert-manager into kube-system; sync to all namespaces with ingresses
               SOURCE_NS="kube-system"
-              SECRET_NAME="home-brettswift-com-tls"
-
-              # Get all namespaces that need the cert (ingress references)
-              TARGET_NS=$(kubectl get ingress -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.spec.tls[0].secretName}{"\n"}{end}' | grep "$SECRET_NAME" | cut -f1 | sort -u)
-
-              echo "Syncing secret from $SOURCE_NS to:"
-              echo "$TARGET_NS"
-              echo ""
-              
-              for ns in $TARGET_NS; do
-                if [ "$ns" != "$SOURCE_NS" ]; then
-                  echo "Syncing to namespace: $ns"
-                  kubectl get secret "$SECRET_NAME" -n "$SOURCE_NS" -o yaml | \
+              for SECRET_NAME in home-brettswift-com-tls brettswift-com-tls; do
+                TARGET_NS=$(kubectl get ingress -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.spec.tls[0].secretName}{"\n"}{end}' 2>/dev/null | grep "$SECRET_NAME" | cut -f1 | sort -u || true)
+                [ -z "$TARGET_NS" ] && continue
+                echo "Syncing $SECRET_NAME to: $TARGET_NS"
+                for ns in $TARGET_NS; do
+                  [ "$ns" = "$SOURCE_NS" ] && continue
+                  kubectl get secret "$SECRET_NAME" -n "$SOURCE_NS" -o yaml 2>/dev/null | \
                     sed "s/namespace: $SOURCE_NS/namespace: $ns/" | \
-                    sed '/^  uid:/d' | \
-                    sed '/^  resourceVersion:/d' | \
-                    sed '/^  selfLink:/d' | \
+                    sed '/^  uid:/d' | sed '/^  resourceVersion:/d' | sed '/^  selfLink:/d' | \
                     kubectl apply -f -
-                  echo "✅ Synced to $ns"
-                fi
+                done
               done
-              
-              echo ""
               echo "✅ Sync complete"

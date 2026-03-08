@@ -20,12 +20,16 @@ Images are tagged with the **short git hash** (e.g. `a1b2c3d`), not `:latest` or
 
 ## Build Flow
 
-1. **Trigger:** Push to `live` or `f1-dev` when these paths change:
-   - `apps/f1-predictor/Dockerfile`
-   - `apps/f1-predictor/requirements.txt`
-   - `apps/f1-predictor/src/**`
+Separate workflows per environment:
 
-2. **Workflow** (`.github/workflows/build-f1-predictor.yml`):
+| Branch | Workflow | Trigger |
+|--------|----------|---------|
+| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` except `overlays/home/kustomization.yaml` |
+| f1-dev | `build-f1-predictor-dev.yml` | Any push to f1-dev except `overlays/dev/kustomization.yaml` |
+
+1. **Trigger:** Push to `live` or `f1-dev` (path filters avoid loops when the workflow pushes manifest updates).
+
+2. **Workflow steps:**
    - Extracts short SHA from the triggering commit
    - Updates the overlay's `newTag` in `kustomization.yaml` and pushes
    - ArgoCD syncs on that push → deployment tries to pull `image:SHA` → ImagePullBackOff
@@ -58,24 +62,30 @@ Each overlay has `images:` in kustomization to override the base image tag. The 
 
 ## DNS
 
-Managed via external-dns annotations in ingress manifests. Uses **A records** (direct IP) so f1 subdomains don't inherit wrong IP from home.brettswift.com CNAME chain:
+Managed via external-dns annotations in ingress manifests:
 
-- Home prod: `f1.home.brettswift.com` → `68.147.109.77` (A record)
-- Dev: `f1-dev.home.brettswift.com` → `68.147.109.77` (A record)
-- External prod: `f1.brettswift.com` → `68.147.109.77` (A record)
+- **Home prod:** `f1.home.brettswift.com` → same IP as `home.brettswift.com` (A record, `target: 68.147.109.77`)
+- **Dev:** `f1-dev.home.brettswift.com` → same IP as home (A record)
+- **External prod:** `f1.brettswift.com` → external cluster ingress IP (no target annotation; external-dns discovers)
 
-Update the `target` annotation in each overlay if your server uses a different public IP.
+Update the `target` annotation in home/dev overlays if your server uses a different public IP.
+
+## TLS
+
+- **Home/Dev:** `home-brettswift-com-tls` (covers `*.home.brettswift.com`)
+- **External prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)
 
 ## GHCR
 
-- One-time setup: create `ghcr-pull` secret in each namespace (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md))
+- One-time setup: create `ghcr-pull` secret in each namespace: `f1-predictor`, `f1-predictor-dev` (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md))
 - Images: `ghcr.io/brettswift/f1-predictor:<sha>`
 - GHCR storage and bandwidth are free for container images
 
 ## Manual Build
 
-Actions → Build f1-predictor image → Run workflow → select branch.
+- **Prod:** Actions → Build f1-predictor prod image → Run workflow
+- **Dev:** Actions → Build f1-predictor dev image → Run workflow
 
 ## ImagePullBackOff
 
-Kubernetes image pull backoff is hard-coded in the kubelet (0, 10, 20, 40, 80, 160, 300s) and cannot be configured. To get the hash on f1-dev: push a change to `Dockerfile`, `requirements.txt`, or `src/**` to trigger the build. The workflow updates the manifest with the SHA, then builds.
+Kubernetes image pull backoff is hard-coded in the kubelet (0, 10, 20, 40, 80, 160, 300s) and cannot be configured. To get the hash on f1-dev: push any change to `apps/f1-predictor/` (except the dev overlay kustomization) to trigger the build. The workflow updates the manifest with the SHA, then builds.

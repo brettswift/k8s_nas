@@ -1,0 +1,18 @@
+# Wildcard certificate for *.brettswift.com (f1.brettswift.com, future prod subdomains)
+# Stored in kube-system; cert-sync copies to namespaces with ingresses
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brettswift-com-dns
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  secretName: brettswift-com-tls
+  issuerRef:
+    name: letsencrypt-dns-home
+    kind: ClusterIssuer
+  dnsNames:
+    - "brettswift.com"
+    - "*.brettswift.com"
+  renewBefore: 720h0m0s

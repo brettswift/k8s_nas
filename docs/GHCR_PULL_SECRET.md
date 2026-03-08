@@ -11,7 +11,7 @@ Create a PAT with **`read:packages`** scope only. Then run:
 GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh all
 
 # Specific namespace(s)
-GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor media
+GH_PULL_IMAGES_TOKEN=ghp_xxx ./scripts/create-ghcr-pull-secret.sh f1-predictor f1-predictor-dev media
 ```
 
 The script creates a secret named `ghcr-pull` in each namespace.
