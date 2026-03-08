@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/brettswift/k8s_nas/compare/v1.0.2...v1.0.3) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1-dev:** revert to SHA flow - dev overlay placeholder, workflow replaces with hash ([3a965fc](https://github.com/brettswift/k8s_nas/commit/3a965fc8bf77c24dcc5bde223846049cb1772e58))
+
 ## [1.0.2](https://github.com/brettswift/k8s_nas/compare/v1.0.1...v1.0.2) (2026-03-08)
 
 
