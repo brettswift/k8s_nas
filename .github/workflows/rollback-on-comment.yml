@@ -1,0 +1,80 @@
+name: Rollback on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  rollback:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/rollback')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Check if live-backup exists
+        id: check-backup
+        run: |
+          if git ls-remote --heads origin live-backup | grep -q live-backup; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ live-backup branch exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ live-backup branch does not exist"
+          fi
+      
+      - name: Backup current live before rollback
+        if: steps.check-backup.outputs.exists == 'true'
+        run: |
+          git fetch origin live:live-current 2>/dev/null || echo "No live branch to backup"
+          if git show-ref --verify --quiet refs/remotes/origin/live; then
+            git push origin live:live-pre-rollback --force 2>/dev/null || true
+            echo "✅ Current live backed up to live-pre-rollback"
+          fi
+      
+      - name: Rollback live-backup to live
+        if: steps.check-backup.outputs.exists == 'true'
+        run: |
+          git fetch origin live-backup:backup-branch
+          git push origin backup-branch:live --force
+          echo "✅ Restored live-backup → live"
+      
+      - name: Comment success on PR
+        if: success() && steps.check-backup.outputs.exists == 'true'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "↩️ **Rollback successful!**\n\n- Restored `live-backup` to `live`\n- Previous state saved to `live-pre-rollback`\n- ArgoCD will auto-sync within ~30 seconds"}'
+      
+      - name: Comment no backup available
+        if: steps.check-backup.outputs.exists == 'false'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "⚠️ **Rollback failed: No backup available**\n\nThe `live-backup` branch does not exist. The daily backup runs at 6am UTC."}'
+          exit 1
+      
+      - name: Comment failure on PR
+        if: failure() && steps.check-backup.outputs.exists == 'true'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "❌ **Rollback failed!**\n\nCheck the [Actions logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."}'

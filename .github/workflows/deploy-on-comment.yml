@@ -1,0 +1,64 @@
+name: Deploy on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  deploy:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get PR branch name
+        id: get-branch
+        run: |
+          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}")
+          BRANCH=$(echo "$PR_DATA" | jq -r .head.ref)
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "PR branch: $BRANCH"
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Backup current live to live-backup
+        run: |
+          git fetch origin live:live
+          git push origin live:live-backup --force
+          echo "✅ Backed up live → live-backup"
+      
+      - name: Deploy PR branch to live
+        run: |
+          git fetch origin ${{ steps.get-branch.outputs.branch }}:pr-branch
+          git push origin pr-branch:live --force
+          echo "✅ Deployed ${{ steps.get-branch.outputs.branch }} → live"
+      
+      - name: Comment success on PR
+        if: success()
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "🚀 **Deployed successfully!**\n\n- Branch `${{ steps.get-branch.outputs.branch }}` pushed to `live`\n- Previous `live` backed up to `live-backup`\n- ArgoCD will auto-sync within ~30 seconds"}'
+      
+      - name: Comment failure on PR
+        if: failure()
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
+            -d '{"body": "❌ **Deploy failed!**\n\nCheck the [Actions logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."}'
