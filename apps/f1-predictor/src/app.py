@@ -2,11 +2,15 @@
 """
 F1 Prediction App - A no-signup F1 prediction web app
 Users enter a username, pick P1/P2/P3 for each race, and accumulate points.
+
+Drivers are loaded from Jolpica F1 API (https://api.jolpi.ca/ergast/f1/)
+and refreshed weekly via CronJob.
 """
 
 import os
 import uuid
 import sqlite3
+import requests
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, jsonify
@@ -19,6 +23,8 @@ app.config['DATABASE'] = os.environ.get('DATABASE_PATH', '/data/f1_predictions.d
 app.config['ENVIRONMENT'] = os.environ.get('ENVIRONMENT', 'dev')
 app.config['API_BASE_URL'] = os.environ.get('API_BASE_URL', '')
 app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 'true'
+app.config['F1_API_URL'] = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1')
+app.config['DRIVER_REFRESH_SECRET'] = os.environ.get('DRIVER_REFRESH_SECRET', '')
 
 # Context processor to make environment available to all templates
 @app.context_processor
@@ -45,7 +51,7 @@ def close_db(e=None):
         db.close()
 
 def init_db():
-    """Initialize database with schema and seed data."""
+    """Initialize database with schema."""
     db = get_db()
     
     # Users table
@@ -57,13 +63,25 @@ def init_db():
         )
     ''')
     
-    # Drivers table
+    # Drivers table - populated from API, not hardcoded
     db.execute('''
         CREATE TABLE IF NOT EXISTS drivers (
             id INTEGER PRIMARY KEY,
+            driver_id TEXT UNIQUE NOT NULL,
             name TEXT NOT NULL,
-            team TEXT NOT NULL,
-            number INTEGER NOT NULL
+            team TEXT,
+            number INTEGER NOT NULL,
+            code TEXT,
+            nationality TEXT
+        )
+    ''')
+    
+    # Metadata table for tracking refreshes
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
@@ -119,78 +137,126 @@ def init_db():
     ''')
     
     db.commit()
-    seed_drivers_2026(db)
+    
+    # Lazy load drivers from API on first startup
+    ensure_drivers_loaded(db)
     seed_races_2026(db)
 
-def seed_drivers_2026(db):
-    """Seed 2026 F1 driver grid."""
-    # 2026 grid with confirmed changes:
-    # - Tsunoda promoted to Red Bull, Lawson demoted to Racing Bulls
-    drivers = [
-        (1, "Max Verstappen", "Red Bull Racing", 1),
-        (2, "Yuki Tsunoda", "Red Bull Racing", 22),
-        (3, "Lewis Hamilton", "Ferrari", 44),
-        (4, "Charles Leclerc", "Ferrari", 16),
-        (5, "Lando Norris", "McLaren", 4),
-        (6, "Oscar Piastri", "McLaren", 81),
-        (7, "George Russell", "Mercedes", 63),
-        (8, "Kimi Antonelli", "Mercedes", 12),
-        (9, "Fernando Alonso", "Aston Martin", 14),
-        (10, "Lance Stroll", "Aston Martin", 18),
-        (11, "Pierre Gasly", "Alpine", 10),
-        (12, "Jack Doohan", "Alpine", 7),
-        (13, "Alexander Albon", "Williams", 23),
-        (14, "Carlos Sainz", "Williams", 55),
-        (15, "Nico Hulkenberg", "Kick Sauber", 27),
-        (16, "Gabriel Bortoleto", "Kick Sauber", 5),
-        (17, "Liam Lawson", "Racing Bulls", 30),
-        (18, "Isack Hadjar", "Racing Bulls", 6),
-        (19, "Esteban Ocon", "Haas", 31),
-        (20, "Oliver Bearman", "Haas", 87),
-    ]
+def fetch_drivers_from_api():
+    """Fetch 2026 drivers from Jolpica F1 API."""
+    api_url = f"{app.config['F1_API_URL']}/2026/drivers.json"
     
-    # Check if drivers already exist
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        
+        drivers = []
+        driver_list = data.get('MRData', {}).get('DriverTable', {}).get('Drivers', [])
+        
+        for idx, driver in enumerate(driver_list, start=1):
+            drivers.append({
+                'id': idx,
+                'driver_id': driver.get('driverId'),
+                'name': f"{driver.get('givenName')} {driver.get('familyName')}",
+                'number': int(driver.get('permanentNumber', 0)),
+                'code': driver.get('code'),
+                'nationality': driver.get('nationality'),
+                'team': None  # API doesn't provide team in this endpoint
+            })
+        
+        return drivers
+    except Exception as e:
+        app.logger.error(f"Failed to fetch drivers from API: {e}")
+        return None
+
+def ensure_drivers_loaded(db):
+    """Ensure drivers are loaded from API. Called on startup if empty."""
     count = db.execute('SELECT COUNT(*) FROM drivers').fetchone()[0]
+    
     if count == 0:
-        db.executemany(
-            'INSERT INTO drivers (id, name, team, number) VALUES (?, ?, ?, ?)',
-            drivers
-        )
-        db.commit()
+        app.logger.info("No drivers found - fetching from API...")
+        drivers = fetch_drivers_from_api()
+        
+        if drivers:
+            for driver in drivers:
+                db.execute('''
+                    INSERT INTO drivers (id, driver_id, name, team, number, code, nationality)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (driver['id'], driver['driver_id'], driver['name'], 
+                      driver['team'], driver['number'], driver['code'], driver['nationality']))
+            
+            db.execute('''
+                INSERT INTO metadata (key, value, updated_at)
+                VALUES ('drivers_last_refresh', ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+            ''', (datetime.now().isoformat(),))
+            
+            db.commit()
+            app.logger.info(f"Loaded {len(drivers)} drivers from API")
+        else:
+            app.logger.error("Failed to load drivers from API - app may not function correctly")
+
+def refresh_drivers_from_api(db):
+    """Refresh drivers from API. Called by CronJob."""
+    app.logger.info("Refreshing drivers from API...")
+    
+    drivers = fetch_drivers_from_api()
+    if not drivers:
+        return False, "Failed to fetch from API"
+    
+    # Store old driver IDs for reference integrity
+    old_drivers = {d['driver_id']: d['id'] for d in 
+                   db.execute('SELECT driver_id, id FROM drivers').fetchall()}
+    
+    # Build mapping from old to new IDs
+    id_mapping = {}
+    new_id = 1
+    
+    for driver in drivers:
+        old_id = old_drivers.get(driver['driver_id'])
+        if old_id:
+            id_mapping[old_id] = new_id
+        driver['new_id'] = new_id
+        new_id += 1
+    
+    # Clear and reload drivers
+    db.execute('DELETE FROM drivers')
+    
+    for driver in drivers:
+        db.execute('''
+            INSERT INTO drivers (id, driver_id, name, team, number, code, nationality)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (driver['new_id'], driver['driver_id'], driver['name'],
+              driver['team'], driver['number'], driver['code'], driver['nationality']))
+    
+    # Update metadata
+    db.execute('''
+        INSERT INTO metadata (key, value, updated_at)
+        VALUES ('drivers_last_refresh', ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    ''', (datetime.now().isoformat(),))
+    
+    db.commit()
+    
+    app.logger.info(f"Refreshed {len(drivers)} drivers")
+    return True, f"Refreshed {len(drivers)} drivers"
 
 def seed_races_2026(db):
-    """Seed 2026 F1 race calendar."""
-    races = [
-        ("Australian Grand Prix", 1, "2026-03-08 04:00:00"),
-        ("Chinese Grand Prix", 2, "2026-03-15 07:00:00"),
-        ("Japanese Grand Prix", 3, "2026-03-29 05:00:00"),
-        ("Bahrain Grand Prix", 4, "2026-04-12 15:00:00"),
-        ("Saudi Arabian Grand Prix", 5, "2026-04-19 17:00:00"),
-        ("Miami Grand Prix", 6, "2026-05-03 20:00:00"),
-        ("Canadian Grand Prix", 7, "2026-05-24 20:00:00"),
-        ("Monaco Grand Prix", 8, "2026-06-07 13:00:00"),
-        ("Barcelona Grand Prix", 9, "2026-06-14 13:00:00"),
-        ("Austrian Grand Prix", 10, "2026-06-28 13:00:00"),
-        ("British Grand Prix", 11, "2026-07-05 14:00:00"),
-        ("Belgian Grand Prix", 12, "2026-07-19 13:00:00"),
-        ("Hungarian Grand Prix", 13, "2026-07-26 13:00:00"),
-        ("Dutch Grand Prix", 14, "2026-08-23 13:00:00"),
-        ("Italian Grand Prix", 15, "2026-09-06 13:00:00"),
-        ("Spanish Grand Prix", 16, "2026-09-13 13:00:00"),
-        ("Azerbaijan Grand Prix", 17, "2026-09-26 11:00:00"),
-        ("Singapore Grand Prix", 18, "2026-10-11 12:00:00"),
-        ("United States Grand Prix", 19, "2026-10-25 20:00:00"),
-        ("Mexico City Grand Prix", 20, "2026-11-01 20:00:00"),
-        ("Brazilian Grand Prix", 21, "2026-11-08 17:00:00"),
-        ("Las Vegas Grand Prix", 22, "2026-11-22 04:00:00"),
-        ("Qatar Grand Prix", 23, "2026-11-29 16:00:00"),
-        ("Abu Dhabi Grand Prix", 24, "2026-12-06 13:00:00"),
-    ]
-    
+    """Seed 2026 F1 race calendar from API or fallback."""
     # Check if races already exist
     count = db.execute('SELECT COUNT(*) FROM races').fetchone()[0]
-    if count == 0:
-        for name, round_num, date_str in races:
+    if count > 0:
+        return
+    
+    # Try to fetch from API first
+    races = fetch_races_from_api()
+    if not races:
+        # Fallback to hardcoded 2026 schedule
+        races = get_fallback_races_2026()
+    
+    for name, round_num, date_str in races:
+        try:
             race_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
             # Set status based on date relative to now
             if race_date > datetime.now() + timedelta(hours=1):
@@ -199,12 +265,69 @@ def seed_races_2026(db):
                 status = 'locked'
             else:
                 status = 'completed'
+        except:
+            status = 'upcoming'
+        
+        db.execute(
+            'INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
+            (name, round_num, date_str, status)
+        )
+    
+    db.commit()
+
+def fetch_races_from_api():
+    """Fetch 2026 race calendar from Jolpica API."""
+    api_url = f"{app.config['F1_API_URL']}/2026.json"
+    
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        
+        races = []
+        race_list = data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
+        
+        for race in race_list:
+            race_name = race.get('raceName', 'Unknown')
+            round_num = int(race.get('round', 0))
+            date = race.get('date', '')
+            time = race.get('time', '12:00:00Z').replace('Z', '')
             
-            db.execute(
-                'INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
-                (name, round_num, date_str, status)
-            )
-        db.commit()
+            if date:
+                date_str = f"{date} {time}" if time else f"{date} 12:00:00"
+                races.append((race_name, round_num, date_str))
+        
+        return races
+    except Exception as e:
+        app.logger.error(f"Failed to fetch races from API: {e}")
+        return None
+
+def get_fallback_races_2026():
+    """Fallback 2026 race calendar if API fails."""
+    return [
+        ("Australian Grand Prix", 1, "2026-03-15 04:00:00"),
+        ("Chinese Grand Prix", 2, "2026-03-22 07:00:00"),
+        ("Japanese Grand Prix", 3, "2026-04-05 05:00:00"),
+        ("Bahrain Grand Prix", 4, "2026-04-12 15:00:00"),
+        ("Saudi Arabian Grand Prix", 5, "2026-04-19 17:00:00"),
+        ("Miami Grand Prix", 6, "2026-05-03 20:00:00"),
+        ("Canadian Grand Prix", 7, "2026-05-24 20:00:00"),
+        ("Spanish Grand Prix", 8, "2026-06-07 13:00:00"),
+        ("Austrian Grand Prix", 9, "2026-06-21 13:00:00"),
+        ("British Grand Prix", 10, "2026-07-05 14:00:00"),
+        ("Belgian Grand Prix", 11, "2026-07-19 13:00:00"),
+        ("Hungarian Grand Prix", 12, "2026-07-26 13:00:00"),
+        ("Dutch Grand Prix", 13, "2026-08-23 13:00:00"),
+        ("Italian Grand Prix", 14, "2026-09-06 13:00:00"),
+        ("Azerbaijan Grand Prix", 15, "2026-09-13 11:00:00"),
+        ("Singapore Grand Prix", 16, "2026-10-11 12:00:00"),
+        ("United States Grand Prix", 17, "2026-10-25 20:00:00"),
+        ("Mexico City Grand Prix", 18, "2026-11-01 20:00:00"),
+        ("Brazilian Grand Prix", 19, "2026-11-08 17:00:00"),
+        ("Las Vegas Grand Prix", 20, "2026-11-22 04:00:00"),
+        ("Qatar Grand Prix", 21, "2026-11-29 16:00:00"),
+        ("Abu Dhabi Grand Prix", 22, "2026-12-06 13:00:00"),
+    ]
 
 def get_current_user():
     """Get current user from session."""
@@ -344,7 +467,7 @@ def predict(race_id):
         return redirect(url_for('home'))
     
     # Get all drivers
-    drivers = db.execute('SELECT * FROM drivers ORDER BY team, name').fetchall()
+    drivers = db.execute('SELECT * FROM drivers ORDER BY name').fetchall()
     
     if request.method == 'POST':
         p1 = request.form.get('p1')
@@ -461,10 +584,10 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# Admin routes (no auth for simplicity, but in production would need protection)
+# Admin routes
 @app.route('/admin/enter-results/<int:race_id>', methods=['GET', 'POST'])
 def enter_results(race_id):
-    """Enter actual race results (admin only - no auth for MVP)."""
+    """Enter actual race results (admin only)."""
     db = get_db()
     
     race = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
@@ -522,6 +645,40 @@ def lock_race(race_id):
     db.commit()
     flash('Race predictions locked', 'success')
     return redirect(url_for('races'))
+
+# Driver refresh endpoint for CronJob
+@app.route('/admin/refresh-drivers', methods=['POST'])
+def refresh_drivers():
+    """Refresh drivers from API - called by CronJob."""
+    # Simple secret check (should use proper auth in production)
+    auth_header = request.headers.get('Authorization', '')
+    expected = f"Bearer {app.config['DRIVER_REFRESH_SECRET']}"
+    
+    if auth_header != expected and app.config['DRIVER_REFRESH_SECRET']:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    db = get_db()
+    success, message = refresh_drivers_from_api(db)
+    
+    if success:
+        return jsonify({'status': 'success', 'message': message}), 200
+    else:
+        return jsonify({'status': 'error', 'message': message}), 500
+
+@app.route('/admin/drivers-status')
+def drivers_status():
+    """Get driver refresh status."""
+    db = get_db()
+    
+    count = db.execute('SELECT COUNT(*) FROM drivers').fetchone()[0]
+    last_refresh = db.execute(
+        'SELECT value FROM metadata WHERE key = "drivers_last_refresh"'
+    ).fetchone()
+    
+    return jsonify({
+        'driver_count': count,
+        'last_refresh': last_refresh['value'] if last_refresh else None
+    })
 
 # Health check
 @app.route('/health')

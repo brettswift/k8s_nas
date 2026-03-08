@@ -1,13 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: f1-predictor-prod
+namespace: prod
 
-namePrefix: prod-
+namePrefix: f1-
 
 resources:
 - ../../base
 - ingress.yaml
+- driver-refresh-cronjob.yaml
 
 patches:
 - path: deployment-patch.yaml
