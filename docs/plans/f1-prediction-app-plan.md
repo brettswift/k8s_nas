@@ -75,7 +75,8 @@ User → Ingress (/f1-predictor) → App Pod
 ### Location
 
 ```
-apps/media-services/f1-predictor/
+apps/f1-predictor/
+├── namespace.yaml
 ├── deployment.yaml
 ├── service.yaml
 ├── ingress.yaml
@@ -85,7 +86,7 @@ apps/media-services/f1-predictor/
 
 ### Key Config
 
-- **Namespace:** `media` (or new `f1-predictor`)
+- **Namespace:** `f1-predictor`
 - **Image:** Custom Python (Flask) image or build from Dockerfile in repo
 - **PVC:** `ReadWriteOnce`, 1Gi, mount at `/data` for SQLite file
 - **Ingress:** `https://home.brettswift.com/f1-predictor` (path-based, per existing standards)

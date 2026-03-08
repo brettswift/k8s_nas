@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   labels:
     app.kubernetes.io/name: f1-predictor
-    category: media
+    category: apps
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
@@ -15,10 +15,10 @@ spec:
   source:
     repoURL: git@github.com:brettswift/k8s_nas.git
     targetRevision: live
-    path: apps/media-services/f1-predictor
+    path: apps/f1-predictor
   destination:
     server: https://kubernetes.default.svc
-    namespace: media
+    namespace: f1-predictor
   syncPolicy:
     automated:
       prune: true

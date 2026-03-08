@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: f1-predictor
-  namespace: media
+  namespace: f1-predictor
   labels:
     app: f1-predictor
 spec:
