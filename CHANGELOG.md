@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/brettswift/k8s_nas/compare/v1.2.3...v1.2.4) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1:** use GHCR token endpoint with Basic auth for manifest API (private registry) ([06a071e](https://github.com/brettswift/k8s_nas/commit/06a071e6bc2b198d97879e40a6c4df16c3835960))
+
 ## [1.2.3](https://github.com/brettswift/k8s_nas/compare/v1.2.2...v1.2.3) (2026-03-08)
 
 
