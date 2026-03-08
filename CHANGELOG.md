@@ -1,3 +1,10 @@
+## [1.2.7](https://github.com/brettswift/k8s_nas/compare/v1.2.6...v1.2.7) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1-predictor:** image-refresh hook Accept header for OCI images ([6858f85](https://github.com/brettswift/k8s_nas/commit/6858f85e08b13d7028b4058d18c13524053865d8))
+
 ## [1.2.6](https://github.com/brettswift/k8s_nas/compare/v1.2.5...v1.2.6) (2026-03-08)
 
 
