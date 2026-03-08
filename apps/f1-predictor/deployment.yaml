@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
       - name: f1-predictor
-        image: ghcr.io/brettswift/f1-predictor:latest
-        imagePullPolicy: Always
+        image: f1-predictor:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 5000
           name: http

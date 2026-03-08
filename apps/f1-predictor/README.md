@@ -1,7 +1,19 @@
 # F1 Predictor
 
-Image is built by GitHub Actions and pushed to `ghcr.io/brettswift/f1-predictor:latest`.
+Local image only – no remote registry. Build on the cluster node.
 
-**First deploy:** Run the "Build f1-predictor image" workflow (Actions → Build f1-predictor image → Run) before the pod can pull the image.
+## Build (on the node)
 
-**Private package:** If the GHCR package is private, add an imagePullSecret to the deployment. See [GitHub docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry).
+```bash
+# From repo root
+cd apps/f1-predictor
+docker build -t f1-predictor:latest .
+```
+
+For k3s (containerd): import into k3s so the node can use it:
+
+```bash
+docker save f1-predictor:latest | sudo k3s ctr images import -
+```
+
+`imagePullPolicy: Never` – Kubernetes uses the locally cached image.
