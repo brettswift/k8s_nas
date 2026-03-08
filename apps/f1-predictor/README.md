@@ -9,7 +9,7 @@ F1 prediction web app with dev and prod environments.
 | Dev | f1-dev | https://f1.home.brettswift.com | f1-predictor-dev |
 | Prod | live | https://f1.brettswift.com | f1-predictor |
 
-Images are tagged with the **short git hash** (e.g. `a1b2c3d`). See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full build and deploy flow.
+Images are tagged with the **short git hash** (e.g. `a1b2c3d`). See [WORKFLOW.md](./WORKFLOW.md) for the full dev→prod process and [DEPLOYMENT.md](./DEPLOYMENT.md) for build and deploy details.
 
 ## Configuration
 
