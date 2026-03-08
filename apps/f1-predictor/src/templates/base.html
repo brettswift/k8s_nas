@@ -218,6 +218,18 @@
         .user-info strong {
             color: #e10600;
         }
+
+        .app-footer {
+            padding: 12px 0;
+            margin-top: 40px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .app-footer .version {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -250,7 +262,15 @@
         
         {% block content %}{% endblock %}
     </main>
-    
+
+    {% if app_version %}
+    <footer class="app-footer">
+        <div class="container">
+            <span class="version">v{{ app_version }}</span>
+        </div>
+    </footer>
+    {% endif %}
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

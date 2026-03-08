@@ -28,14 +28,18 @@ Separate workflows per environment:
 
 | Branch | Workflow | Trigger |
 |--------|----------|---------|
-| live | `build-f1-predictor-prod.yml` | Any change under `apps/f1-predictor/**` |
+| live | `build-f1-predictor-prod.yml` | Push to live (paths: `apps/f1-predictor/**`) or any tag `v*` |
 | f1-dev | `build-f1-predictor-dev.yml` | Any push to f1-dev |
 
-1. **Trigger:** Push to `live` or `f1-dev` (and for prod, path must be under `apps/f1-predictor/**`).
+1. **Trigger:** Push to `live` or `f1-dev` (prod also triggers on tag push `v*`; path filter applies only to branch pushes).
 
-2. **Workflow steps:** Checkout, build image, push to GHCR with tag `:dev` or `:live`. No manifest updates or git pushes.
+2. **Version:** Prod uses tag name (e.g. `v1.2.3`) when built from a tag, otherwise short SHA. Dev uses short SHA. Baked into the image as `APP_VERSION` and shown in the page footer.
 
-3. **Deploy:** ArgoCD syncs the overlay (fixed tag). A **PostSync hook** Job runs: it polls the GHCR manifest for the tag, compares digest to the running pod; if different, it runs `kubectl rollout restart deployment/f1-predictor` and waits for rollout. Hook runs up to ~20×15s then exits 0; it is deleted before the next sync.
+3. **Workflow steps:** Checkout, set version (tag or short SHA), build image with `APP_VERSION` build arg, push to GHCR with tag `:dev` or `:live`. No manifest updates or git pushes.
+
+4. **Deploy:** ArgoCD syncs the overlay (fixed tag). A **PostSync hook** Job runs: it polls the GHCR manifest for the tag, compares digest to the running pod; if different, it runs `kubectl rollout restart deployment/f1-predictor` and waits for rollout. Hook runs up to ~20×15s then exits 0; it is deleted before the next sync.
+
+**Version in footer:** The app shows `v<tag>` or `<sha>` in a subtle footer at the bottom of each page. Prod builds from tag pushes (e.g. `git tag v1.0.0 && git push origin v1.0.0`) bake the tag into the image for clearer version display.
 
 ## ArgoCD
 
@@ -80,6 +84,7 @@ Managed via external-dns annotations in ingress manifests:
 ### Verifying the image-refresh hook
 
 After an Argo CD sync, a PostSync Job runs once per overlay. To confirm it ran and what it did:
+
 
 ```bash
 # Dev

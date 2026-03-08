@@ -32,7 +32,8 @@ def inject_environment():
     return dict(
         environment=app.config['ENVIRONMENT'],
         api_base_url=app.config['API_BASE_URL'],
-        use_stub_api=app.config['USE_STUB_API']
+        use_stub_api=app.config['USE_STUB_API'],
+        app_version=os.environ.get('APP_VERSION', '')
     )
 
 # Database helpers

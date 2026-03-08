@@ -2,6 +2,9 @@
 # trigger: image-refresh
 FROM python:3.11-slim
 
+ARG APP_VERSION=""
+ENV APP_VERSION=$APP_VERSION
+
 WORKDIR /app
 
 # Install dependencies
