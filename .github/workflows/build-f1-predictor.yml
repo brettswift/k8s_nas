@@ -3,6 +3,8 @@ name: Build f1-predictor image
 on:
   push:
     branches: [live, f1-dev]
+    paths:
+      - "apps/f1-predictor/**"
   workflow_dispatch:
 
 jobs:
