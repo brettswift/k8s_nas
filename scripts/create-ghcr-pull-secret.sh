@@ -20,17 +20,26 @@ if [ $# -eq 0 ]; then
 fi
 
 if [ "$1" = "all" ]; then
-  NAMESPACES=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}')
+  echo "Listing namespaces..."
+  NAMESPACES=$(kubectl get namespaces --request-timeout=10s -o jsonpath='{.items[*].metadata.name}') || {
+    echo "kubectl get namespaces failed. Check: kubectl config current-context; kubectl cluster-info"
+    exit 1
+  }
+  echo "Found: $NAMESPACES"
 else
   NAMESPACES="$*"
 fi
 
 for NAMESPACE in $NAMESPACES; do
-  kubectl create secret docker-registry ghcr-pull \
+  echo -n "Creating ghcr-pull in $NAMESPACE... "
+  if kubectl create secret docker-registry ghcr-pull \
     --docker-server=ghcr.io \
     --docker-username=brettswift \
     --docker-password="$GH_PULL_IMAGES_TOKEN" \
     -n "$NAMESPACE" \
-    --dry-run=client -o yaml | kubectl apply -f -
-  echo "Created ghcr-pull secret in $NAMESPACE"
+    --dry-run=client -o yaml | kubectl apply -f - -n "$NAMESPACE"; then
+    echo "ok"
+  else
+    echo "failed (skipped)"
+  fi
 done
