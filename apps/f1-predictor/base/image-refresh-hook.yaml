@@ -35,36 +35,36 @@ spec:
           echo "Pod digest: $POD_DIGEST"
 
           # --- 2. Get GHCR credentials from ghcr-pull secret ---
-          CREDENTIALS=""
-          if [ -f /tmp/ghcr/.dockerconfigjson ]; then
-            GHCR_USER=$(cat /tmp/ghcr/.dockerconfigjson | sed -n 's/.*"username"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
-            GHCR_PASS=$(cat /tmp/ghcr/.dockerconfigjson | sed -n 's/.*"password"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
-            if [ -n "$GHCR_USER" ] && [ -n "$GHCR_PASS" ]; then
-              CREDENTIALS="$GHCR_USER:$GHCR_PASS"
-              echo "GHCR auth: using ghcr-pull secret (user=$GHCR_USER)"
-            else
-              echo "GHCR auth: ghcr-pull mounted but could not parse credentials"
-            fi
-          else
-            echo "GHCR auth: ghcr-pull secret not mounted (does it exist in this namespace?)"
-            echo "Skipping registry check. Exiting."
+          if [ ! -f /tmp/ghcr/.dockerconfigjson ]; then
+            echo "ghcr-pull secret not mounted. Exiting."
             exit 0
           fi
+          GHCR_USER=$(jq -r '.auths["ghcr.io"].username' /tmp/ghcr/.dockerconfigjson)
+          GHCR_PASS=$(jq -r '.auths["ghcr.io"].password' /tmp/ghcr/.dockerconfigjson)
+          if [ -z "$GHCR_USER" ] || [ "$GHCR_USER" = "null" ]; then
+            echo "Could not parse credentials from ghcr-pull secret. Exiting."
+            exit 0
+          fi
+          echo "GHCR auth: user=$GHCR_USER"
 
-          # --- 3. Get bearer token from GHCR token endpoint ---
-          TOKEN_RESP=$(curl -sf -u "$CREDENTIALS" \
-            "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" 2>&1 || true)
-          TOKEN=$(echo "$TOKEN_RESP" | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-          if [ -z "$TOKEN" ]; then
-            echo "GHCR token endpoint failed. Response: $TOKEN_RESP"
-            echo "Cannot check registry. Exiting."
+          # --- 3. Get bearer token ---
+          TOKEN=$(curl -sf -u "$GHCR_USER:$GHCR_PASS" \
+            "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull" \
+            | jq -r .token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "GHCR token request failed. Exiting."
             exit 0
           fi
           echo "GHCR token: OK"
 
-          # --- 4. Get registry digest for tag ---
+          # --- 4. Get registry digest (OCI index or Docker v2 manifest) ---
+          ACCEPT="application/vnd.oci.image.index.v1+json"
+          ACCEPT="$ACCEPT, application/vnd.docker.distribution.manifest.list.v2+json"
+          ACCEPT="$ACCEPT, application/vnd.docker.distribution.manifest.v2+json"
+          ACCEPT="$ACCEPT, application/vnd.oci.image.manifest.v1+json"
+
           HEADERS=$(curl -sf \
-            -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+            -H "Accept: $ACCEPT" \
             -H "Authorization: Bearer $TOKEN" \
             "https://ghcr.io/v2/$REPO/manifests/$TAG" \
             -D - -o /dev/null 2>&1 || true)
@@ -75,13 +75,15 @@ spec:
             echo "Exiting."
             exit 0
           fi
-          echo "Registry digest for :$TAG: $REGISTRY_DIGEST"
+          echo "Registry digest: $REGISTRY_DIGEST"
 
           # --- 5. Compare and act ---
           if [ "$POD_DIGEST" = "$REGISTRY_DIGEST" ]; then
             echo "Digests match. No restart needed."
           else
             echo "Digests differ! Restarting deployment/$DEPLOYMENT"
+            echo "  pod=$POD_DIGEST"
+            echo "  reg=$REGISTRY_DIGEST"
             kubectl rollout restart deployment/$DEPLOYMENT
             kubectl rollout status deployment/$DEPLOYMENT --timeout=90s
             echo "Rollout complete."
