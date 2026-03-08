@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Results - {{ race['name'] }} - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Enter Race Results</h2>
+    <h3>{{ race['name'] }} — Round {{ race['round'] }}</h3>
+    <p style="color: #ff5722;">⚠️ This will calculate scores for all users</p>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('enter_results', race_id=race['id']) }}">
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">1</span>
+                Actual First Place
+            </label>
+            <select name="p1" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}">
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #c0c0c0, #9e9e9e); color: #000; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">2</span>
+                Actual Second Place
+            </label>
+            <select name="p2" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}">
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">3</span>
+                Actual Third Place
+            </label>
+            <select name="p3" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}">
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn">
+            Save Results & Calculate Scores
+        </button>
+        <a href="{{ url_for('races') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

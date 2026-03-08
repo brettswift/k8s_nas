@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏆 Leaderboard</h2>
+    <p>Total scores after all completed races</p>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th style="text-align: right;">Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr {% if user['session_id'] == current_user['session_id'] %}style="background: rgba(225, 6, 0, 0.1);"{% endif %}>
+                <td>
+                    {% if loop.index == 1 %}🥇
+                    {% elif loop.index == 2 %}🥈
+                    {% elif loop.index == 3 %}🥉
+                    {% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td>
+                    {{ user['username'] }}
+                    {% if user['session_id'] == current_user['session_id'] %}
+                        <span style="font-size: 12px; opacity: 0.6;">(you)</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <span class="score-badge">{{ user['total_score'] }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if races %}
+<div class="card">
+    <h3>Race-by-Race Breakdown</h3>
+    <div style="overflow-x: auto;">
+        <table style="min-width: 100%;">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    {% for race in races %}
+                    <th style="writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap;">{{ race['name'].split(' ')[0] }}</th>
+                    {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr {% if user['session_id'] == current_user['session_id'] %}style="background: rgba(225, 6, 0, 0.1);"{% endif %}>
+                    <td>{{ user['username'] }}</td>
+                    {% for race in races %}
+                    <td style="text-align: center;">
+                        {{ score_matrix[user['session_id']][race['id']] }}
+                    </td>
+                    {% endfor %}
+                    <td><span class="score-badge">{{ user['total_score'] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

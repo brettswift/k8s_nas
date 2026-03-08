@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Predict - {{ race['name'] }} - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Make Your Prediction</h2>
+    <h3>{{ race['name'] }} — Round {{ race['round'] }}</h3>
+    <p>{{ race['date'] }}</p>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('predict', race_id=race['id']) }}">
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">1</span>
+                First Place (P1)
+            </label>
+            <select name="p1" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}" {% if existing and existing['p1_driver_id'] == driver['id'] %}selected{% endif %}>
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #c0c0c0, #9e9e9e); color: #000; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">2</span>
+                Second Place (P2)
+            </label>
+            <select name="p2" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}" {% if existing and existing['p2_driver_id'] == driver['id'] %}selected{% endif %}>
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                <span style="display: inline-block; width: 30px; height: 30px; background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px;">3</span>
+                Third Place (P3)
+            </label>
+            <select name="p3" required>
+                <option value="">Select driver...</option>
+                {% for driver in drivers %}
+                <option value="{{ driver['id'] }}" {% if existing and existing['p3_driver_id'] == driver['id'] %}selected{% endif %}>
+                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn">
+            {% if existing %}Update Prediction{% else %}Save Prediction{% endif %}
+        </button>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<div class="card" style="background: rgba(225, 6, 0, 0.1);">
+    <h3>🏆 Scoring</h3>
+    <ul style="list-style: none; padding: 0;">
+        <li style="margin-bottom: 8px;">🥇 <strong>10 points</strong> — Exact P1 prediction</li>
+        <li style="margin-bottom: 8px;">🥈 <strong>6 points</strong> — Exact P2 prediction</li>
+        <li style="margin-bottom: 8px;">🥉 <strong>4 points</strong> — Exact P3 prediction</li>
+        <li><strong>1 point</strong> — Driver in top 3 (wrong position)</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; margin-top: 50px;">
+    <h1 style="font-size: 48px; margin-bottom: 10px;">🏎️</h1>
+    <h1>F1 Predictor</h1>
+    <p style="font-size: 18px; margin: 30px 0;">
+        Predict the podium for each F1 race. No signup required — just enter your name and start playing!
+    </p>
+    
+    <form method="POST" action="{{ url_for('set_username') }}" style="max-width: 400px; margin: 0 auto;">
+        <input type="text" name="username" placeholder="Enter your name" required autofocus>
+        <button type="submit" class="btn" style="width: 100%;">Start Predicting</button>
+    </form>
+    
+    <p style="margin-top: 30px; opacity: 0.6; font-size: 14px;">
+        Powered by your predictions. Race on! 🏁
+    </p>
+</div>
+
+<div class="card">
+    <h2>How It Works</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+        <div style="text-align: center;">
+            <div style="font-size: 36px; margin-bottom: 10px;">👤</div>
+            <h3>1. Enter Name</h3>
+            <p style="font-size: 14px;">No signup needed. Just type your username and go.</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 36px; margin-bottom: 10px;">🏁</div>
+            <h3>2. Make Predictions</h3>
+            <p style="font-size: 14px;">Pick P1, P2, and P3 for each upcoming race.</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 36px; margin-bottom: 10px;">🏆</div>
+            <h3>3. Score Points</h3>
+            <p style="font-size: 14px;">10 pts for exact P1, 6 for P2, 4 for P3. Climb the leaderboard!</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

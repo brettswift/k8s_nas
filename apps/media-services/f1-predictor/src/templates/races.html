@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Races - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏁 2025 Race Calendar</h2>
+    <p>All 24 races of the 2025 F1 season</p>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>Race</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Your Prediction</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for race in races %}
+            <tr>
+                <td>{{ race['round'] }}</td>
+                <td><strong>{{ race['name'] }}</strong></td>
+                <td>{{ race['date'][:10] }}</td>
+                <td><span class="status status-{{ race['status'] }}">{{ race['status']|upper }}</span></td>
+                <td>
+                    {% if race['id'] in predictions %}
+                        <span style="font-size: 12px;">
+                            P1: {{ predictions[race['id']]['p1_name'].split()[-1] }}<br>
+                            P2: {{ predictions[race['id']]['p2_name'].split()[-1] }}<br>
+                            P3: {{ predictions[race['id']]['p3_name'].split()[-1] }}
+                        </span>
+                    {% elif race['status'] == 'open' %}
+                        <a href="{{ url_for('predict', race_id=race['id']) }}" class="btn" style="padding: 6px 12px; font-size: 12px;">Predict</a>
+                    {% else %}
+                        <span style="opacity: 0.5;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if race['status'] == 'completed' and race['p1_name'] %}
+                        <span style="font-size: 12px;">
+                            🥇 {{ race['p1_name'].split()[-1] }}<br>
+                            🥈 {{ race['p2_name'].split()[-1] }}<br>
+                            🥉 {{ race['p3_name'].split()[-1] }}
+                        </span>
+                    {% else %}
+                        <span style="opacity: 0.5;">TBD</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="background: rgba(255, 255, 255, 0.03);">
+    <h3>Admin Actions</h3>
+    <p style="font-size: 14px; opacity: 0.7;">These actions are for admin use only</p>
+    <div style="margin-top: 15px;">
+        {% for race in races %}
+            {% if race['status'] == 'open' %}
+                <a href="{{ url_for('lock_race', race_id=race['id']) }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">
+                    Lock {{ race['name'].split()[0] }}
+                </a>
+            {% elif race['status'] == 'locked' %}
+                <a href="{{ url_for('enter_results', race_id=race['id']) }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">
+                    Results {{ race['name'].split()[0] }}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

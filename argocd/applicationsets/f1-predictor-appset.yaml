@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: f1-predictor
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: f1-predictor
+    category: media
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "40"
+spec:
+  project: apps
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: live
+    path: apps/media-services/f1-predictor
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

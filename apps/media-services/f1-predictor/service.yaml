@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: f1-predictor
+  namespace: media
+  labels:
+    app: f1-predictor
+spec:
+  selector:
+    app: f1-predictor
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  type: ClusterIP
