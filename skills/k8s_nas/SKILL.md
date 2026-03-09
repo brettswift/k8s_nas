@@ -155,3 +155,54 @@ Always deploy to dev branch for local testing:
 ```bash
 git push origin <feature-branch>:dev
 ```
+
+## External Service Deployment Pattern
+
+For apps with external-facing services (e.g., f1-predictor), use this model:
+
+### Two-Branch Strategy
+| Environment | Branch | URL | ArgoCD App | Namespace |
+|-------------|--------|-----|------------|-----------|
+| Dev | `<app>-dev` | `https://<app>.home.brettswift.com` | `<app>-dev` | `<app>-dev` |
+| Prod | `live` | `https://<app>.brettswift.com` | `<app>` | `<app>` |
+
+### Workflow
+1. **Dev first:** Create PR to `<app>-dev` branch (NOT directly to `live`)
+2. **Test in dev:** Verify at internal URL
+3. **Promote:** Merge `<app>-dev` → `live` after verification
+4. **Prod deploy:** ArgoCD syncs from `live`
+
+### Image Tagging
+- **Dev:** `:dev` mutable tag
+- **Prod:** `:live` mutable tag
+- **No GHA commits:** Overlays use fixed tags; PostSync hook triggers rollout
+
+### Required Files per App
+```
+apps/<app>/
+├── overlays/
+│   ├── dev/
+│   │   ├── kustomization.yaml    # newTag: dev
+│   │   ├── ingress.yaml          # internal DNS
+│   │   └── namespace.yaml
+│   └── prod/
+│       ├── kustomization.yaml    # newTag: live
+│       ├── ingress.yaml          # external DNS
+│       └── namespace.yaml
+├── base/
+│   ├── kustomization.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── image-refresh-hook.yaml   # PostSync hook
+├── Dockerfile
+└── DEPLOYMENT.md                 # App-specific deployment guide
+```
+
+### Example: f1-predictor
+See `apps/f1-predictor/` for the reference implementation:
+- `DEPLOYMENT.md` - Build flow, ArgoCD, GHCR
+- `WORKFLOW.md` - Dev→prod workflow
+- `.github/workflows/build-f1-predictor-*.yml` - Build workflows
+
+### Interval Services
+For non-external services (media stack, cron jobs), use single branch (`live`) with simple deployment.
