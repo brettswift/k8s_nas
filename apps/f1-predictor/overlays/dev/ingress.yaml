@@ -18,6 +18,13 @@ spec:
   - host: f1.home.brettswift.com
     http:
       paths:
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: f1-mock-api
+            port:
+              number: 80
       - path: /
         pathType: Prefix
         backend:
