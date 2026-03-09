@@ -67,9 +67,8 @@ All data is pulled from the F1 API (Ergast/Jolpica). No hardcoded races or fallb
 
 - **F1_SEASON** (default: 2026): Season year for API calls.
 - **F1_API_URL** (default: https://api.jolpi.ca/ergast/f1): API base URL.
-- **RESULTS_POLL_INTERVAL_MIN** (default: 5): Minutes between polling for race results after races start.
 
-Votes lock automatically when the race start time passes. Results are polled from the API and scores are calculated when the API posts them.
+Votes lock automatically when the race start time passes. Results are user-triggered: a "Check for Race Results" button appears when races have started (90+ min ago) and have no results. Clicking it checks the F1 API; if no results yet, the page auto-retries every 2 minutes (max 10 times). No background polling.
 
 ## DNS
 

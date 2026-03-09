@@ -4,17 +4,14 @@ F1 Prediction App - A no-signup F1 prediction web app
 Users enter a username, pick P1/P2/P3 for each race, and accumulate points.
 
 All data (drivers, races, results) is pulled from the F1 API.
-Votes lock when the race starts. Results are polled from the API after races.
+Votes lock when the race starts. Results are user-triggered via a button with browser auto-retry.
 """
 
 import os
 import uuid
 import sqlite3
 import requests
-import threading
-import logging
-import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, jsonify
 
@@ -29,7 +26,9 @@ app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 
 app.config['F1_API_URL'] = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1')
 app.config['F1_SEASON'] = int(os.environ.get('F1_SEASON', '2026'))
 app.config['DRIVER_REFRESH_SECRET'] = os.environ.get('DRIVER_REFRESH_SECRET', '')
-app.config['RESULTS_POLL_INTERVAL_MIN'] = int(os.environ.get('RESULTS_POLL_INTERVAL_MIN', '5'))
+RESULTS_CHECK_DELAY_MIN = 90  # Only check races that started 90+ min ago
+MAX_RETRIES = 10
+RETRY_INTERVAL_SEC = 120
 
 # Context processor to make environment available to all templates
 @app.context_processor
@@ -331,7 +330,7 @@ def refresh_drivers_from_api(db):
     app.logger.info(f"Refreshed {len(drivers)} drivers")
     return True, f"Refreshed {len(drivers)} drivers"
 
-# --- Results polling (background) ---
+# --- Results checking (user-triggered with browser auto-retry) ---
 
 def fetch_race_results_from_api(season, round_num):
     """Fetch race results from F1 API. Returns dict with p1/p2/p3 driver_ids or None."""
@@ -355,7 +354,7 @@ def fetch_race_results_from_api(season, round_num):
             'p2_driver_id': results[1]['Driver']['driverId'],
             'p3_driver_id': results[2]['Driver']['driverId']
         }
-    except Exception as e:
+    except Exception:
         return None
 
 def get_driver_db_id_by_api_id(db, api_driver_id):
@@ -363,64 +362,65 @@ def get_driver_db_id_by_api_id(db, api_driver_id):
     row = db.execute('SELECT id FROM drivers WHERE driver_id = ?', (api_driver_id,)).fetchone()
     return row['id'] if row else None
 
-def poll_and_update_results():
-    """Background task: poll API for results of races that have started and have no results yet."""
-    logger = logging.getLogger('f1.results_poller')
-    interval_min = app.config['RESULTS_POLL_INTERVAL_MIN']
+def get_races_pending_results(db, min_minutes_after_start=RESULTS_CHECK_DELAY_MIN):
+    """Races that started min_minutes_after_start+ ago, no results in DB."""
+    cutoff = _now_utc() - timedelta(minutes=min_minutes_after_start)
+    cutoff_str = cutoff.strftime('%Y-%m-%d %H:%M:%S')
+    return db.execute('''
+        SELECT r.id, r.name, r.round, r.date
+        FROM races r
+        LEFT JOIN results res ON r.id = res.race_id
+        WHERE res.race_id IS NULL AND r.date <= ?
+        ORDER BY r.round
+    ''', (cutoff_str,)).fetchall()
+
+def check_and_ingest_results(db):
+    """
+    Check F1 API for races pending results and ingest if available.
+    Returns (updated_races, error_message).
+    """
     season = app.config['F1_SEASON']
+    pending = get_races_pending_results(db)
+    updated = []
 
-    with app.app_context():
-        db = sqlite3.connect(app.config['DATABASE'])
-        db.row_factory = sqlite3.Row
+    for race in pending:
+        podium = fetch_race_results_from_api(season, race['round'])
+        if not podium:
+            continue
 
-        while True:
-            try:
-                # Find races: past start time, no results in DB
-                now_str = _now_utc().strftime('%Y-%m-%d %H:%M:%S')
-                races = db.execute('''
-                    SELECT r.id, r.name, r.round, r.date
-                    FROM races r
-                    LEFT JOIN results res ON r.id = res.race_id
-                    WHERE res.race_id IS NULL AND r.date <= ?
-                    ORDER BY r.round
-                ''', (now_str,)).fetchall()
+        p1_id = get_driver_db_id_by_api_id(db, podium['p1_driver_id'])
+        p2_id = get_driver_db_id_by_api_id(db, podium['p2_driver_id'])
+        p3_id = get_driver_db_id_by_api_id(db, podium['p3_driver_id'])
 
-                for race in races:
-                    podium = fetch_race_results_from_api(season, race['round'])
-                    if not podium:
-                        continue
+        if not all([p1_id, p2_id, p3_id]):
+            continue
 
-                    p1_id = get_driver_db_id_by_api_id(db, podium['p1_driver_id'])
-                    p2_id = get_driver_db_id_by_api_id(db, podium['p2_driver_id'])
-                    p3_id = get_driver_db_id_by_api_id(db, podium['p3_driver_id'])
+        db.execute('''
+            INSERT INTO results (race_id, p1_driver_id, p2_driver_id, p3_driver_id)
+            VALUES (?, ?, ?, ?)
+        ''', (race['id'], p1_id, p2_id, p3_id))
 
-                    if not all([p1_id, p2_id, p3_id]):
-                        logger.warning(f"Could not match drivers for race {race['name']}")
-                        continue
+        predictions = db.execute('SELECT * FROM predictions WHERE race_id = ?', (race['id'],)).fetchall()
+        result_data = {'p1_driver_id': p1_id, 'p2_driver_id': p2_id, 'p3_driver_id': p3_id}
 
-                    db.execute('''
-                        INSERT INTO results (race_id, p1_driver_id, p2_driver_id, p3_driver_id)
-                        VALUES (?, ?, ?, ?)
-                    ''', (race['id'], p1_id, p2_id, p3_id))
+        for pred in predictions:
+            points = calculate_score(dict(pred), result_data)
+            db.execute('''
+                INSERT INTO scores (user_id, race_id, points)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id, race_id) DO UPDATE SET points = excluded.points
+            ''', (pred['user_id'], race['id'], points))
 
-                    predictions = db.execute('SELECT * FROM predictions WHERE race_id = ?', (race['id'],)).fetchall()
-                    result_data = {'p1_driver_id': p1_id, 'p2_driver_id': p2_id, 'p3_driver_id': p3_id}
+        updated.append(race['name'])
 
-                    for pred in predictions:
-                        points = calculate_score(dict(pred), result_data)
-                        db.execute('''
-                            INSERT INTO scores (user_id, race_id, points)
-                            VALUES (?, ?, ?)
-                            ON CONFLICT(user_id, race_id) DO UPDATE SET points = excluded.points
-                        ''', (pred['user_id'], race['id'], points))
+    if updated:
+        db.commit()
 
-                    db.commit()
-                    logger.info(f"Updated results for {race['name']} from API")
+    return updated, None
 
-            except Exception as e:
-                logger.exception(f"Results poll error: {e}")
-
-            time.sleep(interval_min * 60)
+def has_races_pending_results(db):
+    """True if any race is eligible for results check (started 90+ min ago, no results)."""
+    return len(get_races_pending_results(db)) > 0
 
 def get_current_user():
     """Get current user from session."""
@@ -546,11 +546,14 @@ def home():
         (user['session_id'],)
     ).fetchone()['total']
 
+    has_pending = has_races_pending_results(db)
+
     return render_template('home.html',
                           user=user,
                           next_race=next_race,
                           user_prediction=user_prediction,
-                          total_score=total_score)
+                          total_score=total_score,
+                          has_pending_results=has_pending)
 
 @app.route('/predict/<int:race_id>', methods=['GET', 'POST'])
 def predict(race_id):
@@ -668,7 +671,12 @@ def races():
         if pred:
             predictions[race['id']] = pred
 
-    return render_template('races.html', races=all_races, predictions=predictions)
+    has_pending = has_races_pending_results(db)
+
+    return render_template('races.html',
+                          races=all_races,
+                          predictions=predictions,
+                          has_pending_results=has_pending)
 
 @app.route('/logout')
 def logout():
@@ -757,6 +765,47 @@ def drivers_status():
         'last_refresh': last_refresh['value'] if last_refresh else None
     })
 
+@app.route('/check-results', methods=['GET', 'POST'])
+def check_results():
+    """
+    Check F1 API for race results and ingest. User-triggered with browser auto-retry.
+    Retry param: 0-10, triggers auto-refresh when no results (max 10 retries = ~20 min).
+    """
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    db = get_db()
+    retry = int(request.args.get('retry', 0))
+
+    updated, _ = check_and_ingest_results(db)
+
+    if updated:
+        flash(f"Results updated for: {', '.join(updated)}", 'success')
+        return redirect(url_for('leaderboard'))
+
+    pending = get_races_pending_results(db)
+    if not pending:
+        return render_template('check_results.html', status='none', retry=retry)
+
+    if retry >= MAX_RETRIES:
+        return render_template(
+            'check_results.html',
+            status='exhausted',
+            retry=retry,
+            max_retries=MAX_RETRIES
+        )
+
+    return render_template(
+        'check_results.html',
+        status='retry',
+        retry=retry,
+        next_retry=retry + 1,
+        max_retries=MAX_RETRIES,
+        retry_interval_sec=RETRY_INTERVAL_SEC,
+        pending_races=[r['name'] for r in pending]
+    )
+
 @app.route('/health')
 def health():
     """Health check endpoint."""
@@ -765,15 +814,6 @@ def health():
 # Initialize database on startup
 with app.app_context():
     init_db()
-
-# Start results polling background thread
-def start_results_poller():
-    thread = threading.Thread(target=poll_and_update_results, daemon=True)
-    thread.start()
-    app.logger.info("Results poller started (interval=%s min)", app.config['RESULTS_POLL_INTERVAL_MIN'])
-
-with app.app_context():
-    start_results_poller()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

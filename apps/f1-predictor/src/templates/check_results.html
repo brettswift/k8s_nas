@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Check Race Results - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏁 Check for Race Results</h2>
+
+    {% if status == 'retry' %}
+    <p>No results available yet from the F1 API.</p>
+    <p>Checking again in {{ retry_interval_sec }} seconds (attempt {{ next_retry }}/{{ max_retries }})…</p>
+    <p style="font-size: 14px; opacity: 0.8;">You can leave this tab open. Close it anytime to stop.</p>
+    <meta http-equiv="refresh" content="{{ retry_interval_sec }}; url={{ url_for('check_results', retry=next_retry) }}">
+    <noscript>
+        <p><a href="{{ url_for('check_results', retry=next_retry) }}" class="btn">Check again</a></p>
+    </noscript>
+
+    {% elif status == 'exhausted' %}
+    <p>No results found after {{ max_retries }} attempts (~20 minutes).</p>
+    <p>The race may still be in progress or the API may not have posted results yet.</p>
+    <a href="{{ url_for('check_results', retry=0) }}" class="btn">Try again</a>
+
+    {% else %}
+    <p>No races are currently awaiting results.</p>
+    <p>Results are checked for races that started at least 90 minutes ago.</p>
+    {% endif %}
+
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to Home</a>
+        <a href="{{ url_for('races') }}" class="btn btn-secondary">All Races</a>
+    </div>
+</div>
+{% endblock %}
