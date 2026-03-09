@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/brettswift/k8s_nas/compare/v1.3.0...v1.3.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* **vpn:** relax Sabnzbd VPN config, add scripts to update secrets and diagnose ([b1c32a2](https://github.com/brettswift/k8s_nas/commit/b1c32a2155ff7c1f14438f175f5606789dcad765))
+
 # [1.3.0](https://github.com/brettswift/k8s_nas/compare/v1.2.7...v1.3.0) (2026-03-09)
 
 
