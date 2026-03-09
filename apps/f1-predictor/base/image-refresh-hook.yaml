@@ -6,7 +6,7 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
-  activeDeadlineSeconds: 120
+  activeDeadlineSeconds: 330
   backoffLimit: 0
   template:
     spec:
@@ -57,37 +57,58 @@ spec:
           fi
           echo "GHCR token: OK"
 
-          # --- 4. Get registry digest (OCI index or Docker v2 manifest) ---
+          # --- 4. Poll for registry digest change (wait for new image) ---
           ACCEPT="application/vnd.oci.image.index.v1+json"
           ACCEPT="$ACCEPT, application/vnd.docker.distribution.manifest.list.v2+json"
           ACCEPT="$ACCEPT, application/vnd.docker.distribution.manifest.v2+json"
           ACCEPT="$ACCEPT, application/vnd.oci.image.manifest.v1+json"
 
-          HEADERS=$(curl -sf \
-            -H "Accept: $ACCEPT" \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://ghcr.io/v2/$REPO/manifests/$TAG" \
-            -D - -o /dev/null 2>&1 || true)
-          REGISTRY_DIGEST=$(echo "$HEADERS" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
-          if [ -z "$REGISTRY_DIGEST" ]; then
-            echo "Could not get digest for $REPO:$TAG from registry."
-            echo "Response headers: $HEADERS"
-            echo "Exiting."
-            exit 0
-          fi
-          echo "Registry digest: $REGISTRY_DIGEST"
+          MAX_ATTEMPTS=20
+          SLEEP_SEC=15
 
-          # --- 5. Compare and act ---
-          if [ "$POD_DIGEST" = "$REGISTRY_DIGEST" ]; then
-            echo "Digests match. No restart needed."
-          else
-            echo "Digests differ! Restarting deployment/$DEPLOYMENT"
-            echo "  pod=$POD_DIGEST"
-            echo "  reg=$REGISTRY_DIGEST"
-            kubectl rollout restart deployment/$DEPLOYMENT
-            kubectl rollout status deployment/$DEPLOYMENT --timeout=90s
-            echo "Rollout complete."
-          fi
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            HEADERS=$(curl -sf \
+              -H "Accept: $ACCEPT" \
+              -H "Authorization: Bearer $TOKEN" \
+              "https://ghcr.io/v2/$REPO/manifests/$TAG" \
+              -D - -o /dev/null 2>&1 || true)
+            REGISTRY_DIGEST=$(echo "$HEADERS" | grep -i docker-content-digest | sed 's/.*: //' | tr -d '\r')
+
+            if [ -z "$REGISTRY_DIGEST" ]; then
+              echo "[attempt $i/$MAX_ATTEMPTS] Could not get digest from registry."
+              echo "Response headers: $HEADERS"
+              if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+                echo "Retrying in ${SLEEP_SEC}s..."
+                sleep $SLEEP_SEC
+              else
+                echo "Exiting."
+                exit 0
+              fi
+              continue
+            fi
+
+            if [ "$i" -eq 1 ]; then
+              echo "Registry digest: $REGISTRY_DIGEST"
+            fi
+
+            if [ "$POD_DIGEST" != "$REGISTRY_DIGEST" ]; then
+              echo "Digests differ! Restarting deployment/$DEPLOYMENT (attempt $i)"
+              echo "  pod=$POD_DIGEST"
+              echo "  reg=$REGISTRY_DIGEST"
+              kubectl rollout restart deployment/$DEPLOYMENT
+              kubectl rollout status deployment/$DEPLOYMENT --timeout=90s
+              echo "Rollout complete."
+              exit 0
+            fi
+
+            if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+              echo "[attempt $i/$MAX_ATTEMPTS] Digests match, waiting for new image... (sleep ${SLEEP_SEC}s)"
+              sleep $SLEEP_SEC
+            else
+              echo "[attempt $i/$MAX_ATTEMPTS] No digest change within timeout. Exiting."
+              exit 0
+            fi
+          done
         env:
         - name: IMAGE
           value: "ghcr.io/brettswift/f1-predictor"
