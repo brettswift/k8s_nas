@@ -3,16 +3,19 @@
 F1 Prediction App - A no-signup F1 prediction web app
 Users enter a username, pick P1/P2/P3 for each race, and accumulate points.
 
-Drivers are loaded from Jolpica F1 API (https://api.jolpi.ca/ergast/f1/)
-and refreshed weekly via CronJob.
+All data (drivers, races, results) is pulled from the F1 API.
+Votes lock when the race starts. Results are polled from the API after races.
 """
 
 import os
 import uuid
 import sqlite3
 import requests
-from datetime import datetime, timedelta
-from functools import wraps
+import threading
+import logging
+import time
+from datetime import datetime, timezone
+
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, jsonify
 
 app = Flask(__name__)
@@ -24,7 +27,9 @@ app.config['ENVIRONMENT'] = os.environ.get('ENVIRONMENT', 'dev')
 app.config['API_BASE_URL'] = os.environ.get('API_BASE_URL', '')
 app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 'true'
 app.config['F1_API_URL'] = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1')
+app.config['F1_SEASON'] = int(os.environ.get('F1_SEASON', '2026'))
 app.config['DRIVER_REFRESH_SECRET'] = os.environ.get('DRIVER_REFRESH_SECRET', '')
+app.config['RESULTS_POLL_INTERVAL_MIN'] = int(os.environ.get('RESULTS_POLL_INTERVAL_MIN', '5'))
 
 # Context processor to make environment available to all templates
 @app.context_processor
@@ -33,7 +38,8 @@ def inject_environment():
         environment=app.config['ENVIRONMENT'],
         api_base_url=app.config['API_BASE_URL'],
         use_stub_api=app.config['USE_STUB_API'],
-        app_version=os.environ.get('APP_VERSION', '')
+        app_version=os.environ.get('APP_VERSION', ''),
+        f1_season=app.config['F1_SEASON']
     )
 
 # Database helpers
@@ -51,10 +57,45 @@ def close_db(e=None):
     if db is not None:
         db.close()
 
+def _parse_race_datetime(date_str):
+    """Parse race date string (YYYY-MM-DD HH:MM:SS or with Z) to timezone-aware UTC datetime."""
+    if not date_str:
+        return None
+    try:
+        s = str(date_str).strip().replace('Z', '').strip()[:19]
+        dt = datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+def _now_utc():
+    return datetime.now(timezone.utc)
+
+def compute_race_status(race, has_results):
+    """
+    Compute race status from race start time and results.
+    Votes lock the minute the race starts (race_start <= now).
+    """
+    if has_results:
+        return 'completed'
+    stored = race.get('status') or ''
+    if stored == 'locked':
+        return 'locked'
+    race_start = _parse_race_datetime(race.get('date', ''))
+    if race_start and race_start <= _now_utc():
+        return 'locked'
+    return 'open'
+
+def enrich_race_with_status(race_dict, has_results):
+    """Add computed status to a race dict."""
+    r = dict(race_dict)
+    r['status'] = compute_race_status(r, has_results)
+    return r
+
 def init_db():
     """Initialize database with schema."""
     db = get_db()
-    
+
     # Users table
     db.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -63,8 +104,8 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Drivers table - populated from API, not hardcoded
+
+    # Drivers table - populated from API
     db.execute('''
         CREATE TABLE IF NOT EXISTS drivers (
             id INTEGER PRIMARY KEY,
@@ -76,7 +117,7 @@ def init_db():
             nationality TEXT
         )
     ''')
-    
+
     # Metadata table for tracking refreshes
     db.execute('''
         CREATE TABLE IF NOT EXISTS metadata (
@@ -85,18 +126,18 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Races table
+
+    # Races table - date is race start (UTC)
     db.execute('''
         CREATE TABLE IF NOT EXISTS races (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             round INTEGER NOT NULL,
             date TIMESTAMP NOT NULL,
-            status TEXT DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'open', 'locked', 'completed'))
+            status TEXT DEFAULT 'open' CHECK (status IN ('upcoming', 'open', 'locked', 'completed'))
         )
     ''')
-    
+
     # Predictions table
     db.execute('''
         CREATE TABLE IF NOT EXISTS predictions (
@@ -112,7 +153,7 @@ def init_db():
             UNIQUE(user_id, race_id)
         )
     ''')
-    
+
     # Results table
     db.execute('''
         CREATE TABLE IF NOT EXISTS results (
@@ -123,7 +164,7 @@ def init_db():
             FOREIGN KEY (race_id) REFERENCES races(id)
         )
     ''')
-    
+
     # Scores table
     db.execute('''
         CREATE TABLE IF NOT EXISTS scores (
@@ -136,25 +177,28 @@ def init_db():
             UNIQUE(user_id, race_id)
         )
     ''')
-    
+
     db.commit()
-    
-    # Lazy load drivers from API on first startup
+
+    # Lazy load from API on first startup
     ensure_drivers_loaded(db)
-    seed_races_2026(db)
+    ensure_races_loaded(db)
+
+# --- API fetching ---
 
 def fetch_drivers_from_api():
-    """Fetch 2026 drivers from Jolpica F1 API."""
-    api_url = f"{app.config['F1_API_URL']}/2026/drivers.json"
-    
+    """Fetch drivers from F1 API."""
+    season = app.config['F1_SEASON']
+    api_url = f"{app.config['F1_API_URL']}/{season}/drivers.json"
+
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
+
         drivers = []
         driver_list = data.get('MRData', {}).get('DriverTable', {}).get('Drivers', [])
-        
+
         for idx, driver in enumerate(driver_list, start=1):
             drivers.append({
                 'id': idx,
@@ -163,9 +207,9 @@ def fetch_drivers_from_api():
                 'number': int(driver.get('permanentNumber', 0)),
                 'code': driver.get('code'),
                 'nationality': driver.get('nationality'),
-                'team': None  # API doesn't provide team in this endpoint
+                'team': None
             })
-        
+
         return drivers
     except Exception as e:
         app.logger.error(f"Failed to fetch drivers from API: {e}")
@@ -174,168 +218,216 @@ def fetch_drivers_from_api():
 def ensure_drivers_loaded(db):
     """Ensure drivers are loaded from API. Called on startup if empty."""
     count = db.execute('SELECT COUNT(*) FROM drivers').fetchone()[0]
-    
+
     if count == 0:
         app.logger.info("No drivers found - fetching from API...")
         drivers = fetch_drivers_from_api()
-        
+
         if drivers:
             for driver in drivers:
                 db.execute('''
                     INSERT INTO drivers (id, driver_id, name, team, number, code, nationality)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (driver['id'], driver['driver_id'], driver['name'], 
+                ''', (driver['id'], driver['driver_id'], driver['name'],
                       driver['team'], driver['number'], driver['code'], driver['nationality']))
-            
+
             db.execute('''
                 INSERT INTO metadata (key, value, updated_at)
                 VALUES ('drivers_last_refresh', ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
             ''', (datetime.now().isoformat(),))
-            
+
             db.commit()
             app.logger.info(f"Loaded {len(drivers)} drivers from API")
         else:
             app.logger.error("Failed to load drivers from API - app may not function correctly")
 
+def fetch_races_from_api():
+    """Fetch race calendar from F1 API."""
+    season = app.config['F1_SEASON']
+    api_url = f"{app.config['F1_API_URL']}/{season}.json"
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        races = []
+        race_list = data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
+
+        for race in race_list:
+            race_name = race.get('raceName', 'Unknown')
+            round_num = int(race.get('round', 0))
+            date = race.get('date', '')
+            time = race.get('time', '12:00:00Z').replace('Z', '').strip()
+
+            if date:
+                date_str = f"{date} {time}" if time else f"{date} 12:00:00"
+                races.append((race_name, round_num, date_str))
+
+        return races
+    except Exception as e:
+        app.logger.error(f"Failed to fetch races from API: {e}")
+        return None
+
+def ensure_races_loaded(db):
+    """Ensure races are loaded from API. Called on startup if empty. No fallback."""
+    count = db.execute('SELECT COUNT(*) FROM races').fetchone()[0]
+
+    if count > 0:
+        return
+
+    app.logger.info("No races found - fetching from API...")
+    races = fetch_races_from_api()
+
+    if not races:
+        app.logger.error("Failed to fetch races from API - race table will remain empty")
+        return
+
+    for name, round_num, date_str in races:
+        db.execute(
+            'INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
+            (name, round_num, date_str, 'open')
+        )
+
+    db.commit()
+    app.logger.info(f"Loaded {len(races)} races from API")
+
 def refresh_drivers_from_api(db):
     """Refresh drivers from API. Called by CronJob."""
     app.logger.info("Refreshing drivers from API...")
-    
+
     drivers = fetch_drivers_from_api()
     if not drivers:
         return False, "Failed to fetch from API"
-    
-    # Store old driver IDs for reference integrity
-    old_drivers = {d['driver_id']: d['id'] for d in 
-                   db.execute('SELECT driver_id, id FROM drivers').fetchall()}
-    
-    # Build mapping from old to new IDs
+
+    old_drivers = {r['driver_id']: r['id'] for r in db.execute('SELECT driver_id, id FROM drivers').fetchall()}
     id_mapping = {}
     new_id = 1
-    
+
     for driver in drivers:
         old_id = old_drivers.get(driver['driver_id'])
         if old_id:
             id_mapping[old_id] = new_id
         driver['new_id'] = new_id
         new_id += 1
-    
-    # Clear and reload drivers
+
     db.execute('DELETE FROM drivers')
-    
+
     for driver in drivers:
         db.execute('''
             INSERT INTO drivers (id, driver_id, name, team, number, code, nationality)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (driver['new_id'], driver['driver_id'], driver['name'],
               driver['team'], driver['number'], driver['code'], driver['nationality']))
-    
-    # Update metadata
+
     db.execute('''
         INSERT INTO metadata (key, value, updated_at)
         VALUES ('drivers_last_refresh', ?, CURRENT_TIMESTAMP)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
     ''', (datetime.now().isoformat(),))
-    
+
     db.commit()
-    
     app.logger.info(f"Refreshed {len(drivers)} drivers")
     return True, f"Refreshed {len(drivers)} drivers"
 
-def seed_races_2026(db):
-    """Seed 2026 F1 race calendar from API or fallback."""
-    # Check if races already exist
-    count = db.execute('SELECT COUNT(*) FROM races').fetchone()[0]
-    if count > 0:
-        return
-    
-    # Try to fetch from API first
-    races = fetch_races_from_api()
-    if not races:
-        # Fallback to hardcoded 2026 schedule
-        races = get_fallback_races_2026()
-    
-    for name, round_num, date_str in races:
-        try:
-            race_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-            # Set status based on date relative to now
-            if race_date > datetime.now() + timedelta(hours=1):
-                status = 'open'
-            elif race_date > datetime.now():
-                status = 'locked'
-            else:
-                status = 'completed'
-        except:
-            status = 'upcoming'
-        
-        db.execute(
-            'INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
-            (name, round_num, date_str, status)
-        )
-    
-    db.commit()
+# --- Results polling (background) ---
 
-def fetch_races_from_api():
-    """Fetch 2026 race calendar from Jolpica API."""
-    api_url = f"{app.config['F1_API_URL']}/2026.json"
-    
+def fetch_race_results_from_api(season, round_num):
+    """Fetch race results from F1 API. Returns dict with p1/p2/p3 driver_ids or None."""
+    api_url = f"{app.config['F1_API_URL']}/{season}/{round_num}/results.json"
+
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
-        races = []
-        race_list = data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
-        
-        for race in race_list:
-            race_name = race.get('raceName', 'Unknown')
-            round_num = int(race.get('round', 0))
-            date = race.get('date', '')
-            time = race.get('time', '12:00:00Z').replace('Z', '')
-            
-            if date:
-                date_str = f"{date} {time}" if time else f"{date} 12:00:00"
-                races.append((race_name, round_num, date_str))
-        
-        return races
+
+        races = data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
+        if not races:
+            return None
+
+        results = races[0].get('Results', [])
+        if len(results) < 3:
+            return None
+
+        return {
+            'p1_driver_id': results[0]['Driver']['driverId'],
+            'p2_driver_id': results[1]['Driver']['driverId'],
+            'p3_driver_id': results[2]['Driver']['driverId']
+        }
     except Exception as e:
-        app.logger.error(f"Failed to fetch races from API: {e}")
         return None
 
-def get_fallback_races_2026():
-    """Fallback 2026 race calendar if API fails."""
-    return [
-        ("Australian Grand Prix", 1, "2026-03-15 04:00:00"),
-        ("Chinese Grand Prix", 2, "2026-03-22 07:00:00"),
-        ("Japanese Grand Prix", 3, "2026-04-05 05:00:00"),
-        ("Bahrain Grand Prix", 4, "2026-04-12 15:00:00"),
-        ("Saudi Arabian Grand Prix", 5, "2026-04-19 17:00:00"),
-        ("Miami Grand Prix", 6, "2026-05-03 20:00:00"),
-        ("Canadian Grand Prix", 7, "2026-05-24 20:00:00"),
-        ("Spanish Grand Prix", 8, "2026-06-07 13:00:00"),
-        ("Austrian Grand Prix", 9, "2026-06-21 13:00:00"),
-        ("British Grand Prix", 10, "2026-07-05 14:00:00"),
-        ("Belgian Grand Prix", 11, "2026-07-19 13:00:00"),
-        ("Hungarian Grand Prix", 12, "2026-07-26 13:00:00"),
-        ("Dutch Grand Prix", 13, "2026-08-23 13:00:00"),
-        ("Italian Grand Prix", 14, "2026-09-06 13:00:00"),
-        ("Azerbaijan Grand Prix", 15, "2026-09-13 11:00:00"),
-        ("Singapore Grand Prix", 16, "2026-10-11 12:00:00"),
-        ("United States Grand Prix", 17, "2026-10-25 20:00:00"),
-        ("Mexico City Grand Prix", 18, "2026-11-01 20:00:00"),
-        ("Brazilian Grand Prix", 19, "2026-11-08 17:00:00"),
-        ("Las Vegas Grand Prix", 20, "2026-11-22 04:00:00"),
-        ("Qatar Grand Prix", 21, "2026-11-29 16:00:00"),
-        ("Abu Dhabi Grand Prix", 22, "2026-12-06 13:00:00"),
-    ]
+def get_driver_db_id_by_api_id(db, api_driver_id):
+    """Get our DB driver id from API driverId."""
+    row = db.execute('SELECT id FROM drivers WHERE driver_id = ?', (api_driver_id,)).fetchone()
+    return row['id'] if row else None
+
+def poll_and_update_results():
+    """Background task: poll API for results of races that have started and have no results yet."""
+    logger = logging.getLogger('f1.results_poller')
+    interval_min = app.config['RESULTS_POLL_INTERVAL_MIN']
+    season = app.config['F1_SEASON']
+
+    with app.app_context():
+        db = sqlite3.connect(app.config['DATABASE'])
+        db.row_factory = sqlite3.Row
+
+        while True:
+            try:
+                # Find races: past start time, no results in DB
+                now_str = _now_utc().strftime('%Y-%m-%d %H:%M:%S')
+                races = db.execute('''
+                    SELECT r.id, r.name, r.round, r.date
+                    FROM races r
+                    LEFT JOIN results res ON r.id = res.race_id
+                    WHERE res.race_id IS NULL AND r.date <= ?
+                    ORDER BY r.round
+                ''', (now_str,)).fetchall()
+
+                for race in races:
+                    podium = fetch_race_results_from_api(season, race['round'])
+                    if not podium:
+                        continue
+
+                    p1_id = get_driver_db_id_by_api_id(db, podium['p1_driver_id'])
+                    p2_id = get_driver_db_id_by_api_id(db, podium['p2_driver_id'])
+                    p3_id = get_driver_db_id_by_api_id(db, podium['p3_driver_id'])
+
+                    if not all([p1_id, p2_id, p3_id]):
+                        logger.warning(f"Could not match drivers for race {race['name']}")
+                        continue
+
+                    db.execute('''
+                        INSERT INTO results (race_id, p1_driver_id, p2_driver_id, p3_driver_id)
+                        VALUES (?, ?, ?, ?)
+                    ''', (race['id'], p1_id, p2_id, p3_id))
+
+                    predictions = db.execute('SELECT * FROM predictions WHERE race_id = ?', (race['id'],)).fetchall()
+                    result_data = {'p1_driver_id': p1_id, 'p2_driver_id': p2_id, 'p3_driver_id': p3_id}
+
+                    for pred in predictions:
+                        points = calculate_score(dict(pred), result_data)
+                        db.execute('''
+                            INSERT INTO scores (user_id, race_id, points)
+                            VALUES (?, ?, ?)
+                            ON CONFLICT(user_id, race_id) DO UPDATE SET points = excluded.points
+                        ''', (pred['user_id'], race['id'], points))
+
+                    db.commit()
+                    logger.info(f"Updated results for {race['name']} from API")
+
+            except Exception as e:
+                logger.exception(f"Results poll error: {e}")
+
+            time.sleep(interval_min * 60)
 
 def get_current_user():
     """Get current user from session."""
     session_id = session.get('session_id')
     if not session_id:
         return None
-    
+
     db = get_db()
     user = db.execute(
         'SELECT * FROM users WHERE session_id = ?', (session_id,)
@@ -345,36 +437,54 @@ def get_current_user():
 def calculate_score(prediction, result):
     """Calculate score for a prediction."""
     points = 0
-    
-    # Exact positions
+
     if prediction['p1_driver_id'] == result['p1_driver_id']:
         points += 10
     if prediction['p2_driver_id'] == result['p2_driver_id']:
         points += 6
     if prediction['p3_driver_id'] == result['p3_driver_id']:
         points += 4
-    
-    # Driver in top 3 (wrong position) - 1 point each
+
     predicted_drivers = {prediction['p1_driver_id'], prediction['p2_driver_id'], prediction['p3_driver_id']}
     result_drivers = {result['p1_driver_id'], result['p2_driver_id'], result['p3_driver_id']}
-    
+
     for driver_id in predicted_drivers:
         if driver_id in result_drivers:
-            # Check if already counted as exact position
-            exact = False
-            if driver_id == prediction['p1_driver_id'] and driver_id == result['p1_driver_id']:
-                exact = True
-            elif driver_id == prediction['p2_driver_id'] and driver_id == result['p2_driver_id']:
-                exact = True
-            elif driver_id == prediction['p3_driver_id'] and driver_id == result['p3_driver_id']:
-                exact = True
-            
+            exact = (
+                (driver_id == prediction['p1_driver_id'] and driver_id == result['p1_driver_id']) or
+                (driver_id == prediction['p2_driver_id'] and driver_id == result['p2_driver_id']) or
+                (driver_id == prediction['p3_driver_id'] and driver_id == result['p3_driver_id'])
+            )
             if not exact:
                 points += 1
-    
+
     return points
 
-# Routes
+def get_races_with_computed_status(db):
+    """Fetch all races and enrich with computed status."""
+    races = db.execute('''
+        SELECT r.*, res.p1_driver_id, res.p2_driver_id, res.p3_driver_id,
+               d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
+        FROM races r
+        LEFT JOIN results res ON r.id = res.race_id
+        LEFT JOIN drivers d1 ON res.p1_driver_id = d1.id
+        LEFT JOIN drivers d2 ON res.p2_driver_id = d2.id
+        LEFT JOIN drivers d3 ON res.p3_driver_id = d3.id
+        ORDER BY r.round
+    ''').fetchall()
+
+    return [enrich_race_with_status(dict(r), r['p1_driver_id'] is not None) for r in races]
+
+def get_next_open_race(db):
+    """Get the next race that is open for predictions (future, no results)."""
+    races = get_races_with_computed_status(db)
+    for r in races:
+        if r['status'] == 'open':
+            return r
+    return None
+
+# --- Routes ---
+
 @app.route('/')
 def index():
     """Landing page - redirect to home if logged in, else show username form."""
@@ -390,7 +500,7 @@ def set_username():
     if not username:
         flash('Please enter a username', 'error')
         return redirect(url_for('index'))
-    
+
     session_id = str(uuid.uuid4())
     db = get_db()
     db.execute(
@@ -398,7 +508,7 @@ def set_username():
         (session_id, username)
     )
     db.commit()
-    
+
     session['session_id'] = session_id
     return redirect(url_for('home'))
 
@@ -408,17 +518,15 @@ def home():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    
+
     db = get_db()
-    
-    # Get next upcoming/open race
-    next_race = db.execute('''
-        SELECT * FROM races 
-        WHERE status IN ('upcoming', 'open') 
-        ORDER BY date LIMIT 1
-    ''').fetchone()
-    
-    # Get user's prediction for next race if exists
+    next_race = get_next_open_race(db)
+    if not next_race:
+        races = get_races_with_computed_status(db)
+        next_race = races[0] if races else None
+        if next_race and next_race['status'] != 'open':
+            next_race = next((r for r in races if r['status'] in ('open', 'locked')), next_race)
+
     user_prediction = None
     if next_race:
         try:
@@ -432,58 +540,57 @@ def home():
             ''', (user['session_id'], next_race['id'])).fetchone()
         except Exception:
             user_prediction = None
-    
-    # Get user's total score
-    total_score = db.execute('''
-        SELECT COALESCE(SUM(points), 0) as total FROM scores WHERE user_id = ?
-    ''', (user['session_id'],)).fetchone()['total']
-    
-    return render_template('home.html', 
-                          user=user, 
+
+    total_score = db.execute(
+        'SELECT COALESCE(SUM(points), 0) as total FROM scores WHERE user_id = ?',
+        (user['session_id'],)
+    ).fetchone()['total']
+
+    return render_template('home.html',
+                          user=user,
                           next_race=next_race,
                           user_prediction=user_prediction,
                           total_score=total_score)
 
 @app.route('/predict/<int:race_id>', methods=['GET', 'POST'])
 def predict(race_id):
-    """Make or update prediction for a race."""
+    """Make or update prediction for a race. Rejects if race has started."""
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    
+
     db = get_db()
-    
-    # Check race is open
-    race = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
-    if not race:
+    race_row = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
+    if not race_row:
         flash('Race not found', 'error')
         return redirect(url_for('home'))
-    
+
+    has_results = db.execute('SELECT 1 FROM results WHERE race_id = ?', (race_id,)).fetchone() is not None
+    race = enrich_race_with_status(dict(race_row), has_results)
+
     if race['status'] == 'locked':
-        flash('Predictions are locked for this race', 'error')
+        flash('Predictions are locked - the race has started.', 'error')
         return redirect(url_for('home'))
-    
+
     if race['status'] == 'completed':
-        flash('This race has already been completed', 'error')
+        flash('This race has already been completed.', 'error')
         return redirect(url_for('home'))
-    
-    # Get all drivers
+
     drivers = db.execute('SELECT * FROM drivers ORDER BY name').fetchall()
-    
+
     if request.method == 'POST':
         p1 = request.form.get('p1')
         p2 = request.form.get('p2')
         p3 = request.form.get('p3')
-        
+
         if not all([p1, p2, p3]):
             flash('Please select all three positions', 'error')
             return redirect(url_for('predict', race_id=race_id))
-        
+
         if len(set([p1, p2, p3])) != 3:
             flash('Please select three different drivers', 'error')
             return redirect(url_for('predict', race_id=race_id))
-        
-        # Insert or update prediction
+
         db.execute('''
             INSERT INTO predictions (user_id, race_id, p1_driver_id, p2_driver_id, p3_driver_id)
             VALUES (?, ?, ?, ?, ?)
@@ -494,16 +601,15 @@ def predict(race_id):
                 created_at = CURRENT_TIMESTAMP
         ''', (user['session_id'], race_id, p1, p2, p3))
         db.commit()
-        
+
         flash('Prediction saved!', 'success')
         return redirect(url_for('home'))
-    
-    # Get existing prediction if any
+
     existing = db.execute('''
-        SELECT p1_driver_id, p2_driver_id, p3_driver_id 
+        SELECT p1_driver_id, p2_driver_id, p3_driver_id
         FROM predictions WHERE user_id = ? AND race_id = ?
     ''', (user['session_id'], race_id)).fetchone()
-    
+
     return render_template('predict.html', race=race, drivers=drivers, existing=existing)
 
 @app.route('/leaderboard')
@@ -512,10 +618,8 @@ def leaderboard():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    
+
     db = get_db()
-    
-    # Get all users with their total scores
     users = db.execute('''
         SELECT u.*, COALESCE(SUM(s.points), 0) as total_score
         FROM users u
@@ -523,23 +627,21 @@ def leaderboard():
         GROUP BY u.session_id
         ORDER BY total_score DESC
     ''').fetchall()
-    
-    # Get race-by-race breakdown
-    races = db.execute('SELECT * FROM races ORDER BY round').fetchall()
-    
-    # Build score matrix
+
+    races = get_races_with_computed_status(db)
     score_matrix = {}
     for u in users:
         score_matrix[u['session_id']] = {}
         for race in races:
-            score = db.execute('''
-                SELECT points FROM scores WHERE user_id = ? AND race_id = ?
-            ''', (u['session_id'], race['id'])).fetchone()
+            score = db.execute(
+                'SELECT points FROM scores WHERE user_id = ? AND race_id = ?',
+                (u['session_id'], race['id'])
+            ).fetchone()
             score_matrix[u['session_id']][race['id']] = score['points'] if score else '-'
-    
-    return render_template('leaderboard.html', 
-                          users=users, 
-                          races=races, 
+
+    return render_template('leaderboard.html',
+                          users=users,
+                          races=races,
                           score_matrix=score_matrix,
                           current_user=user)
 
@@ -549,21 +651,10 @@ def races():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    
+
     db = get_db()
-    all_races = db.execute('''
-        SELECT r.*, 
-               res.p1_driver_id, res.p2_driver_id, res.p3_driver_id,
-               d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
-        FROM races r
-        LEFT JOIN results res ON r.id = res.race_id
-        LEFT JOIN drivers d1 ON res.p1_driver_id = d1.id
-        LEFT JOIN drivers d2 ON res.p2_driver_id = d2.id
-        LEFT JOIN drivers d3 ON res.p3_driver_id = d3.id
-        ORDER BY r.round
-    ''').fetchall()
-    
-    # Get user's predictions
+    all_races = get_races_with_computed_status(db)
+
     predictions = {}
     for race in all_races:
         pred = db.execute('''
@@ -576,7 +667,7 @@ def races():
         ''', (user['session_id'], race['id'])).fetchone()
         if pred:
             predictions[race['id']] = pred
-    
+
     return render_template('races.html', races=all_races, predictions=predictions)
 
 @app.route('/logout')
@@ -588,26 +679,27 @@ def logout():
 # Admin routes
 @app.route('/admin/enter-results/<int:race_id>', methods=['GET', 'POST'])
 def enter_results(race_id):
-    """Enter actual race results (admin only)."""
+    """Enter actual race results manually (admin). API polling may have already updated."""
     db = get_db()
-    
-    race = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
-    if not race:
+
+    race_row = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
+    if not race_row:
         flash('Race not found', 'error')
         return redirect(url_for('races'))
-    
+
+    has_results = db.execute('SELECT 1 FROM results WHERE race_id = ?', (race_id,)).fetchone() is not None
+    race = enrich_race_with_status(dict(race_row), has_results)
     drivers = db.execute('SELECT * FROM drivers ORDER BY name').fetchall()
-    
+
     if request.method == 'POST':
         p1 = request.form.get('p1')
         p2 = request.form.get('p2')
         p3 = request.form.get('p3')
-        
+
         if not all([p1, p2, p3]):
             flash('Please select all three positions', 'error')
             return redirect(url_for('enter_results', race_id=race_id))
-        
-        # Save results
+
         db.execute('''
             INSERT INTO results (race_id, p1_driver_id, p2_driver_id, p3_driver_id)
             VALUES (?, ?, ?, ?)
@@ -616,14 +708,10 @@ def enter_results(race_id):
                 p2_driver_id = excluded.p2_driver_id,
                 p3_driver_id = excluded.p3_driver_id
         ''', (race_id, p1, p2, p3))
-        
-        # Mark race as completed
-        db.execute('UPDATE races SET status = ? WHERE id = ?', ('completed', race_id))
-        
-        # Calculate scores for all predictions
+
         predictions = db.execute('SELECT * FROM predictions WHERE race_id = ?', (race_id,)).fetchall()
         result = {'p1_driver_id': p1, 'p2_driver_id': p2, 'p3_driver_id': p3}
-        
+
         for pred in predictions:
             points = calculate_score(pred, result)
             db.execute('''
@@ -631,57 +719,44 @@ def enter_results(race_id):
                 VALUES (?, ?, ?)
                 ON CONFLICT(user_id, race_id) DO UPDATE SET points = excluded.points
             ''', (pred['user_id'], race_id, points))
-        
+
         db.commit()
         flash('Results entered and scores calculated!', 'success')
         return redirect(url_for('races'))
-    
+
     return render_template('enter_results.html', race=race, drivers=drivers)
 
-@app.route('/admin/lock-race/<int:race_id>')
-def lock_race(race_id):
-    """Lock predictions for a race."""
-    db = get_db()
-    db.execute('UPDATE races SET status = ? WHERE id = ?', ('locked', race_id))
-    db.commit()
-    flash('Race predictions locked', 'success')
-    return redirect(url_for('races'))
-
-# Driver refresh endpoint for CronJob
 @app.route('/admin/refresh-drivers', methods=['POST'])
 def refresh_drivers():
     """Refresh drivers from API - called by CronJob."""
-    # Simple secret check (should use proper auth in production)
     auth_header = request.headers.get('Authorization', '')
     expected = f"Bearer {app.config['DRIVER_REFRESH_SECRET']}"
-    
+
     if auth_header != expected and app.config['DRIVER_REFRESH_SECRET']:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     db = get_db()
     success, message = refresh_drivers_from_api(db)
-    
+
     if success:
         return jsonify({'status': 'success', 'message': message}), 200
-    else:
-        return jsonify({'status': 'error', 'message': message}), 500
+    return jsonify({'status': 'error', 'message': message}), 500
 
 @app.route('/admin/drivers-status')
 def drivers_status():
     """Get driver refresh status."""
     db = get_db()
-    
+
     count = db.execute('SELECT COUNT(*) FROM drivers').fetchone()[0]
     last_refresh = db.execute(
         'SELECT value FROM metadata WHERE key = "drivers_last_refresh"'
     ).fetchone()
-    
+
     return jsonify({
         'driver_count': count,
         'last_refresh': last_refresh['value'] if last_refresh else None
     })
 
-# Health check
 @app.route('/health')
 def health():
     """Health check endpoint."""
@@ -690,6 +765,15 @@ def health():
 # Initialize database on startup
 with app.app_context():
     init_db()
+
+# Start results polling background thread
+def start_results_poller():
+    thread = threading.Thread(target=poll_and_update_results, daemon=True)
+    thread.start()
+    app.logger.info("Results poller started (interval=%s min)", app.config['RESULTS_POLL_INTERVAL_MIN'])
+
+with app.app_context():
+    start_results_poller()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
