@@ -266,9 +266,17 @@ SABNZBD_API_KEY: ""    # Base64 encoded API key
 
 ---
 
-**vpn-secrets** (`apps/media-services/starr/vpn-deployment.yaml`)
+**vpn-secrets** (used by Sabnzbd in `media` and qBittorrent in `qbittorrent`)
 
 **Status:** ⚠️ **TO BE VERIFIED** - Check if VPN credentials are configured
+
+**Update credentials (IPVanish):** From a host that can reach the cluster:
+
+```bash
+OPENVPN_USER=your_ipvanish_user OPENVPN_PASSWORD=your_ipvanish_pass ./scripts/update-vpn-secrets.sh
+```
+
+**Diagnose VPN/Sabnzbd:** `./scripts/diagnose-vpn-sabnzbd.sh` (shows pod status, secret presence, VPN container logs).
 
 ---
 

@@ -94,10 +94,9 @@ spec:
             secretKeyRef:
               name: vpn-secrets
               key: OPENVPN_PASSWORD
+        # Use only SERVER_COUNTRIES; SERVER_HOSTNAMES has known issues with IPVanish in gluetun
         - name: SERVER_COUNTRIES
           value: "Canada"
-        - name: SERVER_HOSTNAMES
-          value: "yvr-c19.ipvanish.com"
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
