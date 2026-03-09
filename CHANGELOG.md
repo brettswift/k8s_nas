@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/brettswift/k8s_nas/compare/v1.2.7...v1.3.0) (2026-03-09)
+
+
+### Features
+
+* **f1:** Add pink DEVELOPMENT banner and remove team from dropdown ([0bfd2c7](https://github.com/brettswift/k8s_nas/commit/0bfd2c7dab5f5cb1b7020c1bb727f1ba3f5d0afe))
+
 ## [1.2.7](https://github.com/brettswift/k8s_nas/compare/v1.2.6...v1.2.7) (2026-03-08)
 
 
