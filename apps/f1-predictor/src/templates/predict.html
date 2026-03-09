@@ -20,7 +20,7 @@
                 <option value="">Select driver...</option>
                 {% for driver in drivers %}
                 <option value="{{ driver['id'] }}" {% if existing and existing['p1_driver_id'] == driver['id'] %}selected{% endif %}>
-                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                    #{{ driver['number'] }} {{ driver['name'] }}
                 </option>
                 {% endfor %}
             </select>
@@ -35,7 +35,7 @@
                 <option value="">Select driver...</option>
                 {% for driver in drivers %}
                 <option value="{{ driver['id'] }}" {% if existing and existing['p2_driver_id'] == driver['id'] %}selected{% endif %}>
-                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                    #{{ driver['number'] }} {{ driver['name'] }}
                 </option>
                 {% endfor %}
             </select>
@@ -50,7 +50,7 @@
                 <option value="">Select driver...</option>
                 {% for driver in drivers %}
                 <option value="{{ driver['id'] }}" {% if existing and existing['p3_driver_id'] == driver['id'] %}selected{% endif %}>
-                    #{{ driver['number'] }} {{ driver['name'] }} ({{ driver['team'] }})
+                    #{{ driver['number'] }} {{ driver['name'] }}
                 </option>
                 {% endfor %}
             </select>
