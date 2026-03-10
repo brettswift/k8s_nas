@@ -71,7 +71,7 @@ spec:
                 push_metric 0
                 exit 0
               fi
-              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 https://ipinfo.io/json >/dev/null 2>&1; then
+              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io./json" >/dev/null 2>&1; then
                 VAL=1
               else
                 VAL=0
