@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/brettswift/k8s_nas/compare/v1.3.2...v1.3.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* use ipinfo.io. (FQDN) in VPN check so DNS resolves in gluetun container ([ee52e09](https://github.com/brettswift/k8s_nas/commit/ee52e0961bee2eb6183921a63a35f4b07c6f5768))
+
 ## [1.3.2](https://github.com/brettswift/k8s_nas/compare/v1.3.1...v1.3.2) (2026-03-10)
 
 
