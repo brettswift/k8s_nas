@@ -63,9 +63,12 @@ spec:
               PUSHGATEWAY="http://pushgateway.monitoring.svc.cluster.local:9091"
               JOB="sabnzbd_vpn_check"
               INSTANCE="media"
+              push_metric() {
+                printf 'sabnzbd_vpn_healthy %s\n' "$1" | curl -sS -X PUT --data-binary @- "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" -H "Content-Type: text/plain; charset=utf-8" || true
+              }
               POD=$(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
               if [ -z "$POD" ]; then
-                wget -q -O- --post-data="sabnzbd_vpn_healthy 0" "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" 2>/dev/null || true
+                push_metric 0
                 exit 0
               fi
               if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 https://ipinfo.io/json >/dev/null 2>&1; then
@@ -73,4 +76,4 @@ spec:
               else
                 VAL=0
               fi
-              wget -q -O- --post-data="sabnzbd_vpn_healthy $VAL" "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" 2>/dev/null || true
+              push_metric "$VAL"
