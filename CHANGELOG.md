@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/brettswift/k8s_nas/compare/v1.3.3...v1.4.0) (2026-03-10)
+
+
+### Features
+
+* add list-jellyseerr-requests.sh and re-request-starr.py for Jellyseerr/Sonarr/Radarr ([d412aeb](https://github.com/brettswift/k8s_nas/commit/d412aebfb2e35f0c73ea87e6c07c3d29f0cf1d10))
+
 ## [1.3.3](https://github.com/brettswift/k8s_nas/compare/v1.3.2...v1.3.3) (2026-03-10)
 
 
