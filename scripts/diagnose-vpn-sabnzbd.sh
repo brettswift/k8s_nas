@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # Diagnose VPN/Sabnzbd: check secrets, pod status, and VPN container logs.
-# Run from a host that can reach the cluster (e.g. on same network as 10.0.0.20).
+# Run from a host that can reach the cluster (e.g. on same network as 10.1.0.20 or via public DNS).
 #
 # Usage: ./scripts/diagnose-vpn-sabnzbd.sh
+# Optional: NTFY_TOPIC=bswift_general and SEND_NTFY=1 to post summary to ntfy.sh
 
 set -euo pipefail
+
+NTFY_TOPIC="${NTFY_TOPIC:-bswift_general}"
+SEND_NTFY="${SEND_NTFY:-0}"
 
 echo "=== Pods (media namespace) ==="
 kubectl get pods -n media -l app=sabnzbd -o wide 2>/dev/null || true
@@ -38,4 +42,10 @@ echo ""
 echo "=== Sabnzbd container logs (last 20 lines) ==="
 if [[ -n "$SAB_POD" ]]; then
   kubectl logs -n media "$SAB_POD" -c sabnzbd --tail=20 2>/dev/null || true
+fi
+
+if [[ "$SEND_NTFY" == "1" && -n "$NTFY_TOPIC" ]]; then
+  SUMMARY="Sabnzbd VPN diagnose: pod=$SAB_POD"
+  [[ -n "$SAB_POD" ]] && SUMMARY="$SUMMARY, check logs above for VPN status"
+  curl -s -o /dev/null -X POST -d "$SUMMARY" -H "Title: k8s-nas VPN diagnose" "https://ntfy.sh/$NTFY_TOPIC" 2>/dev/null || true
 fi

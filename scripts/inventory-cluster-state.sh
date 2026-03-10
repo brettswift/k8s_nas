@@ -19,7 +19,7 @@ cat > "${INVENTORY_FILE}" << 'EOF'
 # Current State Inventory - k8s_nas
 
 **Generated:** $(date)  
-**Cluster:** Production (10.0.0.20)  
+**Cluster:** Production (10.1.0.20)  
 **Purpose:** Document current deployed state before service integration configuration
 
 ---

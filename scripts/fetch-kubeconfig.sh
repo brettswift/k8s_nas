@@ -3,9 +3,9 @@
 set -euo pipefail
 
 # Usage: scripts/fetch-kubeconfig.sh [ssh_host]
-# Copies k3s kubeconfig from 10.0.0.20 (or provided host) and rewrites server to the host IP.
+# Copies k3s kubeconfig from 10.1.0.20 (or provided host) and rewrites server to the host IP.
 
-SSH_HOST="${1:-10.0.0.20}"
+SSH_HOST="${1:-10.1.0.20}"
 OUT_DIR="${HOME}/.kube"
 OUT_FILE="${OUT_DIR}/config-nas"
 

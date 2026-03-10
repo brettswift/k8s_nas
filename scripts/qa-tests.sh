@@ -30,7 +30,7 @@ test_1() {
 }
 
 test_ssh_guidance() {
-  assert_contains "$GUIDANCE_FILE" "10\\.0\\.0\\.20" "AI guidance includes server IP 10.0.0.20"
+  assert_contains "$GUIDANCE_FILE" "10\\.1\\.0\\.20" "AI guidance includes server IP 10.1.0.20"
   assert_contains "$GUIDANCE_FILE" "\\bssh\\b" "AI guidance includes SSH instructions"
 }
 

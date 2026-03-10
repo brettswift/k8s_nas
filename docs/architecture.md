@@ -401,7 +401,7 @@ See [Development Guide](./development-guide.md) for detailed instructions.
 - Local-path storage
 
 **Production (`main` branch):**
-- Remote server at 10.0.0.20
+- Remote server at 10.1.0.20
 - Full resource allocation
 - HostPath storage for media files
 - Production-grade certificates

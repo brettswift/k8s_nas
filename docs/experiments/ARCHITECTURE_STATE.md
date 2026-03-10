@@ -1,7 +1,7 @@
 # Architecture State Tracking
 
 ## Current System Architecture
-- **Target Server**: 10.0.0.20 (k3s cluster)
+- **Target Server**: 10.1.0.20 (k3s cluster)
 - **Ingress Controller**: NGINX Ingress (replacing Traefik)
 - **GitOps**: ArgoCD
 - **Branch**: feat/nginx-routing

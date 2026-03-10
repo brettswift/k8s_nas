@@ -130,10 +130,10 @@ Since the deployment comment explicitly says "Rely on ingress strip-prefix", we 
 
 ```bash
 # Check current config
-ssh bswift@10.0.0.20 "grep UrlBase /mnt/data/configs/sonarr/config.xml"
+ssh bswift@10.1.0.20 "grep UrlBase /mnt/data/configs/sonarr/config.xml"
 
 # Edit to remove base URL (or set to empty)
-ssh bswift@10.0.0.20 "sed -i 's|<UrlBase>/sonarr</UrlBase>|<UrlBase></UrlBase>|g' /mnt/data/configs/sonarr/config.xml"
+ssh bswift@10.1.0.20 "sed -i 's|<UrlBase>/sonarr</UrlBase>|<UrlBase></UrlBase>|g' /mnt/data/configs/sonarr/config.xml"
 
 # Restart pod to pick up config change
 kubectl rollout restart deployment/sonarr -n media

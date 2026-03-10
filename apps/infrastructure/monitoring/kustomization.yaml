@@ -7,6 +7,10 @@ resources:
 - prometheus-service.yaml
 - prometheus-serviceaccount.yaml
 - prometheus-ingress.yaml
+# Pushgateway (for CronJob-pushed metrics)
+- pushgateway-deployment.yaml
+# Sabnzbd VPN health check → pushgateway (Grafana can alert on sabnzbd_vpn_healthy)
+- sabnzbd-vpn-check-cronjob.yaml
 # Grafana - enable for Loki UI
 - grafana-configmap.yaml
 - grafana-dashboard-configmap.yaml

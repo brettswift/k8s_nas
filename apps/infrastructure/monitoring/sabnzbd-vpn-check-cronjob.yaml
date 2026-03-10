@@ -1,0 +1,76 @@
+# CronJob: runs every 15 min, checks Sabnzbd VPN by exec'ing into the pod
+# and curling through the tunnel. Pushes sabnzbd_vpn_healthy 1|0 to Pushgateway.
+# Prometheus scrapes Pushgateway; Grafana can alert on the metric.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sabnzbd-vpn-check
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sabnzbd-vpn-check
+  namespace: media
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sabnzbd-vpn-check
+  namespace: media
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sabnzbd-vpn-check
+subjects:
+- kind: ServiceAccount
+  name: sabnzbd-vpn-check
+  namespace: monitoring
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sabnzbd-vpn-check
+  namespace: monitoring
+spec:
+  schedule: "*/15 * * * *"   # every 15 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          serviceAccountName: sabnzbd-vpn-check
+          restartPolicy: Never
+          containers:
+          - name: check
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              PUSHGATEWAY="http://pushgateway.monitoring.svc.cluster.local:9091"
+              JOB="sabnzbd_vpn_check"
+              INSTANCE="media"
+              POD=$(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+              if [ -z "$POD" ]; then
+                wget -q -O- --post-data="sabnzbd_vpn_healthy 0" "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" 2>/dev/null || true
+                exit 0
+              fi
+              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 https://ipinfo.io/json >/dev/null 2>&1; then
+                VAL=1
+              else
+                VAL=0
+              fi
+              wget -q -O- --post-data="sabnzbd_vpn_healthy $VAL" "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" 2>/dev/null || true

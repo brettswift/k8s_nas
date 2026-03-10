@@ -1,7 +1,7 @@
 # Current State Inventory - k8s_nas
 
 **Generated:** 2025-01-27  
-**Cluster:** Production (10.0.0.20)  
+**Cluster:** Production (10.1.0.20)  
 **Purpose:** Document current deployed state before service integration configuration
 
 ---
@@ -16,7 +16,7 @@ This document captures the current state of the k8s_nas cluster to understand:
 - What services need configuration
 
 **Last Updated:** 2025-01-27  
-**Cluster Inventory:** Live data gathered from cluster at 10.0.0.20
+**Cluster Inventory:** Live data gathered from cluster at 10.1.0.20
 
 ---
 
@@ -276,7 +276,7 @@ SABNZBD_API_KEY: ""    # Base64 encoded API key
 OPENVPN_USER=your_ipvanish_user OPENVPN_PASSWORD=your_ipvanish_pass ./scripts/update-vpn-secrets.sh
 ```
 
-**Diagnose VPN/Sabnzbd:** `./scripts/diagnose-vpn-sabnzbd.sh` (shows pod status, secret presence, VPN container logs).
+**Diagnose VPN/Sabnzbd:** `./scripts/diagnose-vpn-sabnzbd.sh` (shows pod status, secret presence, VPN container logs). Optional: `SEND_NTFY=1` to post summary to ntfy.sh topic `bswift_general`.
 
 ---
 
@@ -351,15 +351,15 @@ All services use path-based routing via `home.brettswift.com`:
 **Actual Ingress Resources:**
 ```
 NAMESPACE     NAME                      CLASS   HOSTS                 ADDRESS     PORTS     AGE
-media         jellyfin-ingress          nginx   home.brettswift.com   10.0.0.20   80, 443   43h
-media         jellyfin-slash-redirect   nginx   home.brettswift.com   10.0.0.20   80        43h
-media         radarr-ingress            nginx   home.brettswift.com   10.0.0.20   80, 443   4d14h
-media         sabnzbd-ingress           nginx   home.brettswift.com   10.0.0.20   80, 443   4d14h
-media         sonarr-ingress            nginx   home.brettswift.com   10.0.0.20   80, 443   4d14h
-qbittorrent   qbittorrent-ingress       nginx   home.brettswift.com   10.0.0.20   80, 443   4d14h
-argocd        argocd-ingress            nginx   home.brettswift.com   10.0.0.20   80, 443   13d
-homepage      homepage-ingress          nginx   home.brettswift.com   10.0.0.20   80, 443   12d
-monitoring    grafana-ingress           nginx   home.brettswift.com   10.0.0.20   80, 443   12d
+media         jellyfin-ingress          nginx   home.brettswift.com   10.1.0.20   80, 443   43h
+media         jellyfin-slash-redirect   nginx   home.brettswift.com   10.1.0.20   80        43h
+media         radarr-ingress            nginx   home.brettswift.com   10.1.0.20   80, 443   4d14h
+media         sabnzbd-ingress           nginx   home.brettswift.com   10.1.0.20   80, 443   4d14h
+media         sonarr-ingress            nginx   home.brettswift.com   10.1.0.20   80, 443   4d14h
+qbittorrent   qbittorrent-ingress       nginx   home.brettswift.com   10.1.0.20   80, 443   4d14h
+argocd        argocd-ingress            nginx   home.brettswift.com   10.1.0.20   80, 443   13d
+homepage      homepage-ingress          nginx   home.brettswift.com   10.1.0.20   80, 443   12d
+monitoring    grafana-ingress           nginx   home.brettswift.com   10.1.0.20   80, 443   12d
 monitoring    prometheus-ingress        nginx   home.brettswift.com   80, 443   12d
 ```
 
@@ -634,7 +634,7 @@ Once service UIs are checked and API keys extracted:
 **End of Inventory**
 
 **Last Updated:** 2025-01-27  
-**Inventory Status:** ✅ **COMPLETE** - Live cluster data gathered from 10.0.0.20  
+**Inventory Status:** ✅ **COMPLETE** - Live cluster data gathered from 10.1.0.20  
 **Cleanup Actions:** ✅ Istio resources removed (HPAs, IstioOperator, namespace) - System using NGINX Ingress only  
 **Next Update:** After service UI verification and API key extraction
 

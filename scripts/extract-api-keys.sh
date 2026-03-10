@@ -39,9 +39,9 @@ extract_key_from_config() {
     local service=$1
     local config_path=$2
     
-    if ssh bswift@10.0.0.20 "test -f $config_path" 2>/dev/null; then
+    if ssh bswift@10.1.0.20 "test -f $config_path" 2>/dev/null; then
         echo "Found config for $service, extracting API key..."
-        ssh bswift@10.0.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $config_path 2>/dev/null | head -1" || echo ""
+        ssh bswift@10.1.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $config_path 2>/dev/null | head -1" || echo ""
     else
         echo "Config file not found: $config_path"
         echo ""
@@ -58,9 +58,9 @@ SABNZBD_KEY=""
 
 # Sonarr config
 SONARR_CONFIG="/mnt/data/configs/sonarr/config.xml"
-if ssh -o ConnectTimeout=5 bswift@10.0.0.20 "test -f $SONARR_CONFIG" 2>/dev/null; then
+if ssh -o ConnectTimeout=5 bswift@10.1.0.20 "test -f $SONARR_CONFIG" 2>/dev/null; then
     echo "📁 Sonarr config found"
-    SONARR_KEY=$(ssh bswift@10.0.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $SONARR_CONFIG 2>/dev/null | head -1" || echo "")
+    SONARR_KEY=$(ssh bswift@10.1.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $SONARR_CONFIG 2>/dev/null | head -1" || echo "")
     if [ -n "$SONARR_KEY" ]; then
         echo "✅ Sonarr API Key extracted: ${SONARR_KEY:0:10}..."
     else
@@ -73,9 +73,9 @@ echo ""
 
 # Radarr config
 RADARR_CONFIG="/mnt/data/configs/radarr/config.xml"
-if ssh -o ConnectTimeout=5 bswift@10.0.0.20 "test -f $RADARR_CONFIG" 2>/dev/null; then
+if ssh -o ConnectTimeout=5 bswift@10.1.0.20 "test -f $RADARR_CONFIG" 2>/dev/null; then
     echo "📁 Radarr config found"
-    RADARR_KEY=$(ssh bswift@10.0.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $RADARR_CONFIG 2>/dev/null | head -1" || echo "")
+    RADARR_KEY=$(ssh bswift@10.1.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $RADARR_CONFIG 2>/dev/null | head -1" || echo "")
     if [ -n "$RADARR_KEY" ]; then
         echo "✅ Radarr API Key extracted: ${RADARR_KEY:0:10}..."
     else
@@ -88,9 +88,9 @@ echo ""
 
 # Sabnzbd config (different format - INI file)
 SABNZBD_CONFIG="/mnt/data/configs/sabnzbd/config.ini"
-if ssh -o ConnectTimeout=5 bswift@10.0.0.20 "test -f $SABNZBD_CONFIG" 2>/dev/null; then
+if ssh -o ConnectTimeout=5 bswift@10.1.0.20 "test -f $SABNZBD_CONFIG" 2>/dev/null; then
     echo "📁 Sabnzbd config found"
-    SABNZBD_KEY=$(ssh bswift@10.0.0.20 "grep -E '^api_key\s*=' $SABNZBD_CONFIG 2>/dev/null | cut -d'=' -f2 | tr -d ' '" || echo "")
+    SABNZBD_KEY=$(ssh bswift@10.1.0.20 "grep -E '^api_key\s*=' $SABNZBD_CONFIG 2>/dev/null | cut -d'=' -f2 | tr -d ' '" || echo "")
     if [ -n "$SABNZBD_KEY" ]; then
         echo "✅ Sabnzbd API Key extracted: ${SABNZBD_KEY:0:10}..."
     else

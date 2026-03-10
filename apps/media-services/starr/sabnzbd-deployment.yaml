@@ -99,6 +99,9 @@ spec:
           value: "Canada"
         - name: DOT
           value: "off"
+        # Avoid fragmentation: PMTUD failed in logs, TLS key sync errors. Lower MSS so tunnel stays stable.
+        - name: OPENVPN_MSSFIX
+          value: "1280"
         - name: FIREWALL_VPN_INPUT_PORTS
           value: ""
         securityContext:
