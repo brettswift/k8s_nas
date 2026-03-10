@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/brettswift/k8s_nas/compare/v1.3.1...v1.3.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* Pushgateway push use PUT + curl (exposition format); image has curl not wget ([c5c6826](https://github.com/brettswift/k8s_nas/commit/c5c68266deb66a47c9911c2e3a7d2a69daefccd5))
+
 ## [1.3.1](https://github.com/brettswift/k8s_nas/compare/v1.3.0...v1.3.1) (2026-03-09)
 
 
