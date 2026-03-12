@@ -72,7 +72,9 @@ spec:
                 push_metric 0
                 exit 0
               fi
-              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io./json" >/dev/null 2>&1; then
+              # Use hostname without trailing dot so check is subject to same DNS search as SABnzbd
+              # (with ndots:5, ipinfo.io fails like news.server.com; with ndots:1 both resolve)
+              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io/json" >/dev/null 2>&1; then
                 VAL=1
                 echo "OK: VPN check passed (pod=$POD), pushed sabnzbd_vpn_healthy=$VAL"
               else
