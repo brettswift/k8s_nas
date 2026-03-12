@@ -1,0 +1,61 @@
+# Grafana Unified Alerting provisioning: contact points, policies, alert rules.
+# Mounted at /etc/grafana/provisioning/alerting (see grafana-deployment.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting
+  namespace: monitoring
+data:
+  contact-points.yaml: |
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: ntfy-bswift-homelab
+        receivers:
+          - uid: ntfy_bswift_homelab
+            type: webhook
+            disableResolveMessage: false
+            settings:
+              url: https://ntfy.sh/bswift_homelab
+              httpMethod: POST
+              title: '{{ .GroupLabels.alertname }}'
+              message: '{{ .CommonAnnotations.summary }}'
+  policies.yaml: |
+    apiVersion: 1
+    policies:
+      - orgId: 1
+        receiver: ntfy-bswift-homelab
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        routes: []
+  alert-rules.yaml: |
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: sabnzbd-vpn
+        folder: Alarms
+        interval: 1m
+        rules:
+          - uid: sabnzbd_vpn_down
+            title: Sabnzbd VPN down
+            condition: A
+            noDataState: Alerting
+            execErrState: Alerting
+            for: 2m
+            annotations:
+              summary: Sabnzbd VPN health check failed or metric missing. Check CronJob sabnzbd-vpn-check and SABnzbd VPN pod.
+            labels:
+              severity: warning
+            data:
+              - refId: A
+                datasourceUid: prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: sabnzbd_vpn_healthy == 0 or absent(sabnzbd_vpn_healthy)
+                  refId: A
+                  intervalMs: 1000
+                  maxDataPoints: 43200

@@ -68,12 +68,15 @@ spec:
               }
               POD=$(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
               if [ -z "$POD" ]; then
+                echo "ERROR: no sabnzbd pod found in namespace media"
                 push_metric 0
                 exit 0
               fi
               if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io./json" >/dev/null 2>&1; then
                 VAL=1
+                echo "OK: VPN check passed (pod=$POD), pushed sabnzbd_vpn_healthy=$VAL"
               else
                 VAL=0
+                echo "ERROR: VPN check failed (wget to ipinfo.io from pod $POD vpn container failed), pushed sabnzbd_vpn_healthy=$VAL"
               fi
               push_metric "$VAL"
