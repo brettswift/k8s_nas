@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/brettswift/k8s_nas/compare/v1.5.0...v1.5.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** Alarms dashboard - add Sabnzbd VPN alarm panel (matches alert state) ([f92c5f0](https://github.com/brettswift/k8s_nas/commit/f92c5f0a47a0bb00ae0019c5108ca1cde2032924))
+
 # [1.5.0](https://github.com/brettswift/k8s_nas/compare/v1.4.0...v1.5.0) (2026-03-12)
 
 
