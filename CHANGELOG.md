@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/brettswift/k8s_nas/compare/v1.5.1...v1.6.0) (2026-03-12)
+
+
+### Features
+
+* **monitoring:** Grafana->ntfy proxy for clean notifications ([dfc5c04](https://github.com/brettswift/k8s_nas/commit/dfc5c04fe74be2f63df5ab649ec778caf10d21a9))
+
 ## [1.5.1](https://github.com/brettswift/k8s_nas/compare/v1.5.0...v1.5.1) (2026-03-12)
 
 
