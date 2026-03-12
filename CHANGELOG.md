@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/brettswift/k8s_nas/compare/v1.6.1...v1.6.2) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** VPN check use ipinfo.io without trailing dot so alarm fires when DNS broken ([d1a37fa](https://github.com/brettswift/k8s_nas/commit/d1a37fa16a0762bb422d7bfbbbcad0caf6d47c90))
+
 ## [1.6.1](https://github.com/brettswift/k8s_nas/compare/v1.6.0...v1.6.1) (2026-03-12)
 
 
