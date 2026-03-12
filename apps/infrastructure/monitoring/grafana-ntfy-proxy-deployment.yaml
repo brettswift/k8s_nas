@@ -1,0 +1,60 @@
+# Proxy: Grafana webhook -> clean POST to ntfy.sh (title + plain text body)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-ntfy-proxy
+  namespace: monitoring
+  labels:
+    app: grafana-ntfy-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-ntfy-proxy
+  template:
+    metadata:
+      labels:
+        app: grafana-ntfy-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: python:3-alpine
+          command: ["python", "/app/relay.py"]
+          env:
+            - name: NTFY_TOPIC
+              value: "bswift_homelab"
+            - name: PORT
+              value: "8080"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: script
+              mountPath: /app
+              readOnly: true
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
+              cpu: "50m"
+      volumes:
+        - name: script
+          configMap:
+            name: grafana-ntfy-proxy-script
+            defaultMode: 0o555
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-ntfy-proxy
+  namespace: monitoring
+  labels:
+    app: grafana-ntfy-proxy
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: grafana-ntfy-proxy

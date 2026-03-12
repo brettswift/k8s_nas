@@ -16,10 +16,9 @@ data:
             type: webhook
             disableResolveMessage: false
             settings:
-              url: https://ntfy.sh/bswift_homelab
+              # In-cluster proxy turns Grafana JSON into clean title + plain text for ntfy.sh
+              url: http://grafana-ntfy-proxy.monitoring.svc.cluster.local:8080/
               httpMethod: POST
-              title: '{{ .GroupLabels.alertname }}'
-              message: '{{ .CommonAnnotations.summary }}'
   policies.yaml: |
     apiVersion: 1
     policies:
