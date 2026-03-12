@@ -40,7 +40,8 @@ data:
           - uid: sabnzbd_vpn_down
             title: Sabnzbd VPN down
             condition: A
-            noDataState: Alerting
+            # No data = query returned no series = metric is 1 (healthy), so OK not Alerting
+            noDataState: OK
             execErrState: Alerting
             for: 2m
             annotations:
