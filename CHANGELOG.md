@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/brettswift/k8s_nas/compare/v1.6.0...v1.6.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** Sabnzbd VPN alert noDataState OK when healthy ([291d1ba](https://github.com/brettswift/k8s_nas/commit/291d1ba8eef41e39eac93318c3a8b2e76172234c))
+
 # [1.6.0](https://github.com/brettswift/k8s_nas/compare/v1.5.1...v1.6.0) (2026-03-12)
 
 
