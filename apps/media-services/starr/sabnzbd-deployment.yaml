@@ -16,6 +16,13 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      # ndots:1 so resolver tries hostnames as FQDN first. Default ndots:5 causes
+      # news.server.com to be tried as news.server.com.media.svc.cluster.local first;
+      # gluetun DNS then fails and SABnzbd never resolves the usenet server.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       initContainers:
       - name: sab-config-init
         image: alpine:3.20
