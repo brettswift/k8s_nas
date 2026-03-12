@@ -23,6 +23,12 @@ spec:
         options:
           - name: ndots
             value: "1"
+      # BBR congestion control for better throughput over VPN (see docs/plans/2026-03-12-sabnzbd-throughput-improvements.md).
+      # On k3s this sysctl may need to be allowlisted: --allowed-unsafe-sysctls=net.ipv4.tcp_congestion_control
+      securityContext:
+        sysctls:
+          - name: net.ipv4.tcp_congestion_control
+            value: "bbr"
       initContainers:
       - name: sab-config-init
         image: alpine:3.20
@@ -89,26 +95,24 @@ spec:
         env:
         - name: VPN_SERVICE_PROVIDER
           value: "ipvanish"
-        - name: OPENVPN_PROTOCOL
-          value: "udp"
-        - name: OPENVPN_USER
+        # WireGuard: kernel-based, multi-threaded, no MSS clamping. Add WIREGUARD_PRIVATE_KEY to vpn-secrets (from IPVanish WireGuard config).
+        # See docs/plans/2026-03-12-sabnzbd-throughput-improvements.md and Gluetun IPVanish WireGuard wiki.
+        - name: VPN_TYPE
+          value: "wireguard"
+        - name: WIREGUARD_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
               name: vpn-secrets
-              key: OPENVPN_USER
-        - name: OPENVPN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_PASSWORD
-        # Use only SERVER_COUNTRIES; SERVER_HOSTNAMES has known issues with IPVanish in gluetun
+              key: WIREGUARD_PRIVATE_KEY
+        - name: VPN_INTERFACE
+          value: "wg0"
+        # 1390 = eth0 MTU (1450) - WireGuard overhead (~60). Omit to use default.
+        - name: WIREGUARD_MTU
+          value: "1390"
         - name: SERVER_COUNTRIES
           value: "Canada"
         - name: DOT
           value: "off"
-        # Avoid fragmentation: PMTUD failed in logs, TLS key sync errors. Lower MSS so tunnel stays stable.
-        - name: OPENVPN_MSSFIX
-          value: "1280"
         - name: FIREWALL_VPN_INPUT_PORTS
           value: ""
         securityContext:
