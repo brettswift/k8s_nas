@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/brettswift/k8s_nas/compare/v1.4.0...v1.5.0) (2026-03-12)
+
+
+### Features
+
+* **monitoring:** Grafana Sabnzbd VPN alarm, Alarms dashboard, ntfy contact point ([89516e5](https://github.com/brettswift/k8s_nas/commit/89516e5b3f942cd526805964e94cb1be2b77134d))
+
 # [1.4.0](https://github.com/brettswift/k8s_nas/compare/v1.3.3...v1.4.0) (2026-03-10)
 
 
