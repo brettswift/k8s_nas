@@ -121,9 +121,10 @@ spec:
         - name: config
           mountPath: /config
         resources:
+          # Higher CPU request so VPN isn't starved under heavy usenet download (single tunnel = CPU-bound).
           requests:
             memory: "256Mi"
-            cpu: "200m"
+            cpu: "500m"
           limits:
             memory: "512Mi"
             cpu: "2000m"

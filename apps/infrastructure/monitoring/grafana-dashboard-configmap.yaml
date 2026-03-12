@@ -1170,13 +1170,13 @@ data:
           },
           "targets": [
             {
-              "expr": "sabnzbd_vpn_healthy == 0 or absent(sabnzbd_vpn_healthy)",
+              "expr": "(sabnzbd_vpn_healthy == 0 or absent(sabnzbd_vpn_healthy)) or (sabnzbd_vpn_healthy * 0)",
               "refId": "A",
               "legendFormat": "alarm"
             }
           ],
           "title": "Sabnzbd VPN alarm",
-          "description": "Same condition as the alert rule. ALARM = alert would fire (metric 0 or missing for 2m).",
+          "description": "Same condition as the alert rule. OK = healthy; ALARM = metric 0 or missing (no more 'No data').",
           "type": "stat",
           "fieldConfig": {
             "defaults": {
@@ -1184,7 +1184,8 @@ data:
                 { "options": { "0": { "color": "green", "index": 0, "text": "OK" } }, "type": "value" },
                 { "options": { "1": { "color": "red", "index": 0, "text": "ALARM" } }, "type": "value" }
               ],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+              "noValue": "OK"
             }
           }
         },
@@ -1194,8 +1195,8 @@ data:
           "options": {
             "alertName": "",
             "dashboardAlerts": false,
-            "folder": { "id": 0, "title": "General" },
-            "groupBy": [],
+            "folder": { "id": 0, "title": "Alarms" },
+            "groupBy": ["alertname"],
             "maxItems": 20,
             "sortOrder": 1,
             "stateFilter": { "error": true, "firing": true, "nodata": true, "normal": false, "pending": true },
