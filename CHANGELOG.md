@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/brettswift/k8s_nas/compare/v1.7.0...v1.7.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** remove BBR sysctl - k3s forbids by default, use node-level sysctl instead ([0b0396a](https://github.com/brettswift/k8s_nas/commit/0b0396ade91d022cc734973664d09ee820980f51))
+
 # [1.7.0](https://github.com/brettswift/k8s_nas/compare/v1.6.2...v1.7.0) (2026-03-13)
 
 
