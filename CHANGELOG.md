@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/brettswift/k8s_nas/compare/v1.7.1...v1.7.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** revert to OpenVPN - Gluetun does not support IPVanish WireGuard ([53987f4](https://github.com/brettswift/k8s_nas/commit/53987f48fa0602dc3aad94665d2ec03e9465ffa5))
+
 ## [1.7.1](https://github.com/brettswift/k8s_nas/compare/v1.7.0...v1.7.1) (2026-03-13)
 
 
