@@ -61,7 +61,7 @@ data:
     \nCATEGORY = os.getenv(\"CATEGORY\", \"formula1\")\nSAVE_PATH = os.getenv(\"SAVE_PATH\"\
     , \"/data/media/formula1\")\nMAX_AGE_DAYS = int(os.getenv(\"MAX_AGE_DAYS\", \"\
     7\"))  # Only add torrents from last week\nSEQUENTIAL_DOWNLOAD = os.getenv(\"\
-    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\n    NTFY_TOPIC = os.getenv(\"\
+    SEQUENTIAL_DOWNLOAD\", \"true\").lower() == \"true\"\nNTFY_TOPIC = os.getenv(\"\
     NTFY_TOPIC\", \"bswift_downloads\")\n\n# Setup logging to both file and stdout\n\
     def setup_logging(log_file):\n    \"\"\"Configure logging to write to both file\
     \ and stdout\"\"\"\n    # Create logger\n    logger = logging.getLogger()\n  \
