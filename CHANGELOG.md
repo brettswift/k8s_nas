@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/brettswift/k8s_nas/compare/v1.7.2...v1.8.0) (2026-03-13)
+
+
+### Features
+
+* **media:** switch sabnzbd VPN from OpenVPN to WireGuard via Gluetun custom provider ([5473124](https://github.com/brettswift/k8s_nas/commit/547312466a770cfa7f85a7471203feff8995d95e))
+
 ## [1.7.2](https://github.com/brettswift/k8s_nas/compare/v1.7.1...v1.7.2) (2026-03-13)
 
 
