@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/brettswift/k8s_nas/compare/v1.6.2...v1.7.0) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** preStop hook on vpn container for clean pod termination during rollout ([68e19e9](https://github.com/brettswift/k8s_nas/commit/68e19e91a95d63c9011db9243430cd3b343e94af))
+
+
+### Features
+
+* **media:** SABnzbd throughput - WireGuard + BBR (plan 2026-03-12) ([d22bc26](https://github.com/brettswift/k8s_nas/commit/d22bc26e72f408fab42cd9f1343359b4b1b4134d))
+
 ## [1.6.2](https://github.com/brettswift/k8s_nas/compare/v1.6.1...v1.6.2) (2026-03-12)
 
 
