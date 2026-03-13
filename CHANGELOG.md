@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/brettswift/k8s_nas/compare/v1.8.0...v1.8.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** use Recreate rollout strategy for sabnzbd ([d3dbd61](https://github.com/brettswift/k8s_nas/commit/d3dbd61dcf26f200474b37a060cfb31f1479332c))
+
 # [1.8.0](https://github.com/brettswift/k8s_nas/compare/v1.7.2...v1.8.0) (2026-03-13)
 
 
