@@ -90,21 +90,34 @@ spec:
           name: sabnzbd-web
         env:
         - name: VPN_SERVICE_PROVIDER
-          value: "ipvanish"
-        - name: OPENVPN_PROTOCOL
-          value: "udp"
-        - name: OPENVPN_USER
+          value: "custom"
+        - name: VPN_TYPE
+          value: "wireguard"
+        - name: WIREGUARD_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_USER
-        - name: OPENVPN_PASSWORD
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_PRIVATE_KEY
+        - name: WIREGUARD_ADDRESSES
           valueFrom:
             secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_PASSWORD
-        - name: SERVER_COUNTRIES
-          value: "Canada"
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ADDRESSES
+        - name: WIREGUARD_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_PUBLIC_KEY
+        - name: WIREGUARD_ENDPOINT_IP
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ENDPOINT_IP
+        - name: WIREGUARD_ENDPOINT_PORT
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ENDPOINT_PORT
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
