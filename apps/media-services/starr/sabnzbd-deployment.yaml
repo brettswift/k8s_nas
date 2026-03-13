@@ -156,6 +156,12 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 5
+        # Graceful shutdown: signal gluetun to release tun interface so pod terminates promptly.
+        # Without this, the old pod can hang in Terminating and block rollout.
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "kill -TERM 1 2>/dev/null || true; sleep 3"]
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
