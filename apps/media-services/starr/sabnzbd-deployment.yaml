@@ -23,12 +23,8 @@ spec:
         options:
           - name: ndots
             value: "1"
-      # BBR congestion control for better throughput over VPN (see docs/plans/2026-03-12-sabnzbd-throughput-improvements.md).
-      # On k3s this sysctl may need to be allowlisted: --allowed-unsafe-sysctls=net.ipv4.tcp_congestion_control
-      securityContext:
-        sysctls:
-          - name: net.ipv4.tcp_congestion_control
-            value: "bbr"
+      # BBR: apply at node level (echo 'net.ipv4.tcp_congestion_control=bbr' | sudo tee /etc/sysctl.d/99-bbr.conf && sudo sysctl -p)
+      # Pod sysctl requires k3s --allowed-unsafe-sysctls=net.ipv4.tcp_congestion_control
       initContainers:
       - name: sab-config-init
         image: alpine:3.20
