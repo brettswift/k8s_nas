@@ -91,20 +91,18 @@ spec:
         env:
         - name: VPN_SERVICE_PROVIDER
           value: "ipvanish"
-        # WireGuard: kernel-based, multi-threaded, no MSS clamping. Add WIREGUARD_PRIVATE_KEY to vpn-secrets (from IPVanish WireGuard config).
-        # See docs/plans/2026-03-12-sabnzbd-throughput-improvements.md and Gluetun IPVanish WireGuard wiki.
-        - name: VPN_TYPE
-          value: "wireguard"
-        - name: WIREGUARD_PRIVATE_KEY
+        - name: OPENVPN_PROTOCOL
+          value: "udp"
+        - name: OPENVPN_USER
           valueFrom:
             secretKeyRef:
               name: vpn-secrets
-              key: WIREGUARD_PRIVATE_KEY
-        - name: VPN_INTERFACE
-          value: "wg0"
-        # 1390 = eth0 MTU (1450) - WireGuard overhead (~60). Omit to use default.
-        - name: WIREGUARD_MTU
-          value: "1390"
+              key: OPENVPN_USER
+        - name: OPENVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-secrets
+              key: OPENVPN_PASSWORD
         - name: SERVER_COUNTRIES
           value: "Canada"
         - name: DOT
