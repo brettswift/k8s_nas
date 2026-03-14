@@ -330,6 +330,30 @@ def get_fallback_races_2026():
         ("Abu Dhabi Grand Prix", 22, "2026-12-06 13:00:00"),
     ]
 
+# Admin: only these usernames can lock races, enter results, etc.
+ADMIN_USERNAMES = {'brett'}
+
+
+def is_admin(user):
+    """Check if user is an admin (case-insensitive)."""
+    return user and user['username'].strip().lower() in ADMIN_USERNAMES
+
+
+def admin_required(f):
+    """Decorator: require admin user for lock/enter-results routes."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            flash('Please log in to access admin', 'error')
+            return redirect(url_for('index'))
+        if not is_admin(user):
+            flash('Admin access only', 'error')
+            return redirect(url_for('races'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 def get_current_user():
     """Get current user from session."""
     session_id = session.get('session_id')
@@ -577,7 +601,7 @@ def races():
         if pred:
             predictions[race['id']] = pred
     
-    return render_template('races.html', races=all_races, predictions=predictions)
+    return render_template('races.html', races=all_races, predictions=predictions, is_admin=is_admin(user))
 
 @app.route('/logout')
 def logout():
@@ -587,6 +611,7 @@ def logout():
 
 # Admin routes
 @app.route('/admin/enter-results/<int:race_id>', methods=['GET', 'POST'])
+@admin_required
 def enter_results(race_id):
     """Enter actual race results (admin only)."""
     db = get_db()
@@ -639,6 +664,7 @@ def enter_results(race_id):
     return render_template('enter_results.html', race=race, drivers=drivers)
 
 @app.route('/admin/lock-race/<int:race_id>')
+@admin_required
 def lock_race(race_id):
     """Lock predictions for a race."""
     db = get_db()

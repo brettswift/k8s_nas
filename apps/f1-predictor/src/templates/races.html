@@ -57,6 +57,7 @@
     </table>
 </div>
 
+{% if is_admin %}
 <div class="card" style="background: rgba(255, 255, 255, 0.03);">
     <h3>Admin Actions</h3>
     <p style="font-size: 14px; opacity: 0.7;">These actions are for admin use only</p>
@@ -74,4 +75,5 @@
         {% endfor %}
     </div>
 </div>
+{% endif %}
 {% endblock %}
