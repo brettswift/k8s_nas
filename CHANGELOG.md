@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/brettswift/k8s_nas/compare/v1.8.1...v1.9.0) (2026-03-14)
+
+
+### Features
+
+* **media:** deploy Unpackerr with usenet mount for SABnzbd season pack extraction ([dc2a0a9](https://github.com/brettswift/k8s_nas/commit/dc2a0a9bb301e4c5cf0e4bcc3c181d340df361f5))
+
 ## [1.8.1](https://github.com/brettswift/k8s_nas/compare/v1.8.0...v1.8.1) (2026-03-13)
 
 
