@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/brettswift/k8s_nas/compare/v1.9.0...v1.9.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* **unpackerr:** add usenet protocol so SABnzbd downloads are processed ([ad6d55f](https://github.com/brettswift/k8s_nas/commit/ad6d55f709cbe7801c243d8fa8c972834681f248))
+
 # [1.9.0](https://github.com/brettswift/k8s_nas/compare/v1.8.1...v1.9.0) (2026-03-14)
 
 
