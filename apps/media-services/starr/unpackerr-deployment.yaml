@@ -48,6 +48,20 @@ spec:
             secretKeyRef:
               name: starr-secrets
               key: RADARR_API_KEY
+        # Include usenet so Unpackerr processes SABnzbd downloads (season packs, etc.)
+        - name: UN_SONARR_0_PROTOCOLS
+          value: "torrent,usenet,TorrentDownloadProtocol,UsenetDownloadProtocol"
+        - name: UN_RADARR_0_PROTOCOLS
+          value: "torrent,usenet,TorrentDownloadProtocol,UsenetDownloadProtocol"
+        # Paths for Usenet (SABnzbd) and torrents - fallback if Starr path not accessible
+        - name: UN_SONARR_0_PATHS_0
+          value: "/usenet"
+        - name: UN_SONARR_0_PATHS_1
+          value: "/data/torrents"
+        - name: UN_RADARR_0_PATHS_0
+          value: "/usenet"
+        - name: UN_RADARR_0_PATHS_1
+          value: "/data/torrents"
         - name: UN_DEBUG
           value: "true"
         volumeMounts:
