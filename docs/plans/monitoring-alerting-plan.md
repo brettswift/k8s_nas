@@ -69,11 +69,11 @@ From `docs/monitoring-design.md` – configure Alertmanager route `repeat_interv
 - **Options:**
   - **A)** In-cluster Python microservice (receives webhook, POSTs to `https://ntfy.sh/<topic>`)
   - **B)** External bridge (e.g. pinpox/alertmanager-ntfy, aTable/ntfy_alertmanager_bridge)
-- **Topics:** `k8s-nas-critical`, `k8s-nas-warnings`, `k8s-nas-alerts` (configurable via ConfigMap)
+- **Topics:** Use `bswift_general` for k8s_nas notifications (configurable via ConfigMap). Subscribe at https://ntfy.sh/bswift_general
 
 ### 6. User Action
 
-- Subscribe to ntfy.sh topics: https://ntfy.sh/k8s-nas-critical, https://ntfy.sh/k8s-nas-warnings
+- Subscribe to ntfy.sh: https://ntfy.sh/bswift_general
 
 ## File Changes Summary
 
@@ -99,7 +99,7 @@ How an external bot (outside the cluster) can access alarms, logs, and cluster s
 |--------|----------|------|-------|
 | **Alertmanager API** | `GET https://home.brettswift.com/alertmanager/api/v2/alerts` | Add Basic Auth or API key via ingress | Returns active alerts as JSON |
 | **Prometheus API** | `GET https://home.brettswift.com/prometheus/api/v1/alerts` | Same as Prometheus UI | All firing alerts |
-| **ntfy.sh subscribe** | `GET https://ntfy.sh/k8s-nas-critical` (SSE stream) | None (public topic) | Long-polling; bot receives pushes as they occur |
+| **ntfy.sh subscribe** | `GET https://ntfy.sh/bswift_general` (SSE stream) | None (public topic) | Long-polling; bot receives pushes as they occur |
 
 **Recommendation:** Expose Alertmanager via ingress with auth, or have the bot subscribe to ntfy.sh topics (SSE).
 

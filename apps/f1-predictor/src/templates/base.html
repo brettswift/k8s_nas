@@ -234,6 +234,11 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% if environment == 'dev' %}
+    <div style="background: #ff69b4; color: #000; text-align: center; padding: 8px 0; font-weight: bold; font-size: 14px;">
+        DEVELOPMENT
+    </div>
+    {% endif %}
     {% if request.endpoint not in ['index'] %}
     <header>
         <div class="container">

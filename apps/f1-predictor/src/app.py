@@ -13,6 +13,7 @@ import sqlite3
 import requests
 from datetime import datetime, timezone, timedelta
 
+from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, jsonify
 
 app = Flask(__name__)
@@ -422,6 +423,30 @@ def has_races_pending_results(db):
     """True if any race is eligible for results check (started 90+ min ago, no results)."""
     return len(get_races_pending_results(db)) > 0
 
+# Admin: only these usernames can lock races, enter results, etc.
+ADMIN_USERNAMES = {'brett'}
+
+
+def is_admin(user):
+    """Check if user is an admin (case-insensitive)."""
+    return user and user['username'].strip().lower() in ADMIN_USERNAMES
+
+
+def admin_required(f):
+    """Decorator: require admin user for lock/enter-results routes."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            flash('Please log in to access admin', 'error')
+            return redirect(url_for('index'))
+        if not is_admin(user):
+            flash('Admin access only', 'error')
+            return redirect(url_for('races'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 def get_current_user():
     """Get current user from session."""
     session_id = session.get('session_id')
@@ -676,7 +701,8 @@ def races():
     return render_template('races.html',
                           races=all_races,
                           predictions=predictions,
-                          has_pending_results=has_pending)
+                          has_pending_results=has_pending,
+                          is_admin=is_admin(user))
 
 @app.route('/logout')
 def logout():
@@ -686,6 +712,7 @@ def logout():
 
 # Admin routes
 @app.route('/admin/enter-results/<int:race_id>', methods=['GET', 'POST'])
+@admin_required
 def enter_results(race_id):
     """Enter actual race results manually (admin). API polling may have already updated."""
     db = get_db()
@@ -734,6 +761,17 @@ def enter_results(race_id):
 
     return render_template('enter_results.html', race=race, drivers=drivers)
 
+@app.route('/admin/lock-race/<int:race_id>')
+@admin_required
+def lock_race(race_id):
+    """Lock predictions for a race."""
+    db = get_db()
+    db.execute('UPDATE races SET status = ? WHERE id = ?', ('locked', race_id))
+    db.commit()
+    flash('Race predictions locked', 'success')
+    return redirect(url_for('races'))
+
+# Driver refresh endpoint for CronJob
 @app.route('/admin/refresh-drivers', methods=['POST'])
 def refresh_drivers():
     """Refresh drivers from API - called by CronJob."""

@@ -96,7 +96,7 @@ This is a **monolith** repository containing all infrastructure and application 
 ## Deployment Environments
 
 1. **Development (`dev` branch)**: Local k3s/k3d cluster for testing
-2. **Production (`main` branch)**: Remote server at 10.0.0.20
+2. **Production (`main` branch)**: Remote server at 10.1.0.20
 
 ## Links to Detailed Documentation
 

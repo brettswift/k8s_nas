@@ -1,3 +1,120 @@
+## [1.8.1](https://github.com/brettswift/k8s_nas/compare/v1.8.0...v1.8.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** use Recreate rollout strategy for sabnzbd ([d3dbd61](https://github.com/brettswift/k8s_nas/commit/d3dbd61dcf26f200474b37a060cfb31f1479332c))
+
+# [1.8.0](https://github.com/brettswift/k8s_nas/compare/v1.7.2...v1.8.0) (2026-03-13)
+
+
+### Features
+
+* **media:** switch sabnzbd VPN from OpenVPN to WireGuard via Gluetun custom provider ([5473124](https://github.com/brettswift/k8s_nas/commit/547312466a770cfa7f85a7471203feff8995d95e))
+
+## [1.7.2](https://github.com/brettswift/k8s_nas/compare/v1.7.1...v1.7.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** revert to OpenVPN - Gluetun does not support IPVanish WireGuard ([53987f4](https://github.com/brettswift/k8s_nas/commit/53987f48fa0602dc3aad94665d2ec03e9465ffa5))
+
+## [1.7.1](https://github.com/brettswift/k8s_nas/compare/v1.7.0...v1.7.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** remove BBR sysctl - k3s forbids by default, use node-level sysctl instead ([0b0396a](https://github.com/brettswift/k8s_nas/commit/0b0396ade91d022cc734973664d09ee820980f51))
+
+# [1.7.0](https://github.com/brettswift/k8s_nas/compare/v1.6.2...v1.7.0) (2026-03-13)
+
+
+### Bug Fixes
+
+* **media:** preStop hook on vpn container for clean pod termination during rollout ([68e19e9](https://github.com/brettswift/k8s_nas/commit/68e19e91a95d63c9011db9243430cd3b343e94af))
+
+
+### Features
+
+* **media:** SABnzbd throughput - WireGuard + BBR (plan 2026-03-12) ([d22bc26](https://github.com/brettswift/k8s_nas/commit/d22bc26e72f408fab42cd9f1343359b4b1b4134d))
+
+## [1.6.2](https://github.com/brettswift/k8s_nas/compare/v1.6.1...v1.6.2) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** VPN check use ipinfo.io without trailing dot so alarm fires when DNS broken ([d1a37fa](https://github.com/brettswift/k8s_nas/commit/d1a37fa16a0762bb422d7bfbbbcad0caf6d47c90))
+
+## [1.6.1](https://github.com/brettswift/k8s_nas/compare/v1.6.0...v1.6.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** Sabnzbd VPN alert noDataState OK when healthy ([291d1ba](https://github.com/brettswift/k8s_nas/commit/291d1ba8eef41e39eac93318c3a8b2e76172234c))
+
+# [1.6.0](https://github.com/brettswift/k8s_nas/compare/v1.5.1...v1.6.0) (2026-03-12)
+
+
+### Features
+
+* **monitoring:** Grafana->ntfy proxy for clean notifications ([dfc5c04](https://github.com/brettswift/k8s_nas/commit/dfc5c04fe74be2f63df5ab649ec778caf10d21a9))
+
+## [1.5.1](https://github.com/brettswift/k8s_nas/compare/v1.5.0...v1.5.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* **monitoring:** Alarms dashboard - add Sabnzbd VPN alarm panel (matches alert state) ([f92c5f0](https://github.com/brettswift/k8s_nas/commit/f92c5f0a47a0bb00ae0019c5108ca1cde2032924))
+
+# [1.5.0](https://github.com/brettswift/k8s_nas/compare/v1.4.0...v1.5.0) (2026-03-12)
+
+
+### Features
+
+* **monitoring:** Grafana Sabnzbd VPN alarm, Alarms dashboard, ntfy contact point ([89516e5](https://github.com/brettswift/k8s_nas/commit/89516e5b3f942cd526805964e94cb1be2b77134d))
+
+# [1.4.0](https://github.com/brettswift/k8s_nas/compare/v1.3.3...v1.4.0) (2026-03-10)
+
+
+### Features
+
+* add list-jellyseerr-requests.sh and re-request-starr.py for Jellyseerr/Sonarr/Radarr ([d412aeb](https://github.com/brettswift/k8s_nas/commit/d412aebfb2e35f0c73ea87e6c07c3d29f0cf1d10))
+
+## [1.3.3](https://github.com/brettswift/k8s_nas/compare/v1.3.2...v1.3.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* use ipinfo.io. (FQDN) in VPN check so DNS resolves in gluetun container ([ee52e09](https://github.com/brettswift/k8s_nas/commit/ee52e0961bee2eb6183921a63a35f4b07c6f5768))
+
+## [1.3.2](https://github.com/brettswift/k8s_nas/compare/v1.3.1...v1.3.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* Pushgateway push use PUT + curl (exposition format); image has curl not wget ([c5c6826](https://github.com/brettswift/k8s_nas/commit/c5c68266deb66a47c9911c2e3a7d2a69daefccd5))
+
+## [1.3.1](https://github.com/brettswift/k8s_nas/compare/v1.3.0...v1.3.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* **vpn:** relax Sabnzbd VPN config, add scripts to update secrets and diagnose ([b1c32a2](https://github.com/brettswift/k8s_nas/commit/b1c32a2155ff7c1f14438f175f5606789dcad765))
+
+# [1.3.0](https://github.com/brettswift/k8s_nas/compare/v1.2.7...v1.3.0) (2026-03-09)
+
+
+### Features
+
+* **f1:** Add pink DEVELOPMENT banner and remove team from dropdown ([0bfd2c7](https://github.com/brettswift/k8s_nas/commit/0bfd2c7dab5f5cb1b7020c1bb727f1ba3f5d0afe))
+
+## [1.2.7](https://github.com/brettswift/k8s_nas/compare/v1.2.6...v1.2.7) (2026-03-08)
+
+
+### Bug Fixes
+
+* **f1-predictor:** image-refresh hook Accept header for OCI images ([6858f85](https://github.com/brettswift/k8s_nas/commit/6858f85e08b13d7028b4058d18c13524053865d8))
+
 ## [1.2.6](https://github.com/brettswift/k8s_nas/compare/v1.2.5...v1.2.6) (2026-03-08)
 
 

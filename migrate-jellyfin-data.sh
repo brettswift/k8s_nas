@@ -9,7 +9,7 @@ echo "🎬 Starting Jellyfin data migration..."
 
 # Configuration
 DOCKER_COMPOSE_PATH="/Users/bswift/src/brettswift/bs-mediaserver-projects/docker-compose-nas/jellyfin"
-SERVER="bswift@10.0.0.20"
+SERVER="bswift@10.1.0.20"
 KUBECONFIG_PATH="/etc/rancher/k3s/k3s.yaml"
 NAMESPACE="media"
 APP_LABEL="app=jellyfin"
