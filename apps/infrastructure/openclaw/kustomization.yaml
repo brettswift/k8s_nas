@@ -1,6 +1,7 @@
 resources:
   - namespace.yaml
   - pvc.yaml
+  - configmap-golden.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml

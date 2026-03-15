@@ -1,0 +1,21 @@
+# Minimal OpenClaw config used as fallback when both openclaw.json and .bak are
+# broken or missing. Restore uses openclaw.json.bak first; this is last resort.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-golden-config
+  namespace: openclaw
+data:
+  openclaw.json: |
+    {
+      "gateway": {
+        "bind": "lan",
+        "port": 18789,
+        "controlUi": {
+          "allowedOrigins": [
+            "https://home.brettswift.com",
+            "https://openclaw.home.brettswift.com"
+          ]
+        }
+      }
+    }

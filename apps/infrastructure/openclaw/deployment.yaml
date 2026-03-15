@@ -44,14 +44,30 @@ spec:
             - sh
             - -c
             - |
+              set -e
+              # If previous run crashed (sentinel still exists), restore from backup
+              if [ -f /data/.gateway-starting ]; then
+                if [ -f /data/openclaw.json.bak ]; then
+                  cp /data/openclaw.json /data/openclaw.json.bad.$(date +%s) 2>/dev/null || true
+                  cp /data/openclaw.json.bak /data/openclaw.json
+                elif [ -f /golden/openclaw.json ]; then
+                  cp /data/openclaw.json /data/openclaw.json.bad.$(date +%s) 2>/dev/null || true
+                  cp /golden/openclaw.json /data/openclaw.json
+                fi
+              fi
               chown -R 1000:1000 /data
               chmod -R u+rwX,g+rX,o-rwx /data
               mkdir -p /data/workspace
               chown 1000:1000 /data/workspace
               chmod 755 /data/workspace
+              touch /data/.gateway-starting
+              chown 1000:1000 /data/.gateway-starting
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: golden-config
+              mountPath: /golden
+              readOnly: true
       containers:
         - name: gateway
           image: ghcr.io/brettswift/openclaw-gateway:live
@@ -137,7 +153,22 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
+        - name: config-sentinel
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              while ! wget -q -O /dev/null http://127.0.0.1:18789/healthz 2>/dev/null; do sleep 5; done
+              rm -f /data/.gateway-starting
+              exec sleep infinity
+          volumeMounts:
+            - name: data
+              mountPath: /data
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: openclaw-data
+        - name: golden-config
+          configMap:
+            name: openclaw-golden-config
