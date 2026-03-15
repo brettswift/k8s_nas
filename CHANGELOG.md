@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/brettswift/k8s_nas/compare/v1.11.1...v1.11.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* **openclaw:** disable NetworkPolicy that broke egress (GitOps deploy) ([ffc0a3d](https://github.com/brettswift/k8s_nas/commit/ffc0a3da7c65fe664520fecbb5c24f62c5f8c5de))
+
 ## [1.11.1](https://github.com/brettswift/k8s_nas/compare/v1.11.0...v1.11.1) (2026-03-15)
 
 
