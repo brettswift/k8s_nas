@@ -70,7 +70,8 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          image: ghcr.io/brettswift/openclaw-gateway:live
+          # Official image (no wrapper); use ghcr.io/brettswift/openclaw-gateway:live for custom build with vim etc.
+          image: ghcr.io/openclaw/openclaw:main
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
