@@ -38,9 +38,10 @@ spec:
       containers:
         - name: gateway
           image: ghcr.io/openclaw/openclaw:main
+          workingDir: /home/node/.openclaw/workspace
           args:
             - node
-            - dist/index.js
+            - /app/dist/index.js
             - gateway
             - --allow-unconfigured
             - --bind
