@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}F1 Predictor{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e10600;
+            text-decoration: none;
+        }
+        
+        .logo span {
+            color: #fff;
+        }
+        
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 20px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        nav a:hover {
+            opacity: 1;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #e10600;
+        }
+        
+        h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #e10600;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #c00500;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-error {
+            background: rgba(225, 6, 0, 0.2);
+            border: 1px solid #e10600;
+        }
+        
+        .alert-success {
+            background: rgba(0, 200, 83, 0.2);
+            border: 1px solid #00c853;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th {
+            font-weight: 600;
+            opacity: 0.7;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-upcoming { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .status-open { background: rgba(0, 200, 83, 0.2); color: #00c853; }
+        .status-locked { background: rgba(255, 87, 34, 0.2); color: #ff5722; }
+        .status-completed { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+        
+        .podium {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .podium-position {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .podium-p1 { background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; }
+        .podium-p2 { background: linear-gradient(135deg, #c0c0c0, #9e9e9e); color: #000; }
+        .podium-p3 { background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; }
+        
+        .score-badge {
+            display: inline-block;
+            background: #e10600;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            text-align: right;
+            font-size: 14px;
+        }
+        
+        .user-info strong {
+            color: #e10600;
+        }
+
+        .app-footer {
+            padding: 12px 0;
+            margin-top: 40px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .app-footer .version {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if environment == 'dev' %}
+    <div style="background: #ff69b4; color: #000; text-align: center; padding: 8px 0; font-weight: bold; font-size: 14px;">
+        DEVELOPMENT
+    </div>
+    {% endif %}
+    {% if request.endpoint not in ['index'] %}
+    <header>
+        <div class="container">
+            <a href="{{ url_for('home') }}" class="logo">F1 <span>Predictor</span></a>
+            {% if environment == 'dev' %}
+            <span style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px;">DEV</span>
+            {% endif %}
+            <nav>
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('races') }}">Races</a>
+                <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </nav>
+        </div>
+    </header>
+    {% endif %}
+    
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if app_version %}
+    <footer class="app-footer">
+        <div class="container">
+            <span class="version">v{{ app_version }}</span>
+        </div>
+    </footer>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

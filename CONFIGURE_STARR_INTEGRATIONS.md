@@ -108,7 +108,7 @@ Root folders define where each service stores its media library. These must be c
 
 ### Required Directory Structure
 
-**On the host server (`10.0.0.20`):**
+**On the host server (`10.1.0.20`):**
 ```bash
 # Create root folder directories (run on the server):
 sudo mkdir -p /mnt/data/media/series /mnt/data/media/movies

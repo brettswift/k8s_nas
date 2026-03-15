@@ -15,11 +15,11 @@
 
 ### Step 1: Create Root Folder Directories
 
-**Host:** Run this script on the server at IP `10.0.0.20` (the Kubernetes node where `/mnt/data` is mounted)
+**Host:** Run this script on the server at IP `10.1.0.20` (the Kubernetes node where `/mnt/data` is mounted)
 
 **SSH to the host:**
 ```bash
-ssh user@10.0.0.20  # or however you access the server
+ssh user@10.1.0.20  # or however you access the server
 ```
 
 **Then run the script:**

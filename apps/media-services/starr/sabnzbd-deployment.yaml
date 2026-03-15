@@ -8,6 +8,8 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: sabnzbd
@@ -16,6 +18,15 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      # ndots:1 so resolver tries hostnames as FQDN first. Default ndots:5 causes
+      # news.server.com to be tried as news.server.com.media.svc.cluster.local first;
+      # gluetun DNS then fails and SABnzbd never resolves the usenet server.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      # BBR: apply at node level (echo 'net.ipv4.tcp_congestion_control=bbr' | sudo tee /etc/sysctl.d/99-bbr.conf && sudo sysctl -p)
+      # Pod sysctl requires k3s --allowed-unsafe-sysctls=net.ipv4.tcp_congestion_control
       initContainers:
       - name: sab-config-init
         image: alpine:3.20
@@ -81,23 +92,34 @@ spec:
           name: sabnzbd-web
         env:
         - name: VPN_SERVICE_PROVIDER
-          value: "ipvanish"
-        - name: OPENVPN_PROTOCOL
-          value: "udp"
-        - name: OPENVPN_USER
+          value: "custom"
+        - name: VPN_TYPE
+          value: "wireguard"
+        - name: WIREGUARD_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_USER
-        - name: OPENVPN_PASSWORD
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_PRIVATE_KEY
+        - name: WIREGUARD_ADDRESSES
           valueFrom:
             secretKeyRef:
-              name: vpn-secrets
-              key: OPENVPN_PASSWORD
-        - name: SERVER_COUNTRIES
-          value: "Canada"
-        - name: SERVER_HOSTNAMES
-          value: "yvr-c19.ipvanish.com"
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ADDRESSES
+        - name: WIREGUARD_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_PUBLIC_KEY
+        - name: WIREGUARD_ENDPOINT_IP
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ENDPOINT_IP
+        - name: WIREGUARD_ENDPOINT_PORT
+          valueFrom:
+            secretKeyRef:
+              name: sabnzbd-wireguard-config
+              key: WIREGUARD_ENDPOINT_PORT
         - name: DOT
           value: "off"
         - name: FIREWALL_VPN_INPUT_PORTS
@@ -112,34 +134,43 @@ spec:
         - name: config
           mountPath: /config
         resources:
+          # Higher CPU request so VPN isn't starved under heavy usenet download (single tunnel = CPU-bound).
           requests:
             memory: "256Mi"
-            cpu: "200m"
+            cpu: "500m"
           limits:
             memory: "512Mi"
             cpu: "2000m"
         livenessProbe:
           exec:
             command:
-            - ping
-            - -c
-            - "1"
-            - www.google.com
+            - wget
+            - -q
+            - -O-
+            - --timeout=3
+            - http://127.0.0.1:9999
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 5
         readinessProbe:
           exec:
             command:
-            - ping
-            - -c
-            - "1"
-            - www.google.com
-          initialDelaySeconds: 10
+            - wget
+            - -q
+            - -O-
+            - --timeout=3
+            - http://127.0.0.1:9999
+          initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 5
+        # Graceful shutdown: signal gluetun to release tun interface so pod terminates promptly.
+        # Without this, the old pod can hang in Terminating and block rollout.
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "kill -TERM 1 2>/dev/null || true; sleep 3"]
       - name: sabnzbd
         image: docker.io/linuxserver/sabnzbd:latest
         ports:
@@ -188,27 +219,25 @@ spec:
           mountPath: /data
         resources:
           requests:
-            memory: "256Mi"
+            memory: "512Mi"
             cpu: "200m"
           limits:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "2000m"
         livenessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 45
           periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
+          timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 10
+          initialDelaySeconds: 20
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 5
       volumes:
       - name: config
         persistentVolumeClaim:

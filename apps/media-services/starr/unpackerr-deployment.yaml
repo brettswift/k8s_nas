@@ -48,13 +48,27 @@ spec:
             secretKeyRef:
               name: starr-secrets
               key: RADARR_API_KEY
-        - name: UN_PATHS_0_TRIGGER
-          value: "true"
+        # Include usenet so Unpackerr processes SABnzbd downloads (season packs, etc.)
+        - name: UN_SONARR_0_PROTOCOLS
+          value: "torrent,usenet,TorrentDownloadProtocol,UsenetDownloadProtocol"
+        - name: UN_RADARR_0_PROTOCOLS
+          value: "torrent,usenet,TorrentDownloadProtocol,UsenetDownloadProtocol"
+        # Paths for Usenet (SABnzbd) and torrents - fallback if Starr path not accessible
+        - name: UN_SONARR_0_PATHS_0
+          value: "/usenet"
+        - name: UN_SONARR_0_PATHS_1
+          value: "/data/torrents"
+        - name: UN_RADARR_0_PATHS_0
+          value: "/usenet"
+        - name: UN_RADARR_0_PATHS_1
+          value: "/data/torrents"
         - name: UN_DEBUG
           value: "true"
         volumeMounts:
         - name: downloads
           mountPath: /data/torrents
+        - name: usenet
+          mountPath: /usenet
         resources:
           requests:
             memory: "128Mi"
@@ -70,19 +84,7 @@ spec:
         hostPath:
           path: /mnt/data/downloads
           type: Directory
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: starr-secrets
-  namespace: media
-type: Opaque
-data:
-  # These will need to be populated with actual base64 encoded API keys
-  SONARR_API_KEY: ""     # Base64 encoded API key
-  RADARR_API_KEY: ""     # Base64 encoded API key
-  LIDARR_API_KEY: ""     # Base64 encoded API key
-  BAZARR_API_KEY: ""     # Base64 encoded API key
-  PROWLARR_API_KEY: ""   # Base64 encoded API key
-  JELLYSEERR_API_KEY: "" # Base64 encoded API key
-  SABNZBD_API_KEY: ""    # Base64 encoded API key
+      - name: usenet
+        hostPath:
+          path: /mnt/data/usenet
+          type: Directory

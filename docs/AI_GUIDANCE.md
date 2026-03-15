@@ -44,6 +44,9 @@ ssh nas
 - **Sync Policy**: Most applications have automated sync with prune and selfHeal enabled
 - Manage applications via Git commits; enable/disable services through Git-controlled values and labels.
 - **NEVER manually apply resources managed by ArgoCD** - always commit to Git and let ArgoCD sync.
+- **Do not advance local `live`** during deployments. Keep local `live` at a known rollback point.
+- **Deploy by pushing feature branch directly to remote `live`** (for example, `git push origin <feature-branch>:live`) while staying on the feature branch locally.
+- **If local `live` is moved by mistake**, immediately reset it back to the pre-deploy commit.
 
 ## Developer and QA workflow
 

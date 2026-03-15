@@ -122,6 +122,12 @@ data:
           action: replace
           target_label: kubernetes_name
 
+      # Pushgateway (for batch/cron job metrics e.g. sabnzbd_vpn_healthy)
+      - job_name: 'pushgateway'
+        honor_labels: true
+        static_configs:
+        - targets: ['pushgateway.monitoring.svc.cluster.local:9091']
+
       # cAdvisor
       - job_name: 'kubernetes-cadvisor'
         kubernetes_sd_configs:

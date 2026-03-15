@@ -35,9 +35,9 @@ echo "Method 1: Checking for existing config on server..."
 PROWLARR_CONFIG="/mnt/data/configs/prowlarr/config.xml"
 PROWLARR_KEY=""
 
-if ssh -o ConnectTimeout=5 bswift@10.0.0.20 "test -f $PROWLARR_CONFIG" 2>/dev/null; then
+if ssh -o ConnectTimeout=5 bswift@10.1.0.20 "test -f $PROWLARR_CONFIG" 2>/dev/null; then
     echo "📁 Found existing Prowlarr config on server"
-    PROWLARR_KEY=$(ssh bswift@10.0.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $PROWLARR_CONFIG 2>/dev/null | head -1" || echo "")
+    PROWLARR_KEY=$(ssh bswift@10.1.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' $PROWLARR_CONFIG 2>/dev/null | head -1" || echo "")
     if [ -n "$PROWLARR_KEY" ]; then
         echo "✅ Extracted API key from server config: ${PROWLARR_KEY:0:10}..."
     fi

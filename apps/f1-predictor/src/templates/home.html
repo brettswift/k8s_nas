@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Home - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <p style="opacity: 0.7; margin-bottom: 5px;">Welcome back,</p>
+            <h1 style="margin-bottom: 0;">{{ user['username'] }}</h1>
+        </div>
+        <div style="text-align: right;">
+            <p style="opacity: 0.7; margin-bottom: 5px;">Total Score</p>
+            <div class="score-badge" style="font-size: 24px;">{{ total_score }}</div>
+        </div>
+    </div>
+</div>
+
+{% if next_race %}
+<div class="card">
+    <h2>Next Race: {{ next_race['name'] }}</h2>
+    <p><strong>Round {{ next_race['round'] }}</strong> — {{ next_race['date'] }}</p>
+    
+    <div style="margin: 20px 0;">
+        <span class="status status-{{ next_race['status'] }}">{{ next_race['status']|upper }}</span>
+    </div>
+    
+    {% if user_prediction %}
+        <h3>Your Prediction</h3>
+        <div class="podium">
+            <div class="podium-position podium-p1">
+                <div style="font-size: 24px; font-weight: bold;">P1</div>
+                <div style="font-size: 14px; margin-top: 5px;">{{ user_prediction['p1_name'] }}</div>
+            </div>
+            <div class="podium-position podium-p2">
+                <div style="font-size: 24px; font-weight: bold;">P2</div>
+                <div style="font-size: 14px; margin-top: 5px;">{{ user_prediction['p2_name'] }}</div>
+            </div>
+            <div class="podium-position podium-p3">
+                <div style="font-size: 24px; font-weight: bold;">P3</div>
+                <div style="font-size: 14px; margin-top: 5px;">{{ user_prediction['p3_name'] }}</div>
+            </div>
+        </div>
+        
+        {% if next_race['status'] == 'open' %}
+            <a href="{{ url_for('predict', race_id=next_race['id']) }}" class="btn">Change Prediction</a>
+        {% endif %}
+    {% else %}
+        {% if next_race['status'] == 'open' %}
+            <p>You haven't made a prediction yet!</p>
+            <a href="{{ url_for('predict', race_id=next_race['id']) }}" class="btn">Make Prediction</a>
+        {% elif next_race['status'] == 'locked' %}
+            <p>Predictions are locked for this race.</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <h2>No Upcoming Races</h2>
+    <p>The F1 season hasn't started yet or all races have been completed.</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Quick Links</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">View Leaderboard</a>
+        <a href="{{ url_for('races') }}" class="btn btn-secondary">All Races</a>
+    </div>
+</div>
+{% endblock %}

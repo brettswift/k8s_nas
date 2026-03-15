@@ -20,7 +20,7 @@
 
 ### Background Context
 
-The k8s_nas project is a Kubernetes-based Network Attached Storage media server infrastructure that has been migrated from a docker-compose setup to a GitOps-managed Kubernetes deployment. The project currently has all core Starr media management services (Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, Jellyseerr, Jellyfin, qBittorrent, Sabnzbd) successfully deployed and running on a remote Kubernetes cluster at 10.0.0.20.
+The k8s_nas project is a Kubernetes-based Network Attached Storage media server infrastructure that has been migrated from a docker-compose setup to a GitOps-managed Kubernetes deployment. The project currently has all core Starr media management services (Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, Jellyseerr, Jellyfin, qBittorrent, Sabnzbd) successfully deployed and running on a remote Kubernetes cluster at 10.1.0.20.
 
 The infrastructure uses ArgoCD ApplicationSets for GitOps deployment management, NGINX Ingress for routing, and follows a GitOps-first approach where all changes must be committed to Git and reconciled through ArgoCD. Services are accessible via `https://home.brettswift.com/<service>` with path-based routing.
 

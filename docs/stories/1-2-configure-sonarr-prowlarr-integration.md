@@ -187,7 +187,7 @@ kubectl logs -n media -l app=prowlarr --tail=50
 
 ```bash
 # Method 1: Extract from existing config on server (if exists)
-ssh bswift@10.0.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' /mnt/data/configs/prowlarr/config.xml 2>/dev/null | head -1"
+ssh bswift@10.1.0.20 "grep -oP '(?<=<ApiKey>)[^<]+' /mnt/data/configs/prowlarr/config.xml 2>/dev/null | head -1"
 
 # Method 2: Extract from pod config (after deployment)
 kubectl exec -n media -l app=prowlarr -- cat /config/config.xml | grep -oP '(?<=<ApiKey>)[^<]+' | head -1

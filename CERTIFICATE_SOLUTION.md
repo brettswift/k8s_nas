@@ -1,7 +1,7 @@
 # Certificate Solution - Automated Let's Encrypt with DNS-01
 
 ## The Problem
-- HTTP-01 challenge fails: Let's Encrypt can't reach private IP (10.0.0.20)
+- HTTP-01 challenge fails: Let's Encrypt can't reach private IP (10.1.0.20)
 - DNS-01 challenge requires Route53 API access
 - cert-manager Route53 provider doesn't support AWS session tokens (temporary credentials)
 

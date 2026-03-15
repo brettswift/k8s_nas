@@ -62,6 +62,11 @@ spec:
       kind: Job
     - group: 'batch'
       kind: CronJob
+    # Namespaced RBAC (e.g. f1-predictor image-refresh hook)
+    - group: 'rbac.authorization.k8s.io'
+      kind: Role
+    - group: 'rbac.authorization.k8s.io'
+      kind: RoleBinding
     # Traefik CRDs (namespaced)
     - group: 'traefik.io'
       kind: IngressRoute

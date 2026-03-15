@@ -58,6 +58,8 @@ spec:
           mountPath: /etc/grafana/provisioning/dashboards
         - name: grafana-dashboard-files
           mountPath: /var/lib/grafana/dashboards
+        - name: grafana-alerting
+          mountPath: /etc/grafana/provisioning/alerting
       volumes:
       - name: grafana-storage
         emptyDir: {}
@@ -73,3 +75,7 @@ spec:
         configMap:
           defaultMode: 420
           name: grafana-dashboards
+      - name: grafana-alerting
+        configMap:
+          defaultMode: 420
+          name: grafana-alerting

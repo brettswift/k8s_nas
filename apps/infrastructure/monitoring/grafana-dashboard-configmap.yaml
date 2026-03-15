@@ -1114,3 +1114,107 @@ data:
       "uid": "error-rates-dashboard",
       "version": 1
     }
+  alarms.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "expr": "sabnzbd_vpn_healthy",
+              "refId": "A",
+              "legendFormat": "VPN healthy"
+            }
+          ],
+          "title": "Sabnzbd VPN (metric)",
+          "description": "Last value pushed by the cron job. Refreshes after each run (every 15 min).",
+          "type": "stat",
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "options": { "0": { "color": "red", "index": 0, "text": "DOWN" } }, "type": "value" },
+                { "options": { "1": { "color": "green", "index": 0, "text": "UP" } }, "type": "value" }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+            }
+          }
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 8, "x": 8, "y": 0 },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "expr": "(sabnzbd_vpn_healthy == 0 or absent(sabnzbd_vpn_healthy)) or (sabnzbd_vpn_healthy * 0)",
+              "refId": "A",
+              "legendFormat": "alarm"
+            }
+          ],
+          "title": "Sabnzbd VPN alarm",
+          "description": "Same condition as the alert rule. OK = healthy; ALARM = metric 0 or missing (no more 'No data').",
+          "type": "stat",
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "options": { "0": { "color": "green", "index": 0, "text": "OK" } }, "type": "value" },
+                { "options": { "1": { "color": "red", "index": 0, "text": "ALARM" } }, "type": "value" }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+              "noValue": "OK"
+            }
+          }
+        },
+        {
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+          "id": 3,
+          "options": {
+            "alertName": "",
+            "dashboardAlerts": false,
+            "folder": { "id": 0, "title": "Alarms" },
+            "groupBy": ["alertname"],
+            "maxItems": 20,
+            "sortOrder": 1,
+            "stateFilter": { "error": true, "firing": true, "nodata": true, "normal": false, "pending": true },
+            "topic": ""
+          },
+          "title": "Firing alerts",
+          "type": "alertlist",
+          "pluginVersion": "10.0.0"
+        }
+      ],
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["alarms"],
+      "templating": { "list": [] },
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Alarms",
+      "uid": "alarms",
+      "version": 1
+    }
