@@ -37,7 +37,8 @@ spec:
               mountPath: /data
       containers:
         - name: gateway
-          image: ghcr.io/openclaw/openclaw:main
+          image: ghcr.io/brettswift/openclaw-gateway:live
+          imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
             - node
