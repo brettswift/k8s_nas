@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/brettswift/k8s_nas/compare/v1.11.0...v1.11.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **openclaw:** use official openclaw image to test egress/network ([8e685f5](https://github.com/brettswift/k8s_nas/commit/8e685f5afebdd46f29fa2773e19ac42b2401cc9a))
+
 # [1.11.0](https://github.com/brettswift/k8s_nas/compare/v1.10.1...v1.11.0) (2026-03-15)
 
 
