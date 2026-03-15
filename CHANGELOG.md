@@ -1,3 +1,25 @@
+# [1.10.0](https://github.com/brettswift/k8s_nas/compare/v1.9.1...v1.10.0) (2026-03-15)
+
+
+### Bug Fixes
+
+* **openclaw:** add path-based ingress fallback at home.brettswift.com/openclaw ([d17fd1d](https://github.com/brettswift/k8s_nas/commit/d17fd1df67e5a2afc3d2d7b0278ab77adf56b9d8))
+* **openclaw:** add proxy-buffering off for WebSocket ([e2d8a13](https://github.com/brettswift/k8s_nas/commit/e2d8a13fdc8c6a4fabceab68ccfd86c5f1110cfa))
+* **openclaw:** disable proxy buffering for WebSocket ([b7f6201](https://github.com/brettswift/k8s_nas/commit/b7f6201270bbdcf6ceda567cfa837ddefbdd4589))
+* **openclaw:** init container to seed allowedOrigins for path/subdomain access ([09f3557](https://github.com/brettswift/k8s_nas/commit/09f35574ce1aa3c576005ea31437734516befd96))
+* **openclaw:** remove configuration-snippet - breaks ingress processing (NGINX_INGRESS_ISSUE) ([59140cc](https://github.com/brettswift/k8s_nas/commit/59140ccfbbc8916c7ffee261c7090e54f7ea9c7b))
+* **openclaw:** remove path-based ingress, use subdomain only; clarify token in README ([95e63e5](https://github.com/brettswift/k8s_nas/commit/95e63e59e6b5e0614c06447d6b3b7661e33af479))
+* **openclaw:** revert to subdomain openclaw.home.brettswift.com ([1b7f1f1](https://github.com/brettswift/k8s_nas/commit/1b7f1f1ee258bc2ea74d852585c6bf8a21dd3d0c))
+* **openclaw:** use native ollama API, remove unused Anthropic/Brave secrets ([b124fc4](https://github.com/brettswift/k8s_nas/commit/b124fc4874b4cfe86a35879540527dcf40981630))
+* **openclaw:** use path-based ingress on home.brettswift.com/openclaw for routing ([fe6407a](https://github.com/brettswift/k8s_nas/commit/fe6407ac809b2e0550322cdac26de1c603d5942c))
+
+
+### Features
+
+* **openclaw:** add Anthropic API key support for chat agent ([615321d](https://github.com/brettswift/k8s_nas/commit/615321da95d6f0eeb6f5d344c55c356adb202a7b))
+* **openclaw:** add dedicated ArgoCD Application, remove from infrastructure kustomization ([78c4a80](https://github.com/brettswift/k8s_nas/commit/78c4a803c4024eee0c48fe4636daa4f4a174f4eb))
+* **openclaw:** add egress NetworkPolicy - internet and host only, no pod access ([eaa3f91](https://github.com/brettswift/k8s_nas/commit/eaa3f9112da6e5db06185257007aa2f5a6722161))
+
 ## [1.9.1](https://github.com/brettswift/k8s_nas/compare/v1.9.0...v1.9.1) (2026-03-14)
 
 
