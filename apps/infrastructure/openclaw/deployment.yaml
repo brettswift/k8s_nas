@@ -75,6 +75,24 @@ spec:
                   name: openclaw-home-assistant-token
                   key: token
                   optional: true
+            - name: MOONSHOT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-config-secrets
+                  key: moonshot_api_key
+                  optional: true
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-config-secrets
+                  key: deepseek_api_key
+                  optional: true
+            - name: NOTION_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-config-secrets
+                  key: notion_api_key
+                  optional: true
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw
