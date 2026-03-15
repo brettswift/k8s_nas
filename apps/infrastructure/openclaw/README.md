@@ -28,12 +28,38 @@ kubectl create secret generic openclaw-anthropic-api-key \
 
 Replace `YOUR_KEY_HERE` with your key from [Anthropic Console](https://console.anthropic.com/). Restart the gateway pod after creating the secret.
 
+- **API keys via .env on the PVC:** OpenClaw reads `~/.openclaw/.env` automatically ([docs](https://docs.openclaw.ai/help/environment)). The deployment does not inject API keys from K8s, so put a `.env` file directly on the PVC at that path (same volume as `openclaw.json`). Create or edit it via `kubectl exec` or `kubectl cp`; e.g. `kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- sh -c 'echo "MOONSHOT_API_KEY=sk-yourkey" >> /home/node/.openclaw/.env'` or copy your local `.env` into the pod. Restart the gateway after changes.
+
 - **Optional**: Run the OpenClaw onboarding wizard once to create config and workspace under the PVC. You can do that by running the CLI image as a one-off job with the same PVC, or complete setup via the Control UI after the gateway is up.
 
 ## URLs
 
 - **Control UI**: https://openclaw.home.brettswift.com
 - **Docs**: https://docs.openclaw.ai
+
+## Control UI: "Pairing required"
+
+If the Control UI loads but shows **pairing required** after you enter the gateway token:
+
+1. **Token must match the gateway:** The gateway reads the token from the `openclaw-gateway-token` secret. If that secret doesn’t exist (or uses a different value), token auth won’t work and the UI may ask for device pairing. Create the secret with the **exact** token you paste in Settings → Auth:
+
+   ```bash
+   kubectl create secret generic openclaw-gateway-token \
+     --namespace openclaw \
+     --from-literal=token="THE_SAME_TOKEN_YOU_PASTE_IN_UI"
+   ```
+
+   Then restart the gateway: `kubectl rollout restart deployment/openclaw-gateway -n openclaw`
+
+2. **Approve the browser device once:** OpenClaw can require one-time device approval. List pending devices and approve yours:
+
+   ```bash
+   export KUBECONFIG=~/.kube/config-nas
+   kubectl exec -n openclaw deploy/openclaw-gateway -- node dist/index.js devices list
+   kubectl exec -n openclaw deploy/openclaw-gateway -- node dist/index.js devices approve <Request-ID>
+   ```
+
+   Use the **Request** UUID from the first column of `devices list`. After approval, refresh the Control UI.
 
 ## Telegram
 
@@ -357,6 +383,16 @@ kubectl cp /tmp/openclaw.json openclaw/$(kubectl get pod -n openclaw -l app=open
 # Restart so the gateway picks up the file
 kubectl rollout restart deployment/openclaw-gateway -n openclaw
 ```
+
+## Status and troubleshooting
+
+See **[STATUS_AND_TROUBLESHOOTING.md](STATUS_AND_TROUBLESHOOTING.md)** for:
+
+- **Agent / LLM times out:** If chat shows "LLM request timed out", the gateway likely has no API key for the model (e.g. Moonshot). Ensure the secret `openclaw-config-secrets` exists in the `openclaw` namespace with keys `moonshot_api_key` and `deepseek_api_key`, then restart the deployment. See **Config secrets** under Prerequisites.
+- What **openclaw status** shows (Update/npm line, Channels, security audit) and why **npm latest unknown** is expected in the container.
+- **Telegram plugin**: the current image (`ghcr.io/openclaw/openclaw:main`) ships a broken Telegram extension (missing `send-deps.js`). Enabling Telegram in config will not fix it; the plugin fails to load until the image is fixed upstream. Use the Control UI for chat, or try another image tag.
+- **node_modules**: the only `node_modules` on the PVC should be under `extensions/<name>/node_modules` for user-installed extensions. Do not copy a full app-level `node_modules` into the PVC.
+- **Wiping the PVC**: if you have a backup and want a clean install, scale the gateway to 0, delete the `openclaw-data` PVC, recreate it, scale back. Restore from backup only what you need. Steps are in STATUS_AND_TROUBLESHOOTING.md.
 
 ## GitOps
 

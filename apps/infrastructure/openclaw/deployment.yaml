@@ -70,8 +70,7 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          # Official image (no wrapper); use ghcr.io/brettswift/openclaw-gateway:live for custom build with vim etc.
-          image: ghcr.io/openclaw/openclaw:main
+          image: ghcr.io/brettswift/openclaw-gateway:live
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
@@ -111,24 +110,7 @@ spec:
                   name: openclaw-home-assistant-token
                   key: token
                   optional: true
-            - name: MOONSHOT_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-config-secrets
-                  key: moonshot_api_key
-                  optional: true
-            - name: DEEPSEEK_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-config-secrets
-                  key: deepseek_api_key
-                  optional: true
-            - name: NOTION_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-config-secrets
-                  key: notion_api_key
-                  optional: true
+            # API keys: not injected here so OpenClaw reads them from ~/.openclaw/.env on the PVC.
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw
