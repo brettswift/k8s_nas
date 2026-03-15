@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/brettswift/k8s_nas/compare/v1.10.1...v1.11.0) (2026-03-15)
+
+
+### Features
+
+* **openclaw:** add env-based API key secrets (moonshot, deepseek, notion) for gateway startup ([818a1a4](https://github.com/brettswift/k8s_nas/commit/818a1a4de2394428f0b18d9108bdf9b1ea5e6761))
+
 ## [1.10.1](https://github.com/brettswift/k8s_nas/compare/v1.10.0...v1.10.1) (2026-03-15)
 
 
