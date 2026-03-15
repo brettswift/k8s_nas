@@ -1,0 +1,31 @@
+# Restrict OpenClaw to: internet + host (10.1.0.20). No access to other pods/services.
+# Assumes k3s default CIDRs (pod 10.42.0.0/16, service 10.43.0.0/16). Adjust except
+# blocks if your cluster uses different CIDRs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openclaw-egress
+  namespace: openclaw
+spec:
+  podSelector:
+    matchLabels:
+      app: openclaw-gateway
+  policyTypes:
+    - Egress
+  egress:
+    # DNS (cluster DNS service)
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.0/16
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Internet and LAN (includes host 10.1.0.20); exclude pod and service CIDRs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.42.0.0/16   # pod CIDR
+              - 10.43.0.0/16   # service CIDR
