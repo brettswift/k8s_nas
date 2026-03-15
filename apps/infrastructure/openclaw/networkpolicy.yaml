@@ -1,4 +1,6 @@
 # Restrict OpenClaw to: internet + host (10.1.0.20). No access to other pods/services.
+# Currently NOT applied (commented out in kustomization.yaml): this policy breaks egress
+# (DNS + internet) on this cluster; pods with the policy fail to reach Google/Moonshot.
 # Assumes k3s default CIDRs (pod 10.42.0.0/16, service 10.43.0.0/16). Adjust except
 # blocks if your cluster uses different CIDRs.
 apiVersion: networking.k8s.io/v1
@@ -22,10 +24,16 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # Internet and LAN (includes host 10.1.0.20); exclude pod and service CIDRs
+    # Internet and LAN (includes host 10.1.0.20); exclude pod and service CIDRs.
+    # Explicit ports required by some CNIs (e.g. kube-router); omit ports = allow none.
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except:
               - 10.42.0.0/16   # pod CIDR
               - 10.43.0.0/16   # service CIDR
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443

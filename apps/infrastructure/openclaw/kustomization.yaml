@@ -5,4 +5,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
-  - networkpolicy.yaml
+  # NetworkPolicy disabled: intended to block pod-to-pod but breaks egress (DNS/internet)
+  # on this cluster's CNI. See networkpolicy.yaml for the policy; re-enable when CNI
+  # supports it or after testing with explicit ports/CIDRs.
+  # - networkpolicy.yaml
