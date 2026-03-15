@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/brettswift/k8s_nas/compare/v1.10.0...v1.10.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **argocd:** allow NetworkPolicy in apps project for openclaw ([5fdf6ca](https://github.com/brettswift/k8s_nas/commit/5fdf6caf89615545fdc554c334af4e5b045617dc))
+
 # [1.10.0](https://github.com/brettswift/k8s_nas/compare/v1.9.1...v1.10.0) (2026-03-15)
 
 
