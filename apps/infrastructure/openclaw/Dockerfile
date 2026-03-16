@@ -1,8 +1,10 @@
-# Extend official OpenClaw image with vim and bat for terminal use (e.g. ArgoCD terminal).
-FROM ghcr.io/openclaw/openclaw:main
+# Extend official OpenClaw image with vim, bat, and Python pip for terminal use and scripting.
+FROM ghcr.io/openclaw/openclaw:2026.3.13-1
 
 USER root
 RUN apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends vim bat && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    vim bat python3-pip python3-venv && \
   rm -rf /var/lib/apt/lists/*
+
 USER node
