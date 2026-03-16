@@ -1,3 +1,10 @@
+## [1.11.3](https://github.com/brettswift/k8s_nas/compare/v1.11.2...v1.11.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* **openclaw:** pin image to 2026.3.13-1 stable; :main build missing plugin-sdk/runtime (breaks Telegram) ([b48e651](https://github.com/brettswift/k8s_nas/commit/b48e651c497a08dff9356d35796f8359578740e4))
+
 ## [1.11.2](https://github.com/brettswift/k8s_nas/compare/v1.11.1...v1.11.2) (2026-03-15)
 
 
