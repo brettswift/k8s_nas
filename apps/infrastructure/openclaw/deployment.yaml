@@ -78,7 +78,7 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          image: ghcr.io/openclaw/openclaw:main
+          image: ghcr.io/openclaw/openclaw:2026.3.13-1
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
