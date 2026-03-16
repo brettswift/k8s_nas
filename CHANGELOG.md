@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-03-16)
+
+
+### Features
+
+* **openclaw:** add python3-pip and duckdb to custom image ([4f98a4d](https://github.com/brettswift/k8s_nas/commit/4f98a4dd184622fc21aaae4344f08c44c4324f48))
+
 ## [1.11.3](https://github.com/brettswift/k8s_nas/compare/v1.11.2...v1.11.3) (2026-03-16)
 
 
