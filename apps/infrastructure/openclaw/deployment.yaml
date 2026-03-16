@@ -29,8 +29,9 @@ spec:
             - sh
             - -c
             - |
-              if [ ! -f /data/openclaw.json ]; then
-                echo '{"gateway":{"controlUi":{"allowedOrigins":["https://home.brettswift.com","https://openclaw.home.brettswift.com"]}}}' > /data/openclaw.json
+              mkdir -p /data/.openclaw
+              if [ ! -f /data/.openclaw/openclaw.json ] && [ ! -f /data/openclaw.json ]; then
+                echo '{"gateway":{"controlUi":{"allowedOrigins":["https://home.brettswift.com","https://openclaw.home.brettswift.com"]}}}' > /data/.openclaw/openclaw.json
               fi
           volumeMounts:
             - name: data
@@ -45,21 +46,28 @@ spec:
             - -c
             - |
               set -e
+              # One-time migration: move old layout (openclaw.json at PVC root) into .openclaw/
+              if [ -f /data/openclaw.json ] && [ ! -f /data/.openclaw/openclaw.json ]; then
+                mkdir -p /data/.openclaw
+                for x in openclaw.json openclaw.json.bak workspace .env; do
+                  [ -e /data/"$x" ] && mv /data/"$x" /data/.openclaw/
+                done
+              fi
               # If previous run crashed (sentinel still exists), restore from backup
               if [ -f /data/.gateway-starting ]; then
-                if [ -f /data/openclaw.json.bak ]; then
-                  cp /data/openclaw.json /data/openclaw.json.bad.$(date +%s) 2>/dev/null || true
-                  cp /data/openclaw.json.bak /data/openclaw.json
+                if [ -f /data/.openclaw/openclaw.json.bak ]; then
+                  cp /data/.openclaw/openclaw.json /data/.openclaw/openclaw.json.bad.$(date +%s) 2>/dev/null || true
+                  cp /data/.openclaw/openclaw.json.bak /data/.openclaw/openclaw.json
                 elif [ -f /golden/openclaw.json ]; then
-                  cp /data/openclaw.json /data/openclaw.json.bad.$(date +%s) 2>/dev/null || true
-                  cp /golden/openclaw.json /data/openclaw.json
+                  cp /data/.openclaw/openclaw.json /data/.openclaw/openclaw.json.bad.$(date +%s) 2>/dev/null || true
+                  cp /golden/openclaw.json /data/.openclaw/openclaw.json
                 fi
               fi
               chown -R 1000:1000 /data
               chmod -R u+rwX,g+rX,o-rwx /data
-              mkdir -p /data/workspace
-              chown 1000:1000 /data/workspace
-              chmod 755 /data/workspace
+              mkdir -p /data/.openclaw/workspace
+              chown 1000:1000 /data/.openclaw/workspace
+              chmod 755 /data/.openclaw/workspace
               touch /data/.gateway-starting
               chown 1000:1000 /data/.gateway-starting
           volumeMounts:
@@ -70,7 +78,7 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          image: ghcr.io/brettswift/openclaw-gateway:live
+          image: ghcr.io/openclaw/openclaw:main
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
@@ -112,8 +120,9 @@ spec:
                   optional: true
             # API keys: not injected here so OpenClaw reads them from ~/.openclaw/.env on the PVC.
           volumeMounts:
+            # Whole home on PVC so ~/.ssh, ~/.bashrc, etc. persist
             - name: data
-              mountPath: /home/node/.openclaw
+              mountPath: /home/node
           resources:
             requests:
               cpu: 250m

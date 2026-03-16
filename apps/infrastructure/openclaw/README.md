@@ -28,6 +28,7 @@ kubectl create secret generic openclaw-anthropic-api-key \
 
 Replace `YOUR_KEY_HERE` with your key from [Anthropic Console](https://console.anthropic.com/). Restart the gateway pod after creating the secret.
 
+- **Whole home on PVC:** The PVC is mounted at `/home/node`, so `~/.openclaw`, `~/.ssh`, `~/.bashrc`, etc. all persist. On first deploy with this layout, the init container migrates existing content (openclaw.json, workspace, .env) into `~/.openclaw/`; `.ssh` stays at `~/.ssh`.
 - **API keys via .env on the PVC:** OpenClaw reads `~/.openclaw/.env` automatically ([docs](https://docs.openclaw.ai/help/environment)). The deployment does not inject API keys from K8s, so put a `.env` file directly on the PVC at that path (same volume as `openclaw.json`). Create or edit it via `kubectl exec` or `kubectl cp`; e.g. `kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- sh -c 'echo "MOONSHOT_API_KEY=sk-yourkey" >> /home/node/.openclaw/.env'` or copy your local `.env` into the pod. Restart the gateway after changes.
 
 - **Optional**: Run the OpenClaw onboarding wizard once to create config and workspace under the PVC. You can do that by running the CLI image as a one-off job with the same PVC, or complete setup via the Control UI after the gateway is up.
@@ -60,6 +61,33 @@ If the Control UI loads but shows **pairing required** after you enter the gatew
    ```
 
    Use the **Request** UUID from the first column of `devices list`. After approval, refresh the Control UI.
+
+## CLI: "gateway token mismatch"
+
+If the CLI says `unauthorized: gateway token mismatch (set gateway.remote.token to match gateway.auth.token)` when using `--url ws://...`, your CLI config must use the **same** token as the gateway.
+
+1. **Get the gateway token** (from the running pod):
+
+   ```bash
+   export KUBECONFIG=~/.kube/config-nas
+   kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- cat /home/node/.openclaw/openclaw.json | jq -r '.gateway.auth.token'
+   ```
+
+2. **Set it in your CLI config** at `~/.openclaw/openclaw.json` (or wherever your CLI reads config):
+
+   ```json
+   {
+     "gateway": {
+       "remote": {
+         "token": "<paste the token from step 1>"
+       }
+     }
+   }
+   ```
+
+   Or use env: `export OPENCLAW_GATEWAY_TOKEN=<token>`, or pass `--token <token>` when using `--url`.
+
+3. If the gateway is already running locally, either use that URL with the matching token, or stop it (`openclaw gateway stop`) and use a different port.
 
 ## Telegram
 
