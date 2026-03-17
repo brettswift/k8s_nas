@@ -106,6 +106,8 @@ spec:
                   name: openclaw-gateway-token
                   key: token
                   optional: true
+            - name: OPENCLAW_GATEWAY_SCOPES
+              value: "operator.read,operator.write,cron.manage"
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
