@@ -20,7 +20,8 @@
         🥉 {{ result_names['p3_name'] }}
     </p>
     <p style="font-size: 12px; opacity: 0.7; margin-top: 12px;">
-        Points: P1=10 · P2=6 · P3=4 · +1 for correct driver, wrong position
+        Points: P1=10 · P2=6 · P3=4 · +1 for correct driver, wrong position<br>
+        <span style="color: #e10600;">Red</span> = exact · <span style="color: #ff8c00;">Orange</span> = right driver, wrong position
     </p>
 </div>
 {% endif %}
@@ -46,6 +47,8 @@
                 <td>
                     {% if result_ids and pred['p1_driver_id'] == result_ids.get('p1_driver_id') %}
                     <span style="color: #e10600;">{{ pred['p1_name'].split()[-1] }}</span>
+                    {% elif result_ids and (pred['p1_driver_id'] == result_ids.get('p2_driver_id') or pred['p1_driver_id'] == result_ids.get('p3_driver_id')) %}
+                    <span style="color: #ff8c00;">{{ pred['p1_name'].split()[-1] }}</span>
                     {% else %}
                     {{ pred['p1_name'].split()[-1] }}
                     {% endif %}
@@ -53,6 +56,8 @@
                 <td>
                     {% if result_ids and pred['p2_driver_id'] == result_ids.get('p2_driver_id') %}
                     <span style="color: #e10600;">{{ pred['p2_name'].split()[-1] }}</span>
+                    {% elif result_ids and (pred['p2_driver_id'] == result_ids.get('p1_driver_id') or pred['p2_driver_id'] == result_ids.get('p3_driver_id')) %}
+                    <span style="color: #ff8c00;">{{ pred['p2_name'].split()[-1] }}</span>
                     {% else %}
                     {{ pred['p2_name'].split()[-1] }}
                     {% endif %}
@@ -60,6 +65,8 @@
                 <td>
                     {% if result_ids and pred['p3_driver_id'] == result_ids.get('p3_driver_id') %}
                     <span style="color: #e10600;">{{ pred['p3_name'].split()[-1] }}</span>
+                    {% elif result_ids and (pred['p3_driver_id'] == result_ids.get('p1_driver_id') or pred['p3_driver_id'] == result_ids.get('p2_driver_id')) %}
+                    <span style="color: #ff8c00;">{{ pred['p3_name'].split()[-1] }}</span>
                     {% else %}
                     {{ pred['p3_name'].split()[-1] }}
                     {% endif %}
