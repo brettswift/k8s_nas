@@ -1,3 +1,25 @@
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-03-17)
+
+
+### Features
+
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-03-16)
+
+
+### Features
+
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+
+## [1.11.3](https://github.com/brettswift/k8s_nas/compare/v1.11.2...v1.11.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* **openclaw:** pin image to 2026.3.13-1 stable; :main build missing plugin-sdk/runtime (breaks Telegram) ([b48e651](https://github.com/brettswift/k8s_nas/commit/b48e651c497a08dff9356d35796f8359578740e4))
+
 ## [1.11.2](https://github.com/brettswift/k8s_nas/compare/v1.11.1...v1.11.2) (2026-03-15)
 
 

@@ -78,7 +78,7 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          image: ghcr.io/openclaw/openclaw:2026.3.13-1
+          image: ghcr.io/brettswift/openclaw-gateway:live
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
@@ -106,6 +106,8 @@ spec:
                   name: openclaw-gateway-token
                   key: token
                   optional: true
+            - name: OPENCLAW_GATEWAY_SCOPES
+              value: "operator.read,operator.write,cron.manage"
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
