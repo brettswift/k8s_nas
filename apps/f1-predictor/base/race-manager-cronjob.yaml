@@ -1,0 +1,38 @@
+# Race-weekend state machine.
+# Runs every 5 min on Fri/Sat/Sun/Mon.  Exits in <1 s when no races
+# are active.  Replaces the old hourly f1-fetch-results CronJob.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: f1-race-manager
+spec:
+  schedule: "*/5 * * * 5,6,0,1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: race-manager
+            image: ghcr.io/brettswift/f1-predictor:latest
+            command:
+            - python3
+            - /app/cron/race_manager.py
+            env:
+            - name: DATABASE_PATH
+              value: "/data/f1_predictions.db"
+            - name: F1_API_URL
+              value: "https://api.jolpi.ca/ergast/f1"
+            - name: F1_SEASON
+              value: "2026"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: f1-predictor-data

@@ -65,6 +65,7 @@
         {% if has_pending_results %}
         <a href="{{ url_for('check_results') }}" class="btn" style="margin: 5px;">Check for Race Results</a>
         {% endif %}
+        <a href="{{ url_for('delete_predictions') }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">Delete wrong predictions</a>
         {% for race in races %}
             {% if race['status'] == 'locked' and not race['p1_name'] %}
                 <a href="{{ url_for('enter_results', race_id=race['id']) }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">

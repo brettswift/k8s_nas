@@ -191,6 +191,19 @@ def init_db():
         )
     ''')
 
+    # Race-weekend state machine (used by cron/race_manager.py)
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS race_stages (
+            race_id      INTEGER PRIMARY KEY,
+            stage        TEXT    NOT NULL
+                         CHECK (stage IN ('watching','locked','polling','completed')),
+            entered_at   TEXT    NOT NULL,
+            last_poll_at TEXT,
+            poll_count   INTEGER DEFAULT 0,
+            FOREIGN KEY (race_id) REFERENCES races(id)
+        )
+    ''')
+
     db.commit()
 
     # Lazy load from API on first startup
