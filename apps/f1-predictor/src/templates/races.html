@@ -28,7 +28,7 @@
                 <td>{{ race['date'][:10] }}</td>
                 <td>
                     {% if race['status'] in ('locked', 'completed') %}
-                    <a href="{{ url_for('race_detail', race_id=race['id']) }}" class="btn" style="padding: 6px 12px; font-size: 12px;">View</a>
+                    <a href="{{ url_for('race_detail', slug=race['slug']) }}" class="btn" style="padding: 6px 12px; font-size: 12px;">View</a>
                     {% else %}
                     <span class="status status-{{ race['status'] }}">{{ race['status']|upper }}</span>
                     {% endif %}

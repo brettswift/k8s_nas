@@ -511,6 +511,21 @@ def calculate_score(prediction, result):
 
     return points
 
+def race_slug(race):
+    """Derive URL slug from race, e.g. 2026_chinese from 'Chinese Grand Prix'."""
+    season = app.config['F1_SEASON']
+    name = (race.get('name') or '').strip()
+    # "Chinese Grand Prix" -> "Chinese", "Saudi Arabian Grand Prix" -> "Saudi Arabian"
+    for suffix in (' Grand Prix', ' GP'):
+        if name.endswith(suffix):
+            name = name[:-len(suffix)].strip()
+            break
+    # "Saudi Arabian" -> "saudi_arabian", "Chinese" -> "chinese"
+    slug = name.lower().replace(' ', '_').replace('-', '_')
+    slug = ''.join(c for c in slug if c.isalnum() or c == '_')
+    return f"{season}_{slug}" if slug else f"{season}_round{race.get('round', 0)}"
+
+
 def get_races_with_computed_status(db):
     """Fetch all races and enrich with computed status."""
     races = db.execute('''
@@ -723,6 +738,8 @@ def races():
             predictions[race['id']] = pred
 
     has_pending = has_races_pending_results(db)
+    for r in all_races:
+        r['slug'] = race_slug(r)
 
     return render_template('races.html',
                           races=all_races,
@@ -731,31 +748,24 @@ def races():
                           is_admin=is_admin(user))
 
 
-@app.route('/race/<int:race_id>')
-def race_detail(race_id):
-    """Show individual race with all voters' picks. Available when locked or completed."""
-    user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
-    db = get_db()
+def _race_detail_impl(race_id, db, user):
+    """Shared logic for race detail. Returns (race, has_results, result_data, predictions, scores_by_user) or None."""
     race_row = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
     if not race_row:
-        flash('Race not found', 'error')
-        return redirect(url_for('races'))
+        return None
 
     has_results = db.execute('SELECT 1 FROM results WHERE race_id = ?', (race_id,)).fetchone() is not None
     race = enrich_race_with_status(dict(race_row), has_results)
 
     if race['status'] not in ('locked', 'completed'):
-        flash('Picks are visible after the race is locked', 'error')
-        return redirect(url_for('races'))
+        return None
 
-    # Actual result (if completed)
     result_names = None
+    result_ids = None
     if has_results:
         res = db.execute('''
-            SELECT d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
+            SELECT res.p1_driver_id, res.p2_driver_id, res.p3_driver_id,
+                   d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
             FROM results res
             JOIN drivers d1 ON res.p1_driver_id = d1.id
             JOIN drivers d2 ON res.p2_driver_id = d2.id
@@ -763,9 +773,9 @@ def race_detail(race_id):
             WHERE res.race_id = ?
         ''', (race_id,)).fetchone()
         if res:
-            result_names = dict(res)
+            result_names = {'p1_name': res['p1_name'], 'p2_name': res['p2_name'], 'p3_name': res['p3_name']}
+            result_ids = {'p1_driver_id': res['p1_driver_id'], 'p2_driver_id': res['p2_driver_id'], 'p3_driver_id': res['p3_driver_id']}
 
-    # All predictions with usernames
     predictions = db.execute('''
         SELECT p.*, u.username,
                d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
@@ -778,18 +788,63 @@ def race_detail(race_id):
         ORDER BY u.username
     ''', (race_id,)).fetchall()
 
-    # Scores per user (if completed)
     scores_by_user = {}
     if has_results:
-        for row in db.execute(
-            'SELECT user_id, points FROM scores WHERE race_id = ?', (race_id,)
-        ).fetchall():
+        for row in db.execute('SELECT user_id, points FROM scores WHERE race_id = ?', (race_id,)).fetchall():
             scores_by_user[row['user_id']] = row['points']
+
+    return (race, has_results, result_names, result_ids, predictions, scores_by_user)
+
+
+@app.route('/race/<int:race_id>')
+def race_detail_by_id(race_id):
+    """Redirect to slug URL for clean address bar."""
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+    db = get_db()
+    race_row = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
+    if not race_row:
+        flash('Race not found', 'error')
+        return redirect(url_for('races'))
+    race = enrich_race_with_status(dict(race_row), db.execute('SELECT 1 FROM results WHERE race_id = ?', (race_id,)).fetchone() is not None)
+    if race['status'] not in ('locked', 'completed'):
+        flash('Picks are visible after the race is locked', 'error')
+        return redirect(url_for('races'))
+    return redirect(url_for('race_detail', slug=race_slug(race)), code=301)
+
+
+@app.route('/race/<slug>')
+def race_detail(slug):
+    """Show individual race with all voters' picks. URL uses slug e.g. 2026_chinese."""
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    db = get_db()
+    all_races = get_races_with_computed_status(db)
+    race = None
+    for r in all_races:
+        if race_slug(r) == slug:
+            race = r
+            break
+    if not race:
+        flash('Race not found', 'error')
+        return redirect(url_for('races'))
+
+    data = _race_detail_impl(race['id'], db, user)
+    if not data:
+        flash('Picks are visible after the race is locked', 'error')
+        return redirect(url_for('races'))
+
+    race, has_results, result_names, result_ids, predictions, scores_by_user = data
 
     return render_template('race_detail.html',
                           race=race,
+                          race_slug=race_slug(race),
                           predictions=predictions,
                           result_names=result_names,
+                          result_ids=result_ids or {},
                           scores_by_user=scores_by_user)
 
 

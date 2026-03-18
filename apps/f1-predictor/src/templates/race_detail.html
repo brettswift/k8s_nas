@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ race['name'] }} - F1 Predictor{% endblock %}
+{% block title %}{{ race_slug }} - F1 Predictor{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -18,6 +18,9 @@
         🥇 {{ result_names['p1_name'] }}<br>
         🥈 {{ result_names['p2_name'] }}<br>
         🥉 {{ result_names['p3_name'] }}
+    </p>
+    <p style="font-size: 12px; opacity: 0.7; margin-top: 12px;">
+        Points: P1=10 · P2=6 · P3=4 · +1 for correct driver, wrong position
     </p>
 </div>
 {% endif %}
@@ -40,9 +43,27 @@
             {% for pred in predictions %}
             <tr>
                 <td><strong>{{ pred['username'] }}</strong></td>
-                <td>{{ pred['p1_name'].split()[-1] }}</td>
-                <td>{{ pred['p2_name'].split()[-1] }}</td>
-                <td>{{ pred['p3_name'].split()[-1] }}</td>
+                <td>
+                    {% if result_ids and pred['p1_driver_id'] == result_ids.get('p1_driver_id') %}
+                    <span style="color: #e10600;">{{ pred['p1_name'].split()[-1] }}</span>
+                    {% else %}
+                    {{ pred['p1_name'].split()[-1] }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result_ids and pred['p2_driver_id'] == result_ids.get('p2_driver_id') %}
+                    <span style="color: #e10600;">{{ pred['p2_name'].split()[-1] }}</span>
+                    {% else %}
+                    {{ pred['p2_name'].split()[-1] }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result_ids and pred['p3_driver_id'] == result_ids.get('p3_driver_id') %}
+                    <span style="color: #e10600;">{{ pred['p3_name'].split()[-1] }}</span>
+                    {% else %}
+                    {{ pred['p3_name'].split()[-1] }}
+                    {% endif %}
+                </td>
                 {% if result_names %}
                 <td>{{ scores_by_user.get(pred['user_id'], '—') }}</td>
                 {% endif %}
