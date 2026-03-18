@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ race['name'] }} - F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏁 {{ race['name'] }}</h2>
+    <p>
+        Round {{ race['round'] }} · {{ race['date'][:10] }}
+        <span class="status status-{{ race['status'] }}" style="margin-left: 10px;">{{ race['status']|upper }}</span>
+    </p>
+</div>
+
+{% if result_names %}
+<div class="card">
+    <h3>Result</h3>
+    <p style="font-size: 18px; margin-top: 10px;">
+        🥇 {{ result_names['p1_name'] }}<br>
+        🥈 {{ result_names['p2_name'] }}<br>
+        🥉 {{ result_names['p3_name'] }}
+    </p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Predictions ({{ predictions|length }} voters)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>P1</th>
+                <th>P2</th>
+                <th>P3</th>
+                {% if result_names %}
+                <th>Points</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for pred in predictions %}
+            <tr>
+                <td><strong>{{ pred['username'] }}</strong></td>
+                <td>{{ pred['p1_name'].split()[-1] }}</td>
+                <td>{{ pred['p2_name'].split()[-1] }}</td>
+                <td>{{ pred['p3_name'].split()[-1] }}</td>
+                {% if result_names %}
+                <td>{{ scores_by_user.get(pred['user_id'], '—') }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p>
+    <a href="{{ url_for('races') }}" class="btn btn-secondary">← Back to Races</a>
+</p>
+{% endblock %}

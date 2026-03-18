@@ -26,7 +26,13 @@
                 <td>{{ race['round'] }}</td>
                 <td><strong>{{ race['name'] }}</strong></td>
                 <td>{{ race['date'][:10] }}</td>
-                <td><span class="status status-{{ race['status'] }}">{{ race['status']|upper }}</span></td>
+                <td>
+                    {% if race['status'] in ('locked', 'completed') %}
+                    <a href="{{ url_for('race_detail', race_id=race['id']) }}" class="btn" style="padding: 6px 12px; font-size: 12px;">View</a>
+                    {% else %}
+                    <span class="status status-{{ race['status'] }}">{{ race['status']|upper }}</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if race['id'] in predictions %}
                         <span style="font-size: 12px;">

@@ -730,6 +730,69 @@ def races():
                           has_pending_results=has_pending,
                           is_admin=is_admin(user))
 
+
+@app.route('/race/<int:race_id>')
+def race_detail(race_id):
+    """Show individual race with all voters' picks. Available when locked or completed."""
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    db = get_db()
+    race_row = db.execute('SELECT * FROM races WHERE id = ?', (race_id,)).fetchone()
+    if not race_row:
+        flash('Race not found', 'error')
+        return redirect(url_for('races'))
+
+    has_results = db.execute('SELECT 1 FROM results WHERE race_id = ?', (race_id,)).fetchone() is not None
+    race = enrich_race_with_status(dict(race_row), has_results)
+
+    if race['status'] not in ('locked', 'completed'):
+        flash('Picks are visible after the race is locked', 'error')
+        return redirect(url_for('races'))
+
+    # Actual result (if completed)
+    result_names = None
+    if has_results:
+        res = db.execute('''
+            SELECT d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
+            FROM results res
+            JOIN drivers d1 ON res.p1_driver_id = d1.id
+            JOIN drivers d2 ON res.p2_driver_id = d2.id
+            JOIN drivers d3 ON res.p3_driver_id = d3.id
+            WHERE res.race_id = ?
+        ''', (race_id,)).fetchone()
+        if res:
+            result_names = dict(res)
+
+    # All predictions with usernames
+    predictions = db.execute('''
+        SELECT p.*, u.username,
+               d1.name as p1_name, d2.name as p2_name, d3.name as p3_name
+        FROM predictions p
+        JOIN users u ON p.user_id = u.session_id
+        JOIN drivers d1 ON p.p1_driver_id = d1.id
+        JOIN drivers d2 ON p.p2_driver_id = d2.id
+        JOIN drivers d3 ON p.p3_driver_id = d3.id
+        WHERE p.race_id = ?
+        ORDER BY u.username
+    ''', (race_id,)).fetchall()
+
+    # Scores per user (if completed)
+    scores_by_user = {}
+    if has_results:
+        for row in db.execute(
+            'SELECT user_id, points FROM scores WHERE race_id = ?', (race_id,)
+        ).fetchall():
+            scores_by_user[row['user_id']] = row['points']
+
+    return render_template('race_detail.html',
+                          race=race,
+                          predictions=predictions,
+                          result_names=result_names,
+                          scores_by_user=scores_by_user)
+
+
 @app.route('/logout')
 def logout():
     """Clear session."""
