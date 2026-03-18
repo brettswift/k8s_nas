@@ -7,3 +7,4 @@ resources:
 - service.yaml
 - image-refresh-hook.yaml
 - image-refresh-rbac.yaml
+- fetch-results-cronjob.yaml

@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY src/ ./
+COPY cron/ ./cron/
 
 # Create data directory for SQLite
 RUN mkdir -p /data

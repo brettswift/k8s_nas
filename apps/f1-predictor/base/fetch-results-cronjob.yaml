@@ -1,0 +1,39 @@
+# Recurring job: fetch race results for locked races that don't have results yet.
+# Runs hourly so that after a race is locked, results and scores are filled without
+# depending on the one-time scheduler.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: f1-fetch-results
+  namespace: f1-predictor
+spec:
+  schedule: "5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: fetch-results
+            image: ghcr.io/brettswift/f1-predictor:latest
+            command:
+            - python3
+            - /app/cron/fetch_race_results.py
+            env:
+            - name: DATABASE_PATH
+              value: "/data/f1_predictions.db"
+            - name: F1_API_URL
+              value: "https://api.jolpi.ca/ergast/f1"
+            - name: F1_SEASON
+              value: "2026"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: f1-predictor-data

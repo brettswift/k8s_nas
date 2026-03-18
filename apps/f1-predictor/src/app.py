@@ -26,6 +26,19 @@ app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 
 app.config['F1_API_URL'] = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1')
 app.config['DRIVER_REFRESH_SECRET'] = os.environ.get('DRIVER_REFRESH_SECRET', '')
 
+def auto_lock_races():
+    """Set status to 'locked' for races that have started (open + date in past)."""
+    try:
+        db = get_db()
+        db.execute('''
+            UPDATE races SET status = 'locked'
+            WHERE status = 'open' AND datetime(date) < datetime('now')
+        ''')
+        db.commit()
+    except Exception as e:
+        app.logger.warning(f"auto_lock_races: {e}")
+
+
 # Context processor to make environment available to all templates
 @app.context_processor
 def inject_environment():
@@ -673,6 +686,61 @@ def lock_race(race_id):
     flash('Race predictions locked', 'success')
     return redirect(url_for('races'))
 
+
+@app.route('/admin/delete-predictions', methods=['GET', 'POST'])
+@admin_required
+def delete_predictions():
+    """
+    Delete predictions for users matching a pattern that did NOT predict
+    the given driver as P1. Used to remove duplicate/wrong 'brett' entries.
+    """
+    if request.method == 'GET':
+        return render_template('admin_delete_predictions.html')
+
+    username_pattern = (request.form.get('username_pattern') or request.args.get('username_pattern') or 'brett').strip()
+    keep_p1_name = (request.form.get('keep_p1_name') or request.args.get('keep_p1_name') or 'Kimi').strip()
+    if not username_pattern or not keep_p1_name:
+        flash('username_pattern and keep_p1_name are required', 'error')
+        return redirect(url_for('delete_predictions'))
+
+    db = get_db()
+    # Resolve driver id for keep_p1 (e.g. Kimi -> Kimi Antonelli)
+    driver = db.execute(
+        'SELECT id FROM drivers WHERE name LIKE ?', (f'%{keep_p1_name}%',)
+    ).fetchone()
+    if not driver:
+        flash(f'No driver found matching "{keep_p1_name}"', 'error')
+        return redirect(url_for('delete_predictions'))
+
+    keep_p1_id = driver['id']
+    pattern = f'%{username_pattern}%'
+    session_ids = [
+        row[0] for row in
+        db.execute('SELECT session_id FROM users WHERE username LIKE ?', (pattern,)).fetchall()
+    ]
+    if not session_ids:
+        flash(f'No users found matching username "{username_pattern}"', 'error')
+        return redirect(url_for('delete_predictions'))
+
+    # Predictions to remove: those users, and p1_driver_id != keep_p1_id
+    placeholders = ','.join('?' * len(session_ids))
+    to_delete = db.execute(
+        f'''
+        SELECT user_id, race_id FROM predictions
+        WHERE user_id IN ({placeholders}) AND p1_driver_id != ?
+        ''',
+        (*session_ids, keep_p1_id)
+    ).fetchall()
+
+    for row in to_delete:
+        db.execute('DELETE FROM scores WHERE user_id = ? AND race_id = ?', (row['user_id'], row['race_id']))
+        db.execute('DELETE FROM predictions WHERE user_id = ? AND race_id = ?', (row['user_id'], row['race_id']))
+
+    db.commit()
+    n = len(to_delete)
+    flash(f'Deleted {n} prediction(s) (and their scores) for users matching "{username_pattern}" that did not predict {keep_p1_name} as P1.', 'success')
+    return redirect(url_for('races'))
+
 # Driver refresh endpoint for CronJob
 @app.route('/admin/refresh-drivers', methods=['POST'])
 def refresh_drivers():
@@ -713,9 +781,19 @@ def health():
     """Health check endpoint."""
     return jsonify({'status': 'healthy'})
 
+@app.before_request
+def before_request():
+    """Auto-lock races that have started (all HTML/API except static and health)."""
+    if request.endpoint in (None, 'static', 'health'):
+        return
+    # Include predict and admin routes so /predict/N cannot bypass lock after race start
+    auto_lock_races()
+
+
 # Initialize database on startup
 with app.app_context():
     init_db()
+    auto_lock_races()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

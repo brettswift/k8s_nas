@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-F1 Race Results Fetcher - One-time cron job
-Fetches race results from Ergast API and updates the F1 predictor database.
+F1 Race Results Fetcher - Cron job (hourly in cluster).
+Fetches race results from Jolpica Ergast mirror (same as the web app).
+Ergast.com is deprecated; use F1_API_URL (default https://api.jolpi.ca/ergast/f1).
 """
 
+import argparse
 import os
 import sys
 import sqlite3
 import requests
-import json
-from datetime import datetime, timedelta
 import logging
 
 # Setup logging
@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 # Database path (matches the app's config)
 DATABASE_PATH = os.environ.get('DATABASE_PATH', '/data/f1_predictions.db')
-ERGAST_API_BASE = "https://ergast.com/api/f1"
+F1_API_BASE = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1').rstrip('/')
+F1_SEASON = int(os.environ.get('F1_SEASON', '2026'))
 
 
 def get_db():
@@ -29,6 +30,21 @@ def get_db():
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def auto_lock_past_races():
+    """Lock races whose start time has passed (same logic as app auto_lock_races)."""
+    db = get_db()
+    try:
+        cur = db.execute('''
+            UPDATE races SET status = 'locked'
+            WHERE status = 'open' AND datetime(date) < datetime('now')
+        ''')
+        db.commit()
+        if cur.rowcount:
+            logger.info(f"Auto-locked {cur.rowcount} race(s) whose start time has passed")
+    finally:
+        db.close()
 
 
 def get_locked_races_without_results():
@@ -47,9 +63,18 @@ def get_locked_races_without_results():
         db.close()
 
 
+def _driver_display_name(result_row):
+    d = result_row.get('Driver') or {}
+    given = (d.get('givenName') or '').strip()
+    family = (d.get('familyName') or '').strip()
+    if given and family:
+        return f"{given} {family}"
+    return family or given or 'Unknown'
+
+
 def fetch_race_results_from_api(season, round_num):
-    """Fetch race results from Ergast API."""
-    url = f"{ERGAST_API_BASE}/{season}/{round_num}/results.json"
+    """Fetch race results from Jolpica / Ergast-compatible API."""
+    url = f"{F1_API_BASE}/{season}/{round_num}/results.json"
     
     try:
         response = requests.get(url, timeout=30)
@@ -72,21 +97,21 @@ def fetch_race_results_from_api(season, round_num):
         podium = {
             'p1': {
                 'position': results[0]['position'],
-                'driver_name': f"{results[0]['Driver']['givenName']} {results[0]['Driver']['familyName']}",
-                'driver_code': results[0]['Driver']['code'],
-                'constructor': results[0]['Constructor']['name']
+                'driver_name': _driver_display_name(results[0]),
+                'driver_code': (results[0].get('Driver') or {}).get('code') or '',
+                'constructor': (results[0].get('Constructor') or {}).get('name') or ''
             },
             'p2': {
                 'position': results[1]['position'],
-                'driver_name': f"{results[1]['Driver']['givenName']} {results[1]['Driver']['familyName']}",
-                'driver_code': results[1]['Driver']['code'],
-                'constructor': results[1]['Constructor']['name']
+                'driver_name': _driver_display_name(results[1]),
+                'driver_code': (results[1].get('Driver') or {}).get('code') or '',
+                'constructor': (results[1].get('Constructor') or {}).get('name') or ''
             },
             'p3': {
                 'position': results[2]['position'],
-                'driver_name': f"{results[2]['Driver']['givenName']} {results[2]['Driver']['familyName']}",
-                'driver_code': results[2]['Driver']['code'],
-                'constructor': results[2]['Constructor']['name']
+                'driver_name': _driver_display_name(results[2]),
+                'driver_code': (results[2].get('Driver') or {}).get('code') or '',
+                'constructor': (results[2].get('Constructor') or {}).get('name') or ''
             }
         }
         
@@ -227,24 +252,52 @@ def update_race_results(race_id, podium):
         db.close()
 
 
+def run_test_api_fetch():
+    """Hit the results API (2025 Abu Dhabi) to verify connectivity and parsing."""
+    season, rnd = 2025, 24
+    logger.info(f"Test fetch: {F1_API_BASE}/{season}/{rnd}/results.json")
+    podium = fetch_race_results_from_api(season, rnd)
+    if podium:
+        logger.info(
+            f"OK P1={podium['p1']['driver_name']} P2={podium['p2']['driver_name']} "
+            f"P3={podium['p3']['driver_name']}"
+        )
+        return 0
+    logger.error("Test fetch failed or incomplete results")
+    return 1
+
+
 def main():
     """Main entry point."""
-    logger.info("Starting race results fetcher")
-    
+    parser = argparse.ArgumentParser(description='Fetch F1 race results into predictor DB')
+    parser.add_argument(
+        '--test-api',
+        action='store_true',
+        help='Only verify API (2025 R24); no database access',
+    )
+    args = parser.parse_args()
+    if args.test_api:
+        sys.exit(run_test_api_fetch())
+
+    logger.info("Starting race results fetcher (API base %s, season %s)", F1_API_BASE, F1_SEASON)
+
     # Check if database exists
     if not os.path.exists(DATABASE_PATH):
         logger.error(f"Database not found at {DATABASE_PATH}")
         sys.exit(1)
-    
+
+    # Lock past races first so hourly job can fetch even if nobody opened the site
+    auto_lock_past_races()
+
     # Get locked races without results
     races = get_locked_races_without_results()
-    
+
     if not races:
         logger.info("No locked races awaiting results")
         sys.exit(0)
-    
-    season = 2026  # Current season
-    
+
+    season = F1_SEASON
+
     for race in races:
         logger.info(f"Checking race {race['round']}: {race['name']}")
         
