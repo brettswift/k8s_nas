@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="card">
-    <h2>🏁 2026 Race Calendar</h2>
-    <p>All 24 races of the 2026 F1 season</p>
+    <h2>🏁 {{ f1_season }} Race Calendar</h2>
+    <p>All {{ races|length }} races of the {{ f1_season }} F1 season</p>
 </div>
 
 <div class="card">
@@ -59,17 +59,16 @@
 
 {% if is_admin %}
 <div class="card" style="background: rgba(255, 255, 255, 0.03);">
-    <h3>Admin Actions</h3>
-    <p style="font-size: 14px; opacity: 0.7;">These actions are for admin use only</p>
+    <h3>Race Results</h3>
+    <p style="font-size: 14px; opacity: 0.7;">Predictions lock when the race starts. Click to check the F1 API for results (auto-retries every 2 min, max 10 times).</p>
     <div style="margin-top: 15px;">
+        {% if has_pending_results %}
+        <a href="{{ url_for('check_results') }}" class="btn" style="margin: 5px;">Check for Race Results</a>
+        {% endif %}
         {% for race in races %}
-            {% if race['status'] == 'open' %}
-                <a href="{{ url_for('lock_race', race_id=race['id']) }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">
-                    Lock {{ race['name'].split()[0] }}
-                </a>
-            {% elif race['status'] == 'locked' %}
+            {% if race['status'] == 'locked' and not race['p1_name'] %}
                 <a href="{{ url_for('enter_results', race_id=race['id']) }}" class="btn btn-secondary" style="margin: 5px; font-size: 12px; padding: 6px 12px;">
-                    Results {{ race['name'].split()[0] }}
+                    Enter Results: {{ race['name'].split()[0] }}
                 </a>
             {% endif %}
         {% endfor %}

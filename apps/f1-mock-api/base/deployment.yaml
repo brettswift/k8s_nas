@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f1-mock-api
+  namespace: f1-predictor-dev
+  labels:
+    app: f1-mock-api
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: f1-mock-api
+  template:
+    metadata:
+      labels:
+        app: f1-mock-api
+    spec:
+      imagePullSecrets:
+      - name: ghcr-pull
+      containers:
+      - name: f1-mock-api
+        image: ghcr.io/brettswift/f1-mock-api:dev
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: DATABASE_PATH
+          value: "/data/f1_mock.db"
+        - name: ERGAST_BASE
+          value: "https://api.jolpi.ca/ergast/f1/"
+        - name: DEFAULT_SEASON
+          value: "2026"
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: f1-mock-api-data

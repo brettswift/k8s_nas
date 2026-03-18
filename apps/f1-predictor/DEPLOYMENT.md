@@ -61,6 +61,15 @@ Each app points directly at its overlay path and branch.
 
 Each overlay has `images:` with fixed `newTag: dev` or `newTag: live`, plus an image-refresh PostSync hook and RBAC (ServiceAccount `image-refresh`, Role/RoleBinding for deployment get/patch).
 
+## App Configuration
+
+All data is pulled from the F1 API (Ergast/Jolpica). No hardcoded races or fallbacks.
+
+- **F1_SEASON** (default: 2026): Season year for API calls.
+- **F1_API_URL** (default: https://api.jolpi.ca/ergast/f1): API base URL.
+
+Votes lock automatically when the race start time passes. Results are user-triggered: a "Check for Race Results" button appears when races have started (90+ min ago) and have no results. Clicking it checks the F1 API; if no results yet, the page auto-retries every 2 minutes (max 10 times). No background polling.
+
 ## DNS
 
 Managed via external-dns annotations in ingress manifests:
@@ -74,6 +83,7 @@ Managed via external-dns annotations in ingress manifests:
 - **Prod:** `brettswift-com-tls` (wildcard `*.brettswift.com`)
 
 ## GHCR
+
 
 - One-time setup: create `ghcr-pull` secret in each namespace: `f1-predictor`, `f1-predictor-dev` (see [GHCR Pull Secret](../../docs/GHCR_PULL_SECRET.md))
 - Images: `ghcr.io/brettswift/f1-predictor:dev` and `ghcr.io/brettswift/f1-predictor:live`

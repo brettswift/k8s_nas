@@ -7,6 +7,7 @@ resources:
 - namespace.yaml
 - ../../base
 - ingress.yaml
+- ../../../f1-mock-api/base
 
 patches:
 - target:
@@ -16,8 +17,37 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/env/1/value
       value: "dev"
+- target:
+    kind: Deployment
+    name: f1-predictor
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: F1_API_URL
+        value: "http://f1-mock-api:80"
 
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
   newName: ghcr.io/brettswift/f1-predictor
   newTag: dev
+- name: ghcr.io/brettswift/f1-mock-api:latest
+  newName: ghcr.io/brettswift/f1-mock-api
+  newTag: dev
+- name: ghcr.io/brettswift/f1-mock-api:latest
+  newName: ghcr.io/brettswift/f1-mock-api
+  newTag: dev
+
+patches:
+- target:
+    kind: Deployment
+    name: f1-predictor
+  patch: |
+    - op: replace
+      path: /spec/template/spec/containers/0/env/2/value
+      value: "dev"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: F1_API_URL
+        value: "http://f1-mock-api:80"

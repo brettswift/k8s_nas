@@ -64,6 +64,9 @@
 <div class="card">
     <h2>Quick Links</h2>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        {% if has_pending_results %}
+        <a href="{{ url_for('check_results') }}" class="btn">Check for Race Results</a>
+        {% endif %}
         <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">View Leaderboard</a>
         <a href="{{ url_for('races') }}" class="btn btn-secondary">All Races</a>
     </div>
