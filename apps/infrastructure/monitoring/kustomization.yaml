@@ -11,6 +11,8 @@ resources:
 - pushgateway-deployment.yaml
 # Sabnzbd VPN health check → pushgateway (Grafana can alert on sabnzbd_vpn_healthy)
 - sabnzbd-vpn-check-cronjob.yaml
+# Sabnzbd health check - restarts sabnzbd if it's unhealthy or in CrashLoopBackOff
+- sabnzbd-health-check-cronjob.yaml
 # Grafana - enable for Loki UI
 - grafana-configmap.yaml
 - grafana-dashboard-configmap.yaml

@@ -1,0 +1,138 @@
+# CronJob: runs every 5 min, checks if sabnzbd is healthy
+# If sabnzbd is unhealthy (not responding to HTTP health check), it deletes the pod
+# to force a restart. This fixes the issue where sabnzbd loses connectivity and
+# doesn't recover on its own.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sabnzbd-health-check
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sabnzbd-health-check
+  namespace: media
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "delete"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sabnzbd-health-check
+  namespace: media
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sabnzbd-health-check
+subjects:
+- kind: ServiceAccount
+  name: sabnzbd-health-check
+  namespace: monitoring
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sabnzbd-health-check
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"   # every 5 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          serviceAccountName: sabnzbd-health-check
+          restartPolicy: Never
+          containers:
+          - name: health-check
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              
+              NAMESPACE="media"
+              APP_LABEL="sabnzbd"
+              HEALTH_URL="http://sabnzbd.media.svc.cluster.local:8080/sabnzbd/api?mode=version"
+              MAX_RETRIES=3
+              RETRY_DELAY=5
+              
+              echo "=== SABnzbd Health Check Job Started ==="
+              echo "Time: $(date)"
+              echo "Namespace: $NAMESPACE"
+              echo "App Label: $APP_LABEL"
+              echo "Health URL: $HEALTH_URL"
+              echo ""
+              
+              # Find the sabnzbd pod
+              POD=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+              
+              if [ -z "$POD" ]; then
+                echo "ERROR: No sabnzbd pod found in namespace $NAMESPACE"
+                exit 1
+              fi
+              
+              echo "Found pod: $POD"
+              
+              # Check pod phase
+              POD_PHASE=$(kubectl get pod -n "$NAMESPACE" "$POD" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+              echo "Pod phase: $POD_PHASE"
+              
+              # Check if pod is in CrashLoopBackOff
+              CONTAINER_STATE=$(kubectl get pod -n "$NAMESPACE" "$POD" -o jsonpath='{.status.containerStatuses[0].state.waiting.reason}' 2>/dev/null || echo "")
+              if [ "$CONTAINER_STATE" = "CrashLoopBackOff" ]; then
+                echo "WARNING: Pod is in CrashLoopBackOff state - will delete pod"
+                echo "Deleting pod $POD..."
+                kubectl delete pod -n "$NAMESPACE" "$POD" --grace-period=30 --force=false
+                echo "Pod deleted. A new pod should be created by the Deployment."
+                exit 0
+              fi
+              
+              # Perform health check with retries
+              HEALTHY=false
+              for i in $(seq 1 $MAX_RETRIES); do
+                echo "Health check attempt $i/$MAX_RETRIES..."
+                
+                # Try to access sabnzbd API through the service
+                if kubectl exec -n "$NAMESPACE" "$POD" -c sabnzbd -- wget -q -O- --timeout=10 "$HEALTH_URL" >/dev/null 2>&1; then
+                  echo "Health check PASSED - sabnzbd is responding"
+                  HEALTHY=true
+                  break
+                else
+                  echo "Health check attempt $i failed"
+                  if [ $i -lt $MAX_RETRIES ]; then
+                    echo "Waiting ${RETRY_DELAY}s before retry..."
+                    sleep $RETRY_DELAY
+                  fi
+                fi
+              done
+              
+              if [ "$HEALTHY" = "true" ]; then
+                echo "=== SABnzbd is healthy ==="
+                exit 0
+              else
+                echo "=== SABnzbd is UNHEALTHY after $MAX_RETRIES attempts ==="
+                echo "Pod $POD is not responding to health checks"
+                echo "Deleting pod to force restart..."
+                
+                # Get pod logs before deletion for debugging
+                echo "--- Recent pod logs ---"
+                kubectl logs -n "$NAMESPACE" "$POD" -c sabnzbd --tail=50 2>/dev/null || echo "Could not retrieve logs"
+                echo "--- End logs ---"
+                
+                # Delete the pod
+                kubectl delete pod -n "$NAMESPACE" "$POD" --grace-period=30 --force=false
+                echo "Pod deleted. A new pod should be created by the Deployment."
+                echo "=== SABnzbd Health Check Job Completed ==="
+              fi
