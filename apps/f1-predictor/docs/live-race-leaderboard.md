@@ -1,64 +1,139 @@
-# Live Race Weekend Leaderboard with Real-Time Points Projection
+# F1 Predictor App - Live Race Leaderboard Design
 
 ## Overview
-Add a **"Live Race View"** that auto-refreshes during active races, showing a live leaderboard based on current running order from the F1 live timing API, with projected points for each user.
 
-## Problem Statement
+This document describes the **Live Race Leaderboard** feature for the F1 Predictor application to be built in the `k8s_nas` project.
+
+## Context: F1 Predictor App
+
+The F1 Predictor is a new web application that will be added to `k8s_nas/apps/f1-predictor/`. It allows users to:
+- Enter a username (no signup required)
+- Predict P1/P2/P3 for each F1 race
+- Accumulate points based on actual race results
+- View leaderboards and race results
+
+**App Location:** `apps/f1-predictor/` (to be created)
+
+## Feature: Live Race Weekend Leaderboard
+
+### Problem Statement
 Users only see their total points after a race is completed and results are ingested. There's no engagement *during* the race — when excitement is highest.
 
-## Solution
-
-### Core Features
-1. **Auto-refresh every 30 seconds** during active races
-2. **Live leaderboard** based on current running order from F1 live timing API
-3. **Points projection** — "If the race ended now, you'd have X points"
-4. **Position change highlights** — "Verstappen just passed Leclerc — your P2 prediction is now worth 10 pts instead of 6!"
+### Solution
+Add a **"Live Race View"** that:
+1. **Auto-refreshes every 30 seconds** during active races
+2. **Shows a live leaderboard** based on current running order from F1 live timing API
+3. **Projects points** — "If the race ended now, you'd have X points"
+4. **Highlights position changes** — "Verstappen just passed Leclerc — your P2 prediction is now worth 10 pts instead of 6!"
 
 ### Why This Matters
 - **Engagement**: Users stay on the site during races instead of checking once afterward
 - **Social**: Friends can watch each other's projected scores change lap by lap
 - **Stickiness**: Creates a reason to return to the app mid-race
 
-## Technical Approach
+## Technical Design
 
-### New Components
+### App Architecture (k8s_nas)
+
+```
+k8s_nas/apps/f1-predictor/
+├── base/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   └── kustomization.yaml
+├── overlays/
+│   ├── dev/
+│   └── prod/
+├── src/
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── templates/
+│       ├── base.html
+│       ├── index.html
+│       ├── races.html
+│       ├── race_detail.html
+│       └── race_live.html  ← NEW
+├── cron/
+│   └── race-manager.yaml
+└── docs/
+    └── live-race-leaderboard.md  ← THIS FILE
+```
+
+### New Components for Live Feature
 
 #### API Endpoints
-- `GET /api/live-standings/<race_id>` — Polls Jolpi's live timing (or FastF1) and returns current positions
-- `GET /api/live-projections/<race_id>` — Returns projected points for all users based on current standings
+```python
+# src/app.py additions
 
-#### Pages
-- `/race/<race_id>/live` — Auto-refreshing live leaderboard page
+@app.route('/api/live-standings/<int:race_id>')
+def get_live_standings(race_id):
+    """Fetch current lap positions from F1 API."""
+    # Poll Jolpi/FastF1 for live timing
+    # Return: [{driver_id, position, last_lap_time}, ...]
 
-#### Data Flow
+@app.route('/api/live-projections/<int:race_id>')
+def get_live_projections(race_id):
+    """Calculate projected points for all users based on current standings."""
+    # Get current live standings
+    # For each user with predictions, calculate projected score
+    # Return: [{username, projected_points, current_total, change}, ...]
 ```
-F1 API (Jolpi/FastF1) → Live Standings Endpoint → Projection Engine → Frontend
-                              ↑                           ↓
-                         30s polling              calculate_score() reuse
+
+#### Page Template
+```
+src/templates/race_live.html
 ```
 
-### Database Changes
-None required — reuses existing `predictions`, `drivers`, and `calculate_score()` logic.
+### Data Flow
 
-### MVP (2-4 hours)
-- Poll Jolpi's live timing API every 30s during race windows
-- Show simple table: User | Current Projected Points | Best/Worst Case
-- No WebSockets — AJAX polling only
+```
+F1 API (Jolpi/FastF1)
+         ↓
+GET /api/live-standings/<race_id>  (30s polling)
+         ↓
+Projection Engine (reuse calculate_score())
+         ↓
+GET /api/live-projections/<race_id>
+         ↓
+race_live.html (auto-refreshing)
+```
+
+### Database Schema (Existing)
+
+The live feature reuses existing tables:
+- `races` — race info, status ('open', 'locked', 'completed')
+- `drivers` — driver info from F1 API
+- `predictions` — user predictions per race
+- `users` — session-based users
+
+### MVP Implementation (2-4 hours)
+
+1. **Research** Jolpi live timing endpoints
+2. **Endpoint** `/api/live-standings/<race_id>` — simple polling wrapper
+3. **Endpoint** `/api/live-projections/<race_id>` — calculate projections
+4. **Template** `race_live.html` — auto-refresh every 30s
+5. **Route** `/race/<race_id>/live` — link from race list when active
 
 ### Stretch Features
+
 - **Driver tracker**: Show where your predicted P1/P2/P3 drivers are running
 - **Notifications**: "Your P1 pick is in the pits!" (browser push)
 - **Race replay**: After the race, scrub through timeline to see how projections changed
 - **WebSocket/SSE**: True real-time updates instead of polling
+- **Best/Worst case**: Show potential points range based on possible outcomes
 
 ## API Integration
 
 ### Jolpi.ca Live Timing
-The app already uses `api.jolpi.ca/ergast/f1` for race data. Check if live timing endpoints are available:
+
+The app will use `api.jolpi.ca/ergast/f1` for race data. Check if live timing endpoints are available:
 - `/{season}/{round}/laps.json` — Lap-by-lap data
 - `/{season}/{round}/results.json` — Updated throughout race (may have provisional results)
 
 ### Alternative: FastF1
+
 If Jolpi doesn't have live data, consider [FastF1](https://docs.fastf1.dev/) Python library for live timing from F1's official data feeds.
 
 ## UI/UX Design
@@ -93,12 +168,13 @@ If Jolpi doesn't have live data, consider [FastF1](https://docs.fastf1.dev/) Pyt
 ```
 
 ### Position Change Alerts
+
 When a driver passes another, show a toast notification:
 > "🔥 Verstappen overtook Leclerc! Your P2 pick is now worth 10 points!"
 
-## Implementation Plan
+## Implementation Phases
 
-### Phase 1: MVP
+### Phase 1: MVP (Core Live Feature)
 1. Research Jolpi live timing endpoints
 2. Create `/api/live-standings/<race_id>` endpoint
 3. Create projection logic (reuse `calculate_score()`)
@@ -118,12 +194,20 @@ When a driver passes another, show a toast notification:
 4. Driver tracker visualization
 
 ## Open Questions
+
 1. Does Jolpi.ca have live timing data, or do we need FastF1?
 2. What's the rate limit on F1 data APIs?
 3. Should we cache live data to reduce API calls?
 4. How do we handle race delays, red flags, or session interruptions?
 
+## Dependencies
+
+- **Parent Story:** F1 Predictor Base App (core app must exist first)
+- **API:** Jolpi.ca or FastF1 for live timing
+- **Frontend:** Auto-refresh JavaScript (no new dependencies)
+
 ## Acceptance Criteria
+
 - [ ] Live race page accessible at `/race/<race_id>/live`
 - [ ] Page auto-refreshes every 30 seconds during active races
 - [ ] Shows current running order from F1 API
@@ -131,11 +215,16 @@ When a driver passes another, show a toast notification:
 - [ ] Highlights position changes since last refresh
 - [ ] Accessible only when race status is "locked" (in progress)
 - [ ] Graceful fallback if live data unavailable
+- [ ] Link appears on race list only when race is active
 
-## Related Files
-- `src/app.py` — Add new endpoints
-- `src/templates/` — Add live race template
-- `src/static/` — Add live refresh JS
+## Related Files (in k8s_nas)
+
+- `apps/f1-predictor/src/app.py` — Add new endpoints
+- `apps/f1-predictor/src/templates/race_live.html` — New template
+- `apps/f1-predictor/src/static/js/live.js` — Auto-refresh logic
 
 ## Branch
 `feat/f1-live-race-leaderboard`
+
+## Design Doc Location
+`apps/f1-predictor/docs/live-race-leaderboard.md`
