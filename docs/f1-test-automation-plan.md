@@ -2,12 +2,22 @@
 
 ## Overview
 
-This document outlines a comprehensive test automation strategy for the F1 Predictor app, focusing on the hard-to-test areas that can't be covered by simple unit tests:
+This document outlines a comprehensive test automation strategy for the **F1 Predictor app** to be built in `k8s_nas/apps/f8-predictor/`. The plan focuses on hard-to-test areas that can't be covered by simple unit tests:
 
 - **Daily cron jobs** (driver refresh, race state management)
 - **Race locking** (UI locks when race starts)
 - **Live race leaderboard** (real-time updates during races)
 - **Results ingestion** (post-race result processing)
+
+## Context: F1 Predictor App in k8s_nas
+
+The F1 Predictor is a new web application that will be added to the `k8s_nas` project at:
+
+```
+k8s_nas/apps/f1-predictor/
+```
+
+This test automation plan should be implemented **alongside or immediately after** the base app is created.
 
 ## Test Strategy: CI with Headless Browser + Time Manipulation
 
@@ -35,6 +45,33 @@ Use **Playwright** with **time mocking** to simulate race weekends at different 
 │         └────────────────────────────────────┘                   │
 │                    (headless browser)                            │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+### Test Directory Structure (in k8s_nas)
+
+```
+k8s_nas/apps/f1-predictor/
+├── src/
+│   ├── app.py
+│   └── ...
+├── tests/                    ← NEW TEST DIRECTORY
+│   ├── conftest.py          ← Pytest fixtures
+│   ├── unit/                ← Unit tests
+│   ├── integration/         ← API/integration tests
+│   └── e2e/                 ← Playwright E2E tests
+│       ├── test_race_locking.py
+│       ├── test_cron_jobs.py
+│       ├── test_live_leaderboard.py
+│       └── test_results_ingestion.py
+├── tests/fixtures/          ← Test data
+│   └── race_scenarios.py
+├── tests/utils/             ← Test utilities
+│   ├── time_control.py      ← Time mocking
+│   └── mock_f1_api.py       ← Mock API server
+├── .github/workflows/
+│   └── f1-tests.yml         ← CI pipeline
+└── docs/
+    └── test-automation-plan.md  ← THIS FILE
 ```
 
 ## Test Scenarios
@@ -358,7 +395,7 @@ def mock_f1_api():
 ### 2. Example Test Implementation
 
 ```python
-# tests/test_race_locking.py
+# tests/e2e/test_race_locking.py
 import pytest
 from datetime import datetime, timezone, timedelta
 
@@ -404,82 +441,6 @@ def test_ui_locks_at_race_start(page, time_controller, mock_f1_api, app):
     # Verify form is now locked
     assert page.is_disabled("button[type='submit']")
     assert page.locator("text=Race in progress - predictions locked").is_visible()
-
-
-def test_live_leaderboard_updates(page, time_controller, mock_f1_api, app):
-    """Test live race page shows updated projections."""
-    
-    # Setup race in progress
-    race_time = datetime(2026, 3, 23, 14, 0, 0, tzinfo=timezone.utc)
-    current_time = race_time + timedelta(minutes=30)  # 30 min into race
-    
-    mock_f1_api.set_races([{
-        'raceName': 'Chinese Grand Prix',
-        'round': 1,
-        'date': race_time.strftime('%Y-%m-%d'),
-        'time': race_time.strftime('%H:%M:%SZ')
-    }])
-    
-    # Initial standings: Leclerc P1, Verstappen P2
-    mock_f1_api.set_live_standings(1, {
-        'laps': [{
-            'number': 15,
-            'Timings': [
-                {'driverId': 'leclerc', 'position': '1'},
-                {'driverId': 'max_verstappen', 'position': '2'},
-                {'driverId': 'norris', 'position': '3'}
-            ]
-        }]
-    })
-    
-    # Seed database
-    with app.app_context():
-        from app import get_db
-        db = get_db()
-        db.execute('INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
-                   ('Chinese Grand Prix', 1, race_time.strftime('%Y-%m-%d %H:%M:%S'), 'locked'))
-        # Add drivers
-        db.execute('INSERT INTO drivers (id, driver_id, name, number) VALUES (?, ?, ?, ?)',
-                   (1, 'leclerc', 'Charles Leclerc', 16))
-        db.execute('INSERT INTO drivers (id, driver_id, name, number) VALUES (?, ?, ?, ?)',
-                   (2, 'max_verstappen', 'Max Verstappen', 1))
-        db.execute('INSERT INTO drivers (id, driver_id, name, number) VALUES (?, ?, ?, ?)',
-                   (3, 'norris', 'Lando Norris', 4))
-        # Add user prediction (Verstappen P1, Leclerc P2, Norris P3)
-        db.execute('INSERT INTO users (session_id, username) VALUES (?, ?)',
-                   ('test-session', 'brett'))
-        db.execute('''
-            INSERT INTO predictions (user_id, race_id, p1_driver_id, p2_driver_id, p3_driver_id)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('test-session', 1, 2, 1, 3))  # P1=VER, P2=LEC, P3=NOR
-        db.commit()
-    
-    time_controller.freeze(current_time)
-    
-    # Navigate to live page
-    page.goto("http://localhost:5000/race/1/live")
-    
-    # Check initial projection (Verstappen P2 = 6 pts for P1 pick)
-    assert page.locator("text=6 pts").is_visible()
-    
-    # Update standings: Verstappen overtakes to P1
-    mock_f1_api.set_live_standings(1, {
-        'laps': [{
-            'number': 16,
-            'Timings': [
-                {'driverId': 'max_verstappen', 'position': '1'},
-                {'driverId': 'leclerc', 'position': '2'},
-                {'driverId': 'norris', 'position': '3'}
-            ]
-        }]
-    })
-    
-    # Trigger refresh
-    page.click("button:has-text('Refresh')")
-    
-    # Check updated projection (Verstappen P1 = 10 pts for P1 pick)
-    assert page.locator("text=10 pts").is_visible()
-    assert page.locator("text=Verstappen overtook Leclerc").is_visible()
 ```
 
 ### 3. CI/CD Integration
@@ -594,6 +555,30 @@ RACE_RESULTS_CHINESE_2026 = {
 }
 ```
 
+## Dependencies
+
+- **Parent Story:** F1 Predictor Base App (must exist first)
+- **Related Story:** Live Race Leaderboard (tests for this feature)
+- **Tools:** Playwright, pytest, testcontainers, Flask test client
+
+## Implementation Phases
+
+### Phase 1: Test Infrastructure
+1. Set up Playwright and pytest
+2. Create `tests/` directory structure
+3. Implement time mocking utilities
+4. Create mock F1 API server
+
+### Phase 2: Core Tests
+1. Write race locking tests
+2. Write cron job tests
+3. Write results ingestion tests
+
+### Phase 3: Advanced Tests
+1. Write live leaderboard tests
+2. Write end-to-end race weekend tests
+3. Set up CI pipeline
+
 ## Acceptance Criteria
 
 - [ ] Playwright test framework configured with time mocking
@@ -610,16 +595,16 @@ RACE_RESULTS_CHINESE_2026 = {
 
 | Story | Description | Depends On |
 |-------|-------------|------------|
-| F1-TEST-1 | Set up Playwright test framework | — |
+| F1-TEST-1 | Set up Playwright test framework | F1-BASE-APP |
 | F1-TEST-2 | Implement time mocking utilities | F1-TEST-1 |
 | F1-TEST-3 | Create mock F1 API server | F1-TEST-1 |
 | F1-TEST-4 | Write race locking tests | F1-TEST-2 |
 | F1-TEST-5 | Write cron job tests | F1-TEST-2, F1-TEST-3 |
-| F1-TEST-6 | Write live leaderboard tests | F1-TEST-2, F1-TEST-3 |
+| F1-TEST-6 | Write live leaderboard tests | F1-TEST-2, F1-TEST-3, F1-LIVE-1 |
 | F1-TEST-7 | Set up CI pipeline | F1-TEST-1 |
 
 ## Branch
 `feat/f1-test-automation`
 
-## PR
-https://github.com/brettswift/k8s_nas/pull/36 (design doc only)
+## Design Doc Location
+`apps/f1-predictor/docs/test-automation-plan.md`
