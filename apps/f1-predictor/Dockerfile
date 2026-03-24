@@ -1,9 +1,8 @@
 # F1 Predictor App
 # trigger: image-refresh
-FROM python:3.11-slim
 
-ARG APP_VERSION=""
-ENV APP_VERSION=$APP_VERSION
+# --- Base stage ---
+FROM python:3.11-slim as base
 
 WORKDIR /app
 
@@ -22,6 +21,21 @@ RUN mkdir -p /data
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DATABASE_PATH=/data/f1_predictions.db
+
+# --- Test stage ---
+FROM base as test
+
+# Copy tests
+COPY tests/ ./tests/
+
+# Run tests
+CMD ["pytest", "tests/unit", "-v"]
+
+# --- Production stage ---
+FROM base as production
+
+ARG APP_VERSION=""
+ENV APP_VERSION=$APP_VERSION
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
