@@ -6,7 +6,7 @@
 - **CronJob `sabnzbd-vpn-check`** (every **15 minutes**, not 3h): execs into the Sabnzbd pod’s VPN container, runs `wget https://ipinfo.io/json` through the tunnel, and pushes:
   - `sabnzbd_vpn_healthy 1` if the request succeeds
   - `sabnzbd_vpn_healthy 0` if no Sabnzbd pod, pod is not `Running`, or the request fails
-- **Self-heal:** If the pod is not `Running`, or the VPN check fails, the job **`kubectl delete pod`** on that pod so the Deployment (Recreate) creates a new one. Job logs use UTC timestamps and include Pushgateway result, phase, and delete outcome.
+- **Self-heal:** If the VPN check fails on a **Running** pod, the job **`kubectl delete pod`** so the Deployment recreates it. If phase is **`Pending`** (e.g. insufficient CPU), the job logs and pushes `0` but **does not delete** (deleting would loop without fixing scheduling). Other non-Running phases (e.g. `Failed`) still get a delete to retry.
 - **Prometheus** scrapes Pushgateway; the metric appears as `sabnzbd_vpn_healthy` (and optionally `pushgateway_*` with job/instance labels).
 
 ## Grafana alert (once you have an alarm target)

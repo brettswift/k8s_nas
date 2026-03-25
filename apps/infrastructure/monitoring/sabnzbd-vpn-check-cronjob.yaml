@@ -91,11 +91,15 @@ spec:
               LOG "pod=$POD phase=$PHASE"
 
               if [ "$PHASE" != "Running" ]; then
-                LOG "Pod not Running — deleting $POD so Deployment recreates it"
-                if kubectl delete pod -n media "$POD" --wait=false 2>&1; then
-                  LOG "DELETE issued for $POD"
+                if [ "$PHASE" = "Pending" ]; then
+                  LOG "Pod Pending (often Insufficient CPU or PVC) — not deleting; fix scheduling or resources"
                 else
-                  LOG "WARN: kubectl delete failed exit=$?"
+                  LOG "Pod phase=$PHASE — deleting $POD so Deployment recreates it"
+                  if kubectl delete pod -n media "$POD" --wait=false 2>&1; then
+                    LOG "DELETE issued for $POD"
+                  else
+                    LOG "WARN: kubectl delete failed exit=$?"
+                  fi
                 fi
                 push_metric 0
                 LOG "done"
