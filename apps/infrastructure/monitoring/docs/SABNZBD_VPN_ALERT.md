@@ -3,9 +3,10 @@
 ## What’s in place
 
 - **Pushgateway** in `monitoring`: receives metrics pushed by batch jobs.
-- **CronJob `sabnzbd-vpn-check`** (every 15 min): execs into the Sabnzbd pod’s VPN container, runs `wget https://ipinfo.io/json` through the tunnel, and pushes:
+- **CronJob `sabnzbd-vpn-check`** (every **15 minutes**, not 3h): execs into the Sabnzbd pod’s VPN container, runs `wget https://ipinfo.io/json` through the tunnel, and pushes:
   - `sabnzbd_vpn_healthy 1` if the request succeeds
-  - `sabnzbd_vpn_healthy 0` if no Sabnzbd pod or the request fails
+  - `sabnzbd_vpn_healthy 0` if no Sabnzbd pod, pod is not `Running`, or the request fails
+- **Self-heal:** If the pod is not `Running`, or the VPN check fails, the job **`kubectl delete pod`** on that pod so the Deployment (Recreate) creates a new one. Job logs use UTC timestamps and include Pushgateway result, phase, and delete outcome.
 - **Prometheus** scrapes Pushgateway; the metric appears as `sabnzbd_vpn_healthy` (and optionally `pushgateway_*` with job/instance labels).
 
 ## Grafana alert (once you have an alarm target)
@@ -40,8 +41,17 @@
 
 Edit the CronJob schedule in `sabnzbd-vpn-check-cronjob.yaml`:
 
-- `*/15 * * * *` = every 15 minutes (default)
+- `*/15 * * * *` = every 15 minutes (default; keeps metrics fresh for alerts)
 - `0 * * * *` = once per hour
 - `*/5 * * * *` = every 5 minutes
 
 Then re-apply the manifest (or let ArgoCD sync).
+
+## View job logs
+
+```bash
+kubectl get jobs -n monitoring | grep sabnzbd-vpn-check
+kubectl logs -n monitoring job/sabnzbd-vpn-check-<timestamp> --tail=80
+```
+
+(use the job name from the first command; container is `check`)

@@ -1,6 +1,7 @@
-# CronJob: runs every 15 min, checks Sabnzbd VPN by exec'ing into the pod
-# and curling through the tunnel. Pushes sabnzbd_vpn_healthy 1|0 to Pushgateway.
-# Prometheus scrapes Pushgateway; Grafana can alert on the metric.
+# CronJob: every 15 min — VPN check, Pushgateway metric, delete pod if unhealthy
+# so the Deployment replaces it (Recreate strategy). RBAC allows delete on sabnzbd pods only.
+#
+# Note: schedule is */15 for timely sabnzbd_vpn_healthy alerts (~3h was a misconception).
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -15,7 +16,7 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "list"]
+  verbs: ["get", "list", "delete"]
 - apiGroups: [""]
   resources: ["pods/exec"]
   verbs: ["create"]
@@ -40,14 +41,14 @@ metadata:
   name: sabnzbd-vpn-check
   namespace: monitoring
 spec:
-  schedule: "*/15 * * * *"   # every 15 minutes
+  schedule: "*/15 * * * *"   # every 15 minutes (alerts + heal within one interval)
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
   jobTemplate:
     spec:
       backoffLimit: 0
-      ttlSecondsAfterFinished: 3600
+      ttlSecondsAfterFinished: 7200
       template:
         spec:
           serviceAccountName: sabnzbd-vpn-check
@@ -59,26 +60,64 @@ spec:
             - /bin/sh
             - -c
             - |
-              set -e
+              # No "set -e": we log every path and always try to push metrics.
+              LOG() { echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
+
               PUSHGATEWAY="http://pushgateway.monitoring.svc.cluster.local:9091"
               JOB="sabnzbd_vpn_check"
               INSTANCE="media"
+
               push_metric() {
-                printf 'sabnzbd_vpn_healthy %s\n' "$1" | curl -sS -X PUT --data-binary @- "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" -H "Content-Type: text/plain; charset=utf-8" || true
+                _val="$1"
+                if printf 'sabnzbd_vpn_healthy %s\n' "$_val" | curl -sS -m 15 -X PUT --data-binary @- \
+                  "${PUSHGATEWAY}/metrics/job/${JOB}/instance/${INSTANCE}" \
+                  -H "Content-Type: text/plain; charset=utf-8"; then
+                  LOG "Pushgateway: sabnzbd_vpn_healthy=$_val OK"
+                else
+                  LOG "WARN: Pushgateway push failed (metric may be stale); curl exit=$?"
+                fi
               }
+
+              LOG "sabnzbd-vpn-check starting"
+
               POD=$(kubectl get pods -n media -l app=sabnzbd -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
               if [ -z "$POD" ]; then
-                echo "ERROR: no sabnzbd pod found in namespace media"
+                LOG "ERROR: no sabnzbd pod in namespace media (label app=sabnzbd)"
                 push_metric 0
                 exit 0
               fi
-              # Use hostname without trailing dot so check is subject to same DNS search as SABnzbd
-              # (with ndots:5, ipinfo.io fails like news.server.com; with ndots:1 both resolve)
-              if kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io/json" >/dev/null 2>&1; then
-                VAL=1
-                echo "OK: VPN check passed (pod=$POD), pushed sabnzbd_vpn_healthy=$VAL"
-              else
-                VAL=0
-                echo "ERROR: VPN check failed (wget to ipinfo.io from pod $POD vpn container failed), pushed sabnzbd_vpn_healthy=$VAL"
+
+              PHASE=$(kubectl get pod -n media "$POD" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+              LOG "pod=$POD phase=$PHASE"
+
+              if [ "$PHASE" != "Running" ]; then
+                LOG "Pod not Running — deleting $POD so Deployment recreates it"
+                if kubectl delete pod -n media "$POD" --wait=false 2>&1; then
+                  LOG "DELETE issued for $POD"
+                else
+                  LOG "WARN: kubectl delete failed exit=$?"
+                fi
+                push_metric 0
+                LOG "done"
+                exit 0
               fi
-              push_metric "$VAL"
+
+              # VPN tunnel test (same as SABnzbd DNS path; ndots:1 on pod)
+              OUT=$(kubectl exec -n media "$POD" -c vpn -- wget -q -O- --timeout=15 "https://ipinfo.io/json" 2>&1)
+              EC=$?
+              if [ "$EC" -eq 0 ]; then
+                LOG "OK: VPN check passed (wget ipinfo.io via pod=$POD)"
+                push_metric 1
+              else
+                LOG "ERROR: VPN check failed pod=$POD wget/kubectl-exit=$EC"
+                LOG "exec output (first 400 chars): $(printf '%s' "$OUT" | head -c 400)"
+                LOG "Deleting pod $POD so Deployment replaces it"
+                if kubectl delete pod -n media "$POD" --wait=false 2>&1; then
+                  LOG "DELETE issued for $POD"
+                else
+                  LOG "WARN: kubectl delete failed exit=$?"
+                fi
+                push_metric 0
+              fi
+
+              LOG "sabnzbd-vpn-check finished"
