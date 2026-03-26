@@ -7,6 +7,34 @@
 * **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
 * **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
 * **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
+* **openclaw:** strip rtk-rewrite from PVC after RTK revert ([91c5e35](https://github.com/brettswift/k8s_nas/commit/91c5e35ac113cf7cf56e9499da33c93b9ffeffe4))
+
+
+### Features
+
+* **f1:** API-driven data, auto-lock at race start, poll for results ([5376cf5](https://github.com/brettswift/k8s_nas/commit/5376cf5adcd82821ec7ab0387d19a900cccf33cf))
+* **f1:** browser auto-retry for race results (replace background thread) ([5a9d3bc](https://github.com/brettswift/k8s_nas/commit/5a9d3bcbc15b5d12ecc509c8146a118bd74ec6f8))
+* **f1:** orange for correct driver wrong position in race detail ([808b5f5](https://github.com/brettswift/k8s_nas/commit/808b5f518c9258933d5a773093b130904cb68cf3))
+* **f1:** race slug URL, points legend, red for winning picks ([066fd76](https://github.com/brettswift/k8s_nas/commit/066fd76ce5f3603d6fc8b7456e357e9e8e484f37))
+* **f1:** race-weekend state machine replacing hourly fetch CronJob ([c678a00](https://github.com/brettswift/k8s_nas/commit/c678a004cce41f19593b2ab527f079f7d74155f6))
+* **f1:** View button for locked/completed races, race detail page ([fac9a7e](https://github.com/brettswift/k8s_nas/commit/fac9a7ee3c9961bd8fee56bc5c2a127d8249abb4))
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+
+
+### Performance Improvements
+
+* **k8s:** reduce CPU requests for sabnzbd VPN and background services ([d706dd3](https://github.com/brettswift/k8s_nas/commit/d706dd3fd1787fd5be768e580257566d24bbfc38))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-03-26)
+
+
+### Bug Fixes
+
+* **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
+* **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
+* **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
+* **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
 
 
 ### Features
