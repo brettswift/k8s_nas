@@ -1,4 +1,4 @@
-name: Build openclaw-gateway image (vim + bat + rtk)
+name: Build openclaw-gateway image (vim + bat)
 
 on:
   push:

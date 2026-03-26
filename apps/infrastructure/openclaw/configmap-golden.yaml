@@ -17,16 +17,5 @@ data:
             "https://openclaw.home.brettswift.com"
           ]
         }
-      },
-      "plugins": {
-        "entries": {
-          "rtk-rewrite": {
-            "enabled": true,
-            "config": {
-              "enabled": true,
-              "verbose": false
-            }
-          }
-        }
       }
     }
