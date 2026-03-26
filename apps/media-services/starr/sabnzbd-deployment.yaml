@@ -137,7 +137,7 @@ spec:
           # Higher CPU request so VPN isn't starved under heavy usenet download (single tunnel = CPU-bound).
           requests:
             memory: "256Mi"
-            cpu: "500m"
+            cpu: "200m"
           limits:
             memory: "512Mi"
             cpu: "2000m"
