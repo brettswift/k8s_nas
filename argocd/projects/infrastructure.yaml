@@ -9,7 +9,6 @@ spec:
   sourceRepos:
     - 'https://github.com/brettswift/k8s_nas.git'
     - 'git@github.com:brettswift/k8s_nas.git'
-    - 'https://kubernetes.github.io/ingress-nginx'
 
   destinations:
     - namespace: 'ingress-nginx'
@@ -56,8 +55,6 @@ spec:
       kind: ClusterRole
     - group: 'rbac.authorization.k8s.io'
       kind: ClusterRoleBinding
-    - group: networking.k8s.io
-      kind: IngressClass
     # Traefik CRDs
     - group: 'traefik.io'
       kind: IngressRoute
@@ -89,8 +86,6 @@ spec:
       kind: StatefulSet
     - group: 'apps'
       kind: DaemonSet
-    - group: 'apps'
-      kind: ReplicaSet
     - group: 'networking.k8s.io'
       kind: Ingress
     - group: 'cert-manager.io'
