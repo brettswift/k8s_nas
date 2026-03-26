@@ -24,6 +24,8 @@ spec:
       values: |
         controller:
           hostNetwork: true
+          extraArgs:
+            publish-status-address: home.brettswift.com
           dnsPolicy: ClusterFirstWithHostNet
           service:
             type: ClusterIP
