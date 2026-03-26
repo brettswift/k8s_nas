@@ -1,17 +1,11 @@
-# RTK (optional)
+# RTK plugin (GitOps)
 
-The `rtk` binary is on `PATH`. OpenClaw **does not** load this plugin from GitOps:
+The gateway image includes the `rtk` binary. Kubernetes seeds this plugin into
+`~/.openclaw/extensions/rtk-rewrite/` from a ConfigMap and merges
+`plugins.entries.rtk-rewrite` into `openclaw.json` on each pod start (idempotent).
 
-- No `plugins.entries.rtk-rewrite` is added to `openclaw.json`.
-- No files are copied into `~/.openclaw/extensions/` by Kubernetes.
+To disable without removing the image, set `"enabled": false` under
+`plugins.entries.rtk-rewrite` in `openclaw.json` on the PVC, or remove that
+entry and delete the extension directory.
 
-To try the plugin later, copy from the image and enable in config (see [upstream](https://github.com/rtk-ai/rtk/blob/master/openclaw/README.md)):
-
-```bash
-kubectl exec -it -n openclaw deploy/openclaw-gateway -c gateway -- sh -lc '
-  mkdir -p ~/.openclaw/extensions/rtk-rewrite &&
-  cp /opt/rtk-openclaw-plugin/index.ts /opt/rtk-openclaw-plugin/openclaw.plugin.json ~/.openclaw/extensions/rtk-rewrite/
-'
-```
-
-Then add the `rtk-rewrite` entry under `plugins.entries` in `~/.openclaw/openclaw.json` and restart the gateway.
+Upstream: [rtk-ai/rtk/openclaw](https://github.com/rtk-ai/rtk/tree/master/openclaw).
