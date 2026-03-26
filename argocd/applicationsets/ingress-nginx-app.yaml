@@ -27,6 +27,7 @@ spec:
           publishService:
             enabled: false
           extraArgs:
+            update-status: "true"
             publish-status-address: home.brettswift.com
           dnsPolicy: ClusterFirstWithHostNet
           service:
