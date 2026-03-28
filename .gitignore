@@ -39,6 +39,9 @@ vendor/
 .env.local
 *.local
 
+# OpenClaw: local restore bundle (secrets; never commit)
+apps/infrastructure/openclaw/openclaw_backup_config_mess.json
+
 # Python
 __pycache__/
 *.py[cod]

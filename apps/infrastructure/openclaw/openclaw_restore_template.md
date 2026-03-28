@@ -1,8 +1,11 @@
 # OpenClaw PVC restore reference (no secrets)
 
 Use this as a **checklist** when recreating `~/.openclaw` and `~/.ssh` on a new
-PVC. **Do not commit real keys.** Copy values from a password manager or
-encrypted backup.
+PVC.
+
+**Your real values:** keep a local copy (e.g. `openclaw_backup_config_mess.json`
+in this folder — **gitignored**; never commit). This file is the safe, empty
+template for sharing in Git.
 
 ## Omitted on purpose (per-server / regenerate)
 
