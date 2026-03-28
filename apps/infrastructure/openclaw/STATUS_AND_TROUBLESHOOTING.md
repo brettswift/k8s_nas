@@ -29,6 +29,41 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 - **node_modules on the PVC**  
   The only `node_modules` directory on the PVC in a typical install is under `extensions/openclaw-linear/node_modules` (for the Linear extension). The rest of OpenClaw runs from the image. If you copied a full `node_modules` tree into the PVC (e.g. under `~/.openclaw`), it can conflict with how the image resolves modules. Prefer not to put image-level dependencies on the PVC; only extension-specific `node_modules` (e.g. for user-installed extensions) belong there.
 
+## Tool noise, mangled paths, and Linear script names
+
+**`tools.profile (coding) allowlist contains unknown entries`**  
+The built-in `coding` profile references tools that this gateway build or your config marks as unavailable (for example `apply_patch`, `memory_search`, `cron`, or `web_search` when search is turned off). It is a warning, not necessarily a failure. Aligning profile and `tools.web` with what you actually use, upgrading the image, or running `openclaw doctor --fix` may reduce noise; some combinations still log until OpenClaw tightens the profile.
+
+**`read failed: ENOENT ... workspace/: 10` or paths containing `,`**  
+Usually the model passed a **shell snippet or pipeline** as a single file path (e.g. `path | wc -l` pasted into `read`). Treat as bad tool arguments from the model, not RTK. Prefer `exec` for shell pipelines and `read` only for a single path.
+
+**`linear-linear-sync.sh: not found`**  
+There is no separate `linear-linear-sync.sh` in the kanban skill; the real script is `linear-kanban-workflow.sh`. Old prompts or hallucinations can call the wrong name. A small compatibility shim on the PVC can forward `sync-all` to `check-and-process`; prefer updating prompts to the path in `HEARTBEAT.md` and the skill.
+
+## Cron jobs: Telegram `not-delivered`
+
+**Symptom:** `cron runs` shows `deliveryStatus: "not-delivered"` or `delivered: false` even though `delivery.to` is set.
+
+**Common cause:** The isolated run finished without a **final plain-text assistant message**. Reasoning-only or tool-only turns (no user-visible text) are not announced. Cron payloads should instruct the model to **always end with a short plain-text summary** when Telegram delivery is enabled.
+
+**Not the bot token:** `TELEGRAM_BOT_TOKEN` is the **bot** credential. Scheduled delivery uses your **Telegram user/chat id** in `cron edit ... --to "..."` (Digits from `sendMessage ok chat=...` in logs, or your user id from pairing.)
+
+**Duplicate jobs:** Two crons with the same schedule and task can run twice and confuse history; remove duplicates with `openclaw cron rm <id>`.
+
+## Log inventory on the gateway pod
+
+| Location | Purpose |
+| --- | --- |
+| `kubectl logs -n openclaw deploy/openclaw-gateway -c gateway` | Container stdout (recent entries; useful for crashes and startup). |
+| `/tmp/openclaw/openclaw-YYYY-MM-DD.log` | Daily JSON-ish log file inside the container (good for grepping tool and agent errors). |
+
+Example:
+
+```bash
+export KUBECONFIG=~/.kube/config-nas
+kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- sh -lc 'ls -la /tmp/openclaw/; tail -50 /tmp/openclaw/openclaw-$(date -u +%F).log'
+```
+
 ## Telegram plugin fails
 
 **Symptom:** Logs show:
