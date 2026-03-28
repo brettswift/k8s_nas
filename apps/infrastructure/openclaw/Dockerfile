@@ -1,7 +1,6 @@
-# Extend official OpenClaw image with vim, bat, and Python pip for terminal use and scripting.
-# RTK CLI is installed for optional token-saving hooks; the OpenClaw plugin is NOT enabled
-# via GitOps (no openclaw.json / PVC seeding). Plugin sources live in /opt/rtk-openclaw-plugin/
-# for manual enable later. See rtk-plugin/README.md.
+# Extend official OpenClaw image with vim, bat, Python pip, RTK CLI, and vendored RTK plugin.
+# GitOps merges rtk-rewrite into openclaw.json and seeds the extension; see deployment.yaml
+# and rtk-plugin/README.md.
 FROM ghcr.io/openclaw/openclaw:2026.3.13-1
 
 ARG RTK_VERSION=v0.33.1
@@ -11,6 +10,18 @@ RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     vim bat python3-pip python3-venv curl ca-certificates && \
   rm -rf /var/lib/apt/lists/*
+
+# Debian package "bat" installs /usr/bin/batcat; expose as `bat` for muscle memory.
+RUN if [ -x /usr/bin/batcat ]; then ln -sf /usr/bin/batcat /usr/local/bin/bat; fi
+
+# Interactive shells (kubectl exec -it … bash): convenience aliases for node.
+RUN printf '%s\n' \
+  '' \
+  '# openclaw-gateway image (k8s_nas)' \
+  "alias l='ls -lah'" \
+  "alias ll='ls -lah'" \
+  >> /home/node/.bashrc && \
+  chown node:node /home/node/.bashrc
 
 COPY rtk-plugin/ /opt/rtk-openclaw-plugin/
 
