@@ -29,10 +29,26 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 - **node_modules on the PVC**  
   The only `node_modules` directory on the PVC in a typical install is under `extensions/openclaw-linear/node_modules` (for the Linear extension). The rest of OpenClaw runs from the image. If you copied a full `node_modules` tree into the PVC (e.g. under `~/.openclaw`), it can conflict with how the image resolves modules. Prefer not to put image-level dependencies on the PVC; only extension-specific `node_modules` (e.g. for user-installed extensions) belong there.
 
+## Control UI: WebSocket `gateway token missing`
+
+**Symptom:** Logs show `reason=unauthorized: gateway token missing` and `code=1008` for connections from the browser (`openclaw-control-ui`), often with `remote=10.42.0.1` (ingress) and your LAN IP in `fwd=`.
+
+**Cause:** The Control UI has not stored the same token as `gateway.auth.token` (from the `openclaw-gateway-token` secret). The gateway is behaving correctly.
+
+**Fix:** Open https://openclaw.home.brettswift.com → **Settings → Auth** → paste the gateway token (see [README prerequisites](README.md)). Optionally set `gateway.trustedProxies` to your ingress hop IPs if you see “Proxy headers detected from untrusted address” and expect tokenless local behavior—you still normally need the token in the UI for WS auth.
+
 ## Tool noise, mangled paths, and Linear script names
 
 **`tools.profile (coding) allowlist contains unknown entries`**  
-The built-in `coding` profile references tools that this gateway build or your config marks as unavailable (for example `apply_patch`, `memory_search`, `cron`, or `web_search` when search is turned off). It is a warning, not necessarily a failure. Aligning profile and `tools.web` with what you actually use, upgrading the image, or running `openclaw doctor --fix` may reduce noise; some combinations still log until OpenClaw tightens the profile.
+The preset **`coding`** profile always includes tools in `group:fs`, `group:memory`, etc. OpenClaw still **warns** when those names are not registered in the current runtime (e.g. memory search off, `web_search` disabled, or provider limits). Adding `tools.deny` does **not** silence that warning, because the check runs against the profile’s built-in list.
+
+**Approach on this cluster (PVC `~/.openclaw/openclaw.json`):** use **`tools.profile: "full"`** (no preset allowlist) and a **`tools.deny`** list so the effective tool surface stays close to “coding minus broken or unwanted tools”:
+
+- `apply_patch`, `memory_search`, `memory_get` — avoid profile noise / memory stays off until you enable it.
+- `cron`, `web_search` — cron is scheduled via gateway/CLI; search stays off (fetch stays on via `tools.web.fetch`).
+- `browser`, `canvas`, `gateway`, `nodes` — reduce risk on a shared gateway (tighten or loosen as you like).
+
+If you later enable memory or web search, remove the matching entries from **`tools.deny`** and consider switching back to **`coding`** once the runtime exposes those tools without warnings.
 
 **`read failed: ENOENT ... workspace/: 10` or paths containing `,`**  
 Usually the model passed a **shell snippet or pipeline** as a single file path (e.g. `path | wc -l` pasted into `read`). Treat as bad tool arguments from the model, not RTK. Prefer `exec` for shell pipelines and `read` only for a single path.
