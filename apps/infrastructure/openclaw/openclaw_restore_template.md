@@ -114,6 +114,15 @@ You can let SSH populate this on first connect, or copy a minimal set for
 github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...
 ```
 
+## `plugins.allow` (extensions you trust)
+
+Bundled core plugins (model providers, etc.) ship with the image; you do not list
+every one. Set **`plugins.allow`** to the **plugin ids** of workspace extensions
+you deliberately load from `~/.openclaw/extensions/` (e.g. **`rtk-rewrite`**),
+and mirror them under **`plugins.entries.<id>.enabled`**. Run
+`openclaw plugins list` on the gateway pod to confirm ids. **`gateway`** is not
+a plugin id here.
+
 ## See also
 
 - [FRESH_PVC_GUIDE.md](FRESH_PVC_GUIDE.md) — full fresh-PVC flow.
