@@ -45,8 +45,9 @@ GOOGLE_PROJECT_ID=
 # Optional: GitHub PAT for gh / API
 GH_TOKEN=
 
-# Optional: GitHub compare URL for f1-dev batch Telegram ping
-# F1_DEV_COMPARE_URL=https://github.com/org/repo/compare/main...f1-dev
+# Optional: compare URL for kanban batch-ready Telegram ping (per project)
+# KANBAN_BATCH_COMPARE_URL=https://github.com/org/repo/compare/main...dev
+# KANBAN_INTEGRATION_BRANCH=dev
 ```
 
 ## `~/.openclaw/credentials/telegram-default-allowFrom.json`
