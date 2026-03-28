@@ -34,6 +34,13 @@ PAYPAL_PASSWORD=
 LINEAR_API_KEY=
 OPENROUTER_API_KEY=
 
+# Memory search (`memory-core`): `k8s_openclaw.json` uses provider `openai` with
+# `remote.baseUrl` OpenRouter. The adapter reads **`OPENAI_API_KEY`** — set it to
+# the same value as **`OPENROUTER_API_KEY`** unless you use a real OpenAI key for
+# embeddings. Without this, status shows memory as unavailable.
+
+OPENAI_API_KEY=
+
 # Git over SSH from the gateway pod
 GIT_SSH_COMMAND="ssh -F /home/node/.ssh/config"
 
@@ -61,6 +68,17 @@ here). The credentials file alone is not enough for config validation.
 Set `channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
 `buddy_workspace/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
 still need an approved pairing code even if this file exists.
+
+### Telegram groups (`groupPolicy` / `groupAllowFrom`)
+
+To clear **`openclaw security audit`** criticals about **`groupPolicy="open"`**,
+set **`channels.telegram.groupPolicy`** to **`allowlist`** and list allowed
+supergroup chat ids in **`channels.telegram.groupAllowFrom`** (strings; supergroup
+ids are usually negative, e.g. `"-1001234567890"`). An **empty** list means the bot
+ignores **all** groups until you add ids (DM allowlist is unchanged).
+
+Optional: set **`channels.defaults.groupPolicy`** to **`allowlist`** so other
+channel types default the same way.
 
 ```json
 {

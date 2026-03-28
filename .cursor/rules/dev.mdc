@@ -12,8 +12,10 @@ alwaysApply: true
 
 ## GitOps Workflow
 
-2. **Always Use GitOps**: 
+2. **Always Use GitOps**:
    - Always commit changes on a branch
+   - ArgoCD follows the **`live`** branch only — never assume `git push origin main`
+     deploys the cluster; use `git push origin <branch>:live`
    - Always push via: `git push <branch>:live`
    - Never apply changes directly with `kubectl apply` (except for temporary test pods)
    - All deployments must go through GitOps (ArgoCD tracks the `live` branch)
