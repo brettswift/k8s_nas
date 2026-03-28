@@ -158,7 +158,12 @@
       },
       "workspace": "/home/node/.openclaw/workspace",
       "memorySearch": {
-        "enabled": false
+        "enabled": true,
+        "provider": "openai",
+        "model": "openai/text-embedding-3-small",
+        "remote": {
+          "baseUrl": "https://openrouter.ai/api/v1"
+        }
       },
       "compaction": {
         "mode": "safeguard"
@@ -203,10 +208,17 @@
     "dmScope": "per-channel-peer"
   },
   "channels": {
+    "defaults": {
+      "groupPolicy": "allowlist"
+    },
     "telegram": {
       "enabled": true,
-      "dmPolicy": "pairing",
-      "groupPolicy": "open",
+      "dmPolicy": "allowlist",
+      "allowFrom": [
+        "7003385843"
+      ],
+      "groupPolicy": "allowlist",
+      "groupAllowFrom": [],
       "streaming": "partial",
       "groups": {
         "*": {
@@ -238,9 +250,19 @@
     ]
   },
   "plugins": {
+    "allow": [
+      "rtk-rewrite"
+    ],
     "entries": {
       "telegram": {
         "enabled": true
+      },
+      "rtk-rewrite": {
+        "enabled": true,
+        "config": {
+          "enabled": true,
+          "verbose": false
+        }
       }
     }
   }
