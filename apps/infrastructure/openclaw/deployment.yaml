@@ -36,7 +36,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-        - name: strip-rtk-artifacts
+        - name: merge-openclaw-rtk-config
           image: ghcr.io/brettswift/openclaw-gateway:live
           imagePullPolicy: Always
           command:
@@ -45,26 +45,42 @@ spec:
             - |
               import json
               import os
-              import shutil
 
               path = "/data/.openclaw/openclaw.json"
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              data = {}
               if os.path.isfile(path):
                   with open(path, encoding="utf-8") as f:
                       data = json.load(f)
-                  plugins = data.get("plugins")
-                  if isinstance(plugins, dict):
-                      entries = plugins.get("entries")
-                      if isinstance(entries, dict) and "rtk-rewrite" in entries:
-                          del entries["rtk-rewrite"]
-                  with open(path, "w", encoding="utf-8") as f:
-                      json.dump(data, f, indent=2)
-                      f.write("\n")
-              ext = "/data/.openclaw/extensions/rtk-rewrite"
-              if os.path.isdir(ext):
-                  shutil.rmtree(ext)
+              plugins = data.setdefault("plugins", {})
+              entries = plugins.setdefault("entries", {})
+              rtk = entries.get("rtk-rewrite", {})
+              rtk["enabled"] = True
+              cfg = rtk.setdefault("config", {})
+              cfg.setdefault("enabled", True)
+              cfg.setdefault("verbose", False)
+              entries["rtk-rewrite"] = rtk
+              with open(path, "w", encoding="utf-8") as f:
+                  json.dump(data, f, indent=2)
+                  f.write("\n")
           volumeMounts:
             - name: data
               mountPath: /data
+        - name: seed-rtk-plugin
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              mkdir -p /data/.openclaw/extensions/rtk-rewrite
+              cp /rtk/index.ts /rtk/openclaw.plugin.json /data/.openclaw/extensions/rtk-rewrite/
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: rtk-plugin-files
+              mountPath: /rtk
+              readOnly: true
         - name: ensure-workspace-perms
           image: busybox:1.36
           securityContext:
@@ -149,6 +165,8 @@ spec:
                   name: openclaw-home-assistant-token
                   key: token
                   optional: true
+            - name: RTK_TELEMETRY_DISABLED
+              value: "1"
             # API keys: not injected here so OpenClaw reads them from ~/.openclaw/.env on the PVC.
           volumeMounts:
             # Whole home on PVC so ~/.ssh, ~/.bashrc, etc. persist
@@ -195,3 +213,6 @@ spec:
         - name: golden-config
           configMap:
             name: openclaw-golden-config
+        - name: rtk-plugin-files
+          configMap:
+            name: openclaw-rtk-plugin
