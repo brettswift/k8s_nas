@@ -54,8 +54,11 @@ GH_TOKEN=
 
 After you know your Telegram user id (from pairing / logs), list allowed DMs here.
 
-For these IDs to work **without** running `openclaw pairing approve`, set
-`channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
+For **`allowlist`**, OpenClaw also requires **`channels.telegram.allowFrom`**
+in **`openclaw.json`** with at least one numeric sender id (same values as
+here). The credentials file alone is not enough for config validation.
+
+Set `channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
 `buddy_workspace/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
 still need an approved pairing code even if this file exists.
 
