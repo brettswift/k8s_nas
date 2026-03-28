@@ -186,9 +186,10 @@ Recommended shape for this gateway:
 
 - **`tools.profile: "full"`** — avoids preset allowlist mismatch when memory
   search or other optional tools are disabled.
-- **`tools.deny`** — only **`browser`**, **`canvas`**, **`gateway`**,
-  **`nodes`** (no headless browser/canvas; no gateway or node control from
-  tools).
+- **`tools.deny`** — **`browser`**, **`canvas`**, **`nodes`** only. Leave
+  **`gateway`** **out** of `deny` so chat/Telegram sessions can change models
+  and gateway settings via the gateway tool; still block browser/canvas and
+  node control.
 - **`tools.web.search.enabled: false`** and **`tools.web.fetch.enabled: true`**
   — fetch URLs without a Brave Search API key.
 - **`tools.elevated.enabled: false`** — keeps normal workspace **`exec`**;

@@ -46,7 +46,8 @@ The preset **`coding`** profile always includes tools in `group:fs`,
 by `tools.exec.applyPatch`). **`tools.deny` does not silence** that check.
 
 **Balanced default on this cluster:** **`tools.profile: "full"`** plus a **short**
-**`tools.deny`**: `browser`, `canvas`, `gateway`, `nodes`. Turn off
+**`tools.deny`**: `browser`, `canvas`, `nodes` (omit **`gateway`** if agents
+should adjust models/config via the gateway tool). Turn off
 **`tools.web.search`**; leave **`tools.web.fetch`** on. Set
 **`tools.elevated.enabled: false`** so normal workspace **`exec`** works without
 “elevated” gate errors. Set **`tools.exec.applyPatch.enabled: true`** if you
