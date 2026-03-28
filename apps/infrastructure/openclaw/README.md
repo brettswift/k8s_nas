@@ -32,7 +32,7 @@ Replace `YOUR_KEY_HERE` with your key from [Anthropic Console](https://console.a
 - **Git-tracked config:** [`backup/k8s_openclaw.json`](../../../backup/k8s_openclaw.json) mirrors gateway settings without **gateway auth tokens** (those stay in the `openclaw-gateway-token` secret / `OPENCLAW_GATEWAY_TOKEN`). To point the live `openclaw.json` at it, copy that file to `~/.openclaw/backup/k8s_openclaw.json` on the PVC and run [`backup/setup-openclaw-json-symlink.sh`](../../../backup/setup-openclaw-json-symlink.sh) (it renames the current file to `openclaw.json_bak_initial_simlink_setup` and symlinks `openclaw.json` → `backup/k8s_openclaw.json`).
 - **API keys via .env on the PVC:** OpenClaw reads `~/.openclaw/.env` automatically ([docs](https://docs.openclaw.ai/help/environment)). The deployment does not inject API keys from K8s, so put a `.env` file directly on the PVC at that path (same volume as `openclaw.json`). Create or edit it via `kubectl exec` or `kubectl cp`; e.g. `kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- sh -c 'echo "MOONSHOT_API_KEY=sk-yourkey" >> /home/node/.openclaw/.env'` or copy your local `.env` into the pod. Restart the gateway after changes.
 
-- **Optional**: Run the OpenClaw onboarding wizard once to create config and workspace under the PVC. You can do that by running the CLI image as a one-off job with the same PVC, or complete setup via the Control UI after the gateway is up.
+- **Fresh or wiped PVC:** See [Fresh PVC setup guide](FRESH_PVC_GUIDE.md) for restoring Git-tracked config, `.env`, optional `openclaw configure`, and how this differs from [upstream Kubernetes install](https://docs.openclaw.ai/install/kubernetes).
 
 ## URLs
 
