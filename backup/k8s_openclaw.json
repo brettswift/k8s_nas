@@ -188,6 +188,7 @@
       "enabled": false
     },
     "exec": {
+      "host": "gateway",
       "applyPatch": {
         "enabled": true
       }
