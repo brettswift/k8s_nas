@@ -30,8 +30,9 @@ variables**:
 
   - `openclaw-gateway-token` — must match what you paste in the Control UI
     (**Settings → Auth**).
-  - `openclaw-telegram-bot-token` (and any others you use, e.g. Home
-    Assistant).
+  - Optional: `openclaw-home-assistant-token` if you inject HA that way.
+  - **Telegram:** use `TELEGRAM_BOT_TOKEN` in `~/.openclaw/.env` on the PVC (not
+    a duplicate K8s secret — env overrides `.env`).
 
 - **`KUBECONFIG`**: e.g. `export KUBECONFIG=~/.kube/config-nas` (see
   `docs/AI_GUIDANCE.md`).

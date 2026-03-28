@@ -101,17 +101,16 @@ Use a Telegram bot so you can chat with OpenClaw from your phone. Default is **p
 3. Follow the prompts: choose a **name** (e.g. "My OpenClaw") and a **username** ending in `bot` (e.g. `my_openclaw_bot`). Must be unique.
 4. BotFather replies with a token like `123456789:ABCdefGHI...`. Copy and save it.
 
-### 2. Store the token in the cluster
+### 2. Store the token on the PVC
 
-Create a Kubernetes secret (do not commit the token):
+Put the bot token in **`~/.openclaw/.env`** on the gateway (same file as your other keys):
 
 ```bash
-kubectl create secret generic openclaw-telegram-bot-token \
-  --namespace openclaw \
-  --from-literal=token="YOUR_BOT_TOKEN_FROM_BOTFATHER"
+TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_FROM_BOTFATHER
 ```
 
-The deployment already has an optional `TELEGRAM_BOT_TOKEN` env that reads this secret.
+Do **not** also inject `TELEGRAM_BOT_TOKEN` from a Kubernetes Secret: container env
+wins over `.env` and two sources can disagree.
 
 ### 3. Enable Telegram in config
 
@@ -130,7 +129,7 @@ In the Control UI: **Settings → Config → Raw**, merge this into `openclaw.js
 ```
 
 - **`dmPolicy: "pairing"`** – New users get a one-time code; you approve them (see step 5).
-- Omit `botToken` in config when using the secret; the gateway uses `TELEGRAM_BOT_TOKEN` from the env.
+- Omit `botToken` in JSON; the gateway reads `TELEGRAM_BOT_TOKEN` from `~/.openclaw/.env`.
 
 Click **Apply**. The gateway will restart and load Telegram.
 

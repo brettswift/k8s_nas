@@ -153,12 +153,6 @@ spec:
                   optional: true
             - name: OPENCLAW_GATEWAY_SCOPES
               value: "operator.read,operator.write,cron.manage"
-            - name: TELEGRAM_BOT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-telegram-bot-token
-                  key: token
-                  optional: true
             - name: HA_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -167,7 +161,8 @@ spec:
                   optional: true
             - name: RTK_TELEMETRY_DISABLED
               value: "1"
-            # API keys: not injected here so OpenClaw reads them from ~/.openclaw/.env on the PVC.
+            # Telegram + other API keys: set in ~/.openclaw/.env on the PVC (avoid
+            # duplicating TELEGRAM_BOT_TOKEN as a K8s env secret — it overrides .env).
           volumeMounts:
             # Whole home on PVC so ~/.ssh, ~/.bashrc, etc. persist
             - name: data
