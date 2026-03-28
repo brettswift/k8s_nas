@@ -220,7 +220,7 @@
       ],
       "groupPolicy": "allowlist",
       "groupAllowFrom": [],
-      "streaming": "partial",
+      "streaming": "off",
       "groups": {
         "*": {
           "requireMention": true
