@@ -53,6 +53,12 @@ should adjust models/config via the gateway tool). Turn off
 “elevated” gate errors. Set **`tools.exec.applyPatch.enabled: true`** if you
 want **`apply_patch`** available.
 
+**`exec failed: exec host=sandbox … sandbox runtime is unavailable` (K8s gateway)**  
+OpenClaw defaults exec to the **sandbox** host; this image/pod has **no Docker
+sandbox**. The model agrees to run commands then nothing useful happens. Set
+**`tools.exec.host: "gateway"`** in `openclaw.json` so shell/exec runs on the
+gateway pod (see tracked `backup/k8s_openclaw.json`).
+
 **Optional:** switch to **`coding`** once **`agents.defaults.memorySearch`**
 is fully configured (embedding provider); otherwise leave memory off and accept
 either **`full`** or occasional **`coding`** warnings.
