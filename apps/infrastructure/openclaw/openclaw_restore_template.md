@@ -52,7 +52,12 @@ GH_TOKEN=
 
 ## `~/.openclaw/credentials/telegram-default-allowFrom.json`
 
-After you know your Telegram user id (from pairing / logs), you can pin DMs:
+After you know your Telegram user id (from pairing / logs), list allowed DMs here.
+
+For these IDs to work **without** running `openclaw pairing approve`, set
+`channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
+`buddy_workspace/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
+still need an approved pairing code even if this file exists.
 
 ```json
 {
