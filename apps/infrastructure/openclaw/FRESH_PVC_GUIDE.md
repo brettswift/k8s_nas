@@ -135,3 +135,5 @@ If you have a private export (paths like `.env`, `credentials/*.json`,
 - [README](README.md) — prerequisites, Control UI pairing, tools policy.
 - [STATUS_AND_TROUBLESHOOTING.md](STATUS_AND_TROUBLESHOOTING.md) — token,
   tools, cron, logs.
+- [openclaw_restore_template.md](openclaw_restore_template.md) — `.env` names,
+  Telegram credential shapes, SSH layout (no live secrets).
