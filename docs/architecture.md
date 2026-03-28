@@ -385,8 +385,8 @@ See [Source Tree Analysis](./source-tree-analysis.md) for complete directory str
    - Self-healing ensures desired state
 
 3. **Production Deployment**:
-   - Merge to `main` branch
-   - ArgoCD syncs to production cluster
+   - Update the **`live`** branch (e.g. `git push origin <branch>:live`)
+   - ArgoCD syncs production from `live`
    - Monitoring verifies deployment
 
 See [Development Guide](./development-guide.md) for detailed instructions.
@@ -400,7 +400,7 @@ See [Development Guide](./development-guide.md) for detailed instructions.
 - Minimal resource requirements
 - Local-path storage
 
-**Production (`main` branch):**
+**Production (`live` branch):**
 - Remote server at 10.1.0.20
 - Full resource allocation
 - HostPath storage for media files

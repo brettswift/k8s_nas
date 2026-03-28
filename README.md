@@ -38,7 +38,7 @@ A clean Kubernetes setup with ArgoCD ApplicationSets for label-driven GitOps dep
 - **k3s**: Lightweight Kubernetes cluster
 - **NGINX Ingress**: Ingress controller
 - **ArgoCD ApplicationSets**: Label-driven application deployment
-- **Environment-based**: `dev` branch for local development, `main` for production
+- **Environment-based**: feature branches for work; **`live`** is what ArgoCD on the NAS cluster tracks (there is no `main` for deploy)
 
 ## Repository Structure
 
@@ -72,9 +72,9 @@ k8s_nas/
 ## Deployment Model
 
 ### Branch Strategy
-- **`dev`**: Local development cluster (this machine)
-- **`main`**: Production server deployments
-- **`feat/*`**: Feature branches for development
+- **`live`**: Git revision ArgoCD syncs on the production NAS cluster (`git push origin <your-branch>:live`)
+- **`feat/*`** (and other branches): Development; merge via push/ref-update to `live`, not a separate `main`
+- Local/history branches (`dev`, `dev_starr`, etc.) may still exist for older docs or local k3d — check `argocd/` `targetRevision` for what each Application uses
 
 ### Deployment Process
 1. **Develop on feature branch**: `feat/application_sets`
@@ -125,7 +125,7 @@ spec:
 - **Services**: Enable/disable via labels
 
 ### Production (Server)
-- **Branch**: `main`
+- **Branch**: `live` (ArgoCD `targetRevision`)
 - **Cluster Labels**: `environment=server`
 - **Resource Limits**: Full production resources
 - **Services**: All enabled by default

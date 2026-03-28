@@ -215,7 +215,7 @@ k8s_nas/
 - **Service Discovery**: Kubernetes native DNS-based service discovery
 
 ### Between Environments
-- **Branch-based**: `dev` branch → development cluster, `main` branch → production
+- **Branch-based**: e.g. feature branches for work; **`live`** → production NAS cluster (ArgoCD)
 - **Overlays**: `apps/sample-hello/overlays/` demonstrates environment-specific configuration
 
 ### With External Systems

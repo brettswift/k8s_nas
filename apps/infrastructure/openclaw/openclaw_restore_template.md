@@ -25,12 +25,21 @@ Create on the PVC with your real values (names only shown here):
 # Providers (examples — use your keys)
 DEEPSEEK_API_KEY=
 TELEGRAM_BOT_TOKEN=
+# Optional: numeric user id for DM pings (linear-kanban telegram_workflow_notify.py)
+TELEGRAM_NOTIFY_CHAT_ID=
 MOONSHOT_API_KEY=
 MOLTBOOK_API_KEY=
 HOMEASSISTANT_TOKEN=
 PAYPAL_PASSWORD=
 LINEAR_API_KEY=
 OPENROUTER_API_KEY=
+
+# Memory search (`memory-core`): `k8s_openclaw.json` uses provider `openai` with
+# `remote.baseUrl` OpenRouter. The adapter reads **`OPENAI_API_KEY`** — set it to
+# the same value as **`OPENROUTER_API_KEY`** unless you use a real OpenAI key for
+# embeddings. Without this, status shows memory as unavailable.
+
+OPENAI_API_KEY=
 
 # Git over SSH from the gateway pod
 GIT_SSH_COMMAND="ssh -F /home/node/.ssh/config"
@@ -42,11 +51,34 @@ GOOGLE_PROJECT_ID=
 
 # Optional: GitHub PAT for gh / API
 GH_TOKEN=
+
+# Optional: compare URL for kanban batch-ready Telegram ping (per project)
+# KANBAN_BATCH_COMPARE_URL=https://github.com/org/repo/compare/live...feat/my-branch
+# KANBAN_INTEGRATION_BRANCH=dev
 ```
 
 ## `~/.openclaw/credentials/telegram-default-allowFrom.json`
 
-After you know your Telegram user id (from pairing / logs), you can pin DMs:
+After you know your Telegram user id (from pairing / logs), list allowed DMs here.
+
+For **`allowlist`**, OpenClaw also requires **`channels.telegram.allowFrom`**
+in **`openclaw.json`** with at least one numeric sender id (same values as
+here). The credentials file alone is not enough for config validation.
+
+Set `channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
+`buddy_workspace/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
+still need an approved pairing code even if this file exists.
+
+### Telegram groups (`groupPolicy` / `groupAllowFrom`)
+
+To clear **`openclaw security audit`** criticals about **`groupPolicy="open"`**,
+set **`channels.telegram.groupPolicy`** to **`allowlist`** and list allowed
+supergroup chat ids in **`channels.telegram.groupAllowFrom`** (strings; supergroup
+ids are usually negative, e.g. `"-1001234567890"`). An **empty** list means the bot
+ignores **all** groups until you add ids (DM allowlist is unchanged).
+
+Optional: set **`channels.defaults.groupPolicy`** to **`allowlist`** so other
+channel types default the same way.
 
 ```json
 {
@@ -79,6 +111,37 @@ Host github.com
 **Never commit this file.** Keep the private key in a vault; copy onto the PVC
 with `kubectl cp` or an editor, mode `600`, owner the gateway user (`node`).
 
+### Mode 0640 on the gateway pod (chmod “does not persist”)
+
+OpenSSH requires private keys **not** be readable by group or other (`0600` only).
+If you see **Permissions 0640 … are too open**, the usual cause on Kubernetes is
+**`pod.spec.securityContext.fsGroup`** (or similar volume ownership): the kubelet
+recursively adjusts the PVC so the supplemental group can read files, which sets
+**group-readable** bits (`0640`). That satisfies the volume but breaks SSH.
+
+Manual `chmod 0600` inside the pod can be **undone on the next pod restart** when
+the kubelet reapplies volume ownership, which looks like “chmod does not persist
+on the PVC.”
+
+**Fix (pick one):**
+
+1. **Init container (simplest with an existing key on the PVC)** — run as UID 0
+   once per start and tighten modes after the volume is mounted. See
+   `openclaw-gateway-ssh-perms-init.snippet.yaml` in this folder for a copy-paste
+   block (set the volume name and `mountPath` to match your Deployment).
+
+2. **Mount the key from a `Secret`** with `defaultMode: 0600` (`384` decimal) and
+   optionally `subPath` — permissions stay correct without relying on PVC bits.
+   Same snippet file shows an example `volumes` / `volumeMounts` shape.
+
+3. **Remove `fsGroup`** from the pod if nothing else on the PVC needs group-writable
+   dirs — only do this if you understand the tradeoff for other files under
+   `/home/node`.
+
+If your namespace enforces restricted Pod Security and blocks `runAsUser: 0` on
+the init container, use the **Secret mount** approach or ask for an exemption for
+that init only.
+
 ## `~/.ssh/id_ed25519.pub` (public key — safe to keep in Git as reference)
 
 Register this deploy key in GitHub (or your Git host) for repos the gateway
@@ -100,7 +163,16 @@ You can let SSH populate this on first connect, or copy a minimal set for
 github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...
 ```
 
+## `plugins.allow` (extensions you trust)
+
+Bundled core plugins (model providers, etc.) ship with the image; you do not list
+every one. Set **`plugins.allow`** to the **plugin ids** of workspace extensions
+you deliberately load from `~/.openclaw/extensions/` (e.g. **`rtk-rewrite`**),
+and mirror them under **`plugins.entries.<id>.enabled`**. Run
+`openclaw plugins list` on the gateway pod to confirm ids. **`gateway`** is not
+a plugin id here.
+
 ## See also
 
-- [FRESH_PVC_GUIDE.md](FRESH_PVC_GUIDE.md) — full fresh-PVC flow.
-- [README.md](README.md) — secrets and `.env` on the PVC.
+- `openclaw-gateway-ssh-perms-init.snippet.yaml` — initContainer / Secret examples
+  for correct SSH key modes on Kubernetes.

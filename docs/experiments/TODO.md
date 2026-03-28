@@ -60,7 +60,7 @@
 ## ArgoCD structure for starr suite
 - [ ] One ApplicationSet to generate one Application per app (labels: `part-of=starr`)
 - [ ] Each app under `apps/media-services/<app>` with `kustomization.yaml`, `deployment.yaml`, `service.yaml`, `ingress.yaml`
-- [ ] qbittorrent tracks `dev_qbit` branch; others track `main`
+- [ ] qbittorrent tracks `dev_qbit` branch; others track `live` (per-Application `targetRevision`)
 
 ## Home Lab Services
 - [ ] Deploy Home Assistant
