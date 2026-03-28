@@ -58,7 +58,7 @@ This is a **monolith** repository containing all infrastructure and application 
 
 ### 1. GitOps Deployment Model
 - **ArgoCD ApplicationSets**: Label-driven application deployment
-- **Branch Strategy**: `dev` for local development, `main` for production
+- **Branch Strategy**: work on feature branches; production NAS cluster syncs from **`live`** (not `main`)
 - **Automated Sync**: Self-healing deployments with automatic reconciliation
 
 ### 2. Service Categories
@@ -95,8 +95,8 @@ This is a **monolith** repository containing all infrastructure and application 
 
 ## Deployment Environments
 
-1. **Development (`dev` branch)**: Local k3s/k3d cluster for testing
-2. **Production (`main` branch)**: Remote server at 10.0.0.20
+1. **Development**: Local k3s/k3d or feature branches as needed
+2. **Production (`live` branch)**: Remote NAS cluster GitOps (see `CLAUDE.md`); ArgoCD uses `targetRevision: live`
 
 ## Links to Detailed Documentation
 

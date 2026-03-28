@@ -27,9 +27,8 @@ The k8s_nas project implements a GitOps-driven Kubernetes platform for managing 
 - Automated sync policies with self-healing enabled
 
 ✅ **Clear Branch Strategy**
-- `dev` branch for local development
-- `main` branch for production
 - Feature branches for development
+- **`live`** branch for production NAS GitOps (ArgoCD); no `main` deploy branch
 
 ✅ **Namespace Organization**
 - Logical namespace isolation (media, infrastructure, monitoring)

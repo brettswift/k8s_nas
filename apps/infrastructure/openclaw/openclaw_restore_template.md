@@ -46,7 +46,7 @@ GOOGLE_PROJECT_ID=
 GH_TOKEN=
 
 # Optional: compare URL for kanban batch-ready Telegram ping (per project)
-# KANBAN_BATCH_COMPARE_URL=https://github.com/org/repo/compare/main...dev
+# KANBAN_BATCH_COMPARE_URL=https://github.com/org/repo/compare/live...feat/my-branch
 # KANBAN_INTEGRATION_BRANCH=dev
 ```
 

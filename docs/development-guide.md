@@ -420,20 +420,20 @@ apps/
 
 - **Story branches**: `feat/{story-id}-{story-name}`
   - Example: `feat/1-2-configure-sonarr-prowlarr`
-  - Created off the current deployment branch (currently `dev_starr`)
+  - Created off the current deployment branch (often `live` or the branch you deploy from)
   - **This is the MANDATORY process for ALL stories**
 
 #### Main Branches
 
-- **`dev_starr`**: Development deployment branch (ArgoCD watches this branch)
-- **`main`**: Production deployments (future use)
+- **`live`**: Production NAS cluster — ArgoCD `targetRevision` for GitOps deploys
+- **`dev_starr`** (and similar): Historical or secondary branches; confirm `targetRevision` in each Application
 
 #### Workflow
 
 **This is the MANDATORY process for ALL stories.**
 
 1. **Create Feature Branch**:
-   - Create branch off current deployment branch (currently `dev_starr`): `git checkout dev_starr && git pull origin dev_starr`
+   - Create branch off the branch you deploy from (e.g. `live`): `git checkout live && git pull origin live`
    - Create feature branch: `git checkout -b feat/{story-id}-{story-name}`
    - Push to remote: `git push -u origin feat/{story-id}-{story-name}`
 

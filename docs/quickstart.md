@@ -79,7 +79,7 @@ Then apply a Repository CR to point Argo CD at this repo (see `BOOTSTRAP.md`).
   - Optional stacks (homepage, monitoring, qbit-only, samples)
 - Sync is automated with prune + self-heal.
 
-Tip: If your main development happens on `main`, ensure `targetRevision` in the AppSets matches. Current samples use `dev_starr`.
+Tip: On the NAS cluster, Application manifests typically use `targetRevision: live`. Ensure each Application’s `targetRevision` matches the branch you push to (see `CLAUDE.md`).
 
 ---
 
