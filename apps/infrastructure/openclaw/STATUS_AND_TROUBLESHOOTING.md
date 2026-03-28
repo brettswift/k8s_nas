@@ -40,15 +40,21 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 ## Tool noise, mangled paths, and Linear script names
 
 **`tools.profile (coding) allowlist contains unknown entries`**  
-The preset **`coding`** profile always includes tools in `group:fs`, `group:memory`, etc. OpenClaw still **warns** when those names are not registered in the current runtime (e.g. memory search off, `web_search` disabled, or provider limits). Adding `tools.deny` does **not** silence that warning, because the check runs against the profile’s built-in list.
+The preset **`coding`** profile always includes tools in `group:fs`,
+`group:memory`, etc. OpenClaw **warns** when those names are not registered
+(e.g. **memory search off** without embedding keys, or `apply_patch` blocked
+by `tools.exec.applyPatch`). **`tools.deny` does not silence** that check.
 
-**Approach on this cluster (PVC `~/.openclaw/openclaw.json`):** use **`tools.profile: "full"`** (no preset allowlist) and a **`tools.deny`** list so the effective tool surface stays close to “coding minus broken or unwanted tools”:
+**Balanced default on this cluster:** **`tools.profile: "full"`** plus a **short**
+**`tools.deny`**: `browser`, `canvas`, `gateway`, `nodes`. Turn off
+**`tools.web.search`**; leave **`tools.web.fetch`** on. Set
+**`tools.elevated.enabled: false`** so normal workspace **`exec`** works without
+“elevated” gate errors. Set **`tools.exec.applyPatch.enabled: true`** if you
+want **`apply_patch`** available.
 
-- `apply_patch`, `memory_search`, `memory_get` — avoid profile noise / memory stays off until you enable it.
-- `cron`, `web_search` — cron is scheduled via gateway/CLI; search stays off (fetch stays on via `tools.web.fetch`).
-- `browser`, `canvas`, `gateway`, `nodes` — reduce risk on a shared gateway (tighten or loosen as you like).
-
-If you later enable memory or web search, remove the matching entries from **`tools.deny`** and consider switching back to **`coding`** once the runtime exposes those tools without warnings.
+**Optional:** switch to **`coding`** once **`agents.defaults.memorySearch`**
+is fully configured (embedding provider); otherwise leave memory off and accept
+either **`full`** or occasional **`coding`** warnings.
 
 **`read failed: ENOENT ... workspace/: 10` or paths containing `,`**  
 Usually the model passed a **shell snippet or pipeline** as a single file path (e.g. `path | wc -l` pasted into `read`). Treat as bad tool arguments from the model, not RTK. Prefer `exec` for shell pipelines and `read` only for a single path.

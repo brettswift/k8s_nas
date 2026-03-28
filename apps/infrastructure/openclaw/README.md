@@ -176,6 +176,35 @@ To allow a Telegram user by ID (no pairing):
 
 To use the bot in groups, add it to the group in Telegram. By default the bot only replies when **mentioned** (e.g. `@my_openclaw_bot`). To change that, configure `channels.telegram.groups` (see [OpenClaw Telegram docs](https://docs.openclaw.ai/channels/telegram)).
 
+## Tools policy (balanced defaults)
+
+Live `openclaw.json` on the PVC should stay **simple** and **predictable**:
+fewer bespoke deny lists, and no “memory search on” until embeddings are
+configured.
+
+Recommended shape for this gateway:
+
+- **`tools.profile: "full"`** — avoids preset allowlist mismatch when memory
+  search or other optional tools are disabled.
+- **`tools.deny`** — only **`browser`**, **`canvas`**, **`gateway`**,
+  **`nodes`** (no headless browser/canvas; no gateway or node control from
+  tools).
+- **`tools.web.search.enabled: false`** and **`tools.web.fetch.enabled: true`**
+  — fetch URLs without a Brave Search API key.
+- **`tools.elevated.enabled: false`** — keeps normal workspace **`exec`**;
+  avoids elevated-exec failures for some Telegram/cron sessions.
+- **`tools.exec.applyPatch.enabled: true`** — matches models that call
+  **`apply_patch`**.
+
+If you want the upstream **`coding`** profile again, enable
+**`agents.defaults.memorySearch`** only after you add an embedding provider
+(see `openclaw doctor` / memory docs); otherwise doctor will complain about
+missing Google/Voyage/Mistral keys.
+
+Stricter research-only presets are in
+[Tool profile: safe but powerful](#tool-profile-safe-but-powerful-research)
+below.
+
 ## Skills (e.g. Home Assistant)
 
 Skills teach OpenClaw how to use tools (e.g. talk to Home Assistant). You can install them from the Control UI or via ClawHub.
