@@ -1,0 +1,42 @@
+# Merge into your OpenClaw gateway Deployment: spec.template.spec
+# (adjust volume name / mountPath to match how the PVC is attached).
+#
+# Fixes: OpenSSH refuses private keys that are group-readable (mode 0640).
+# Kubernetes fsGroup volume ownership often sets exactly that on PVC files.
+
+# initContainers:
+#   - name: fix-ssh-key-perms
+#     image: busybox:1.36
+#     securityContext:
+#       runAsUser: 0
+#       runAsNonRoot: false
+#     command:
+#       - sh
+#       - -c
+#       - |
+#         set -e
+#         if [ -d /home/node/.ssh ]; then
+#           chmod 700 /home/node/.ssh
+#           for f in /home/node/.ssh/id_ed25519 /home/node/.ssh/id_rsa; do
+#             [ -f "$f" ] && chmod 600 "$f" || true
+#           done
+#         fi
+#     volumeMounts:
+#       - name: REPLACE_WITH_YOUR_HOME_VOLUME_NAME
+#         mountPath: /home/node
+
+# Prefer mounting the deploy key from a Secret (permissions are correct every time):
+#
+# volumes:
+#   - name: git-ssh-key
+#     secret:
+#       secretName: openclaw-github-deploy-key
+#       defaultMode: 384   # 0600
+#       items:
+#         - key: id_ed25519
+#           path: id_ed25519
+# volumeMounts:
+#   - name: git-ssh-key
+#     mountPath: /home/node/.ssh/id_ed25519
+#     subPath: id_ed25519
+#     readOnly: true

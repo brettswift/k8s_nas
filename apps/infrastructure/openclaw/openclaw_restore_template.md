@@ -93,6 +93,37 @@ Host github.com
 **Never commit this file.** Keep the private key in a vault; copy onto the PVC
 with `kubectl cp` or an editor, mode `600`, owner the gateway user (`node`).
 
+### Mode 0640 on the gateway pod (chmod “does not persist”)
+
+OpenSSH requires private keys **not** be readable by group or other (`0600` only).
+If you see **Permissions 0640 … are too open**, the usual cause on Kubernetes is
+**`pod.spec.securityContext.fsGroup`** (or similar volume ownership): the kubelet
+recursively adjusts the PVC so the supplemental group can read files, which sets
+**group-readable** bits (`0640`). That satisfies the volume but breaks SSH.
+
+Manual `chmod 0600` inside the pod can be **undone on the next pod restart** when
+the kubelet reapplies volume ownership, which looks like “chmod does not persist
+on the PVC.”
+
+**Fix (pick one):**
+
+1. **Init container (simplest with an existing key on the PVC)** — run as UID 0
+   once per start and tighten modes after the volume is mounted. See
+   `openclaw-gateway-ssh-perms-init.snippet.yaml` in this folder for a copy-paste
+   block (set the volume name and `mountPath` to match your Deployment).
+
+2. **Mount the key from a `Secret`** with `defaultMode: 0600` (`384` decimal) and
+   optionally `subPath` — permissions stay correct without relying on PVC bits.
+   Same snippet file shows an example `volumes` / `volumeMounts` shape.
+
+3. **Remove `fsGroup`** from the pod if nothing else on the PVC needs group-writable
+   dirs — only do this if you understand the tradeoff for other files under
+   `/home/node`.
+
+If your namespace enforces restricted Pod Security and blocks `runAsUser: 0` on
+the init container, use the **Secret mount** approach or ask for an exemption for
+that init only.
+
 ## `~/.ssh/id_ed25519.pub` (public key — safe to keep in Git as reference)
 
 Register this deploy key in GitHub (or your Git host) for repos the gateway
@@ -125,5 +156,5 @@ a plugin id here.
 
 ## See also
 
-- [FRESH_PVC_GUIDE.md](FRESH_PVC_GUIDE.md) — full fresh-PVC flow.
-- [README.md](README.md) — secrets and `.env` on the PVC.
+- `openclaw-gateway-ssh-perms-init.snippet.yaml` — initContainer / Secret examples
+  for correct SSH key modes on Kubernetes.
