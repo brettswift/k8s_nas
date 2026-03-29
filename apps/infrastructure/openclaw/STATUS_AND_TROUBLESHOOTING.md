@@ -24,6 +24,9 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 - **Channels: empty**  
   If the Telegram plugin fails to load (see below), no channels appear. Other channels (e.g. webchat) may still work via the Control UI.
 
+- **Channels: empty but `channels.telegram.enabled` is true**  
+  Check **`openclaw plugins list`**: the stock **Telegram** row must be **loaded/enabled**, not **disabled**. If you use **`plugins.allow`** as a whitelist (e.g. only **`rtk-rewrite`**), the **Telegram** stock plugin is **not** loaded until you add **`telegram`** to **`plugins.allow`**. **`plugins.entries.telegram.enabled`** alone is not enough. Fix: add **`telegram`** to **`plugins.allow`**, then **`openclaw plugins enable telegram`** (or edit JSON) and **restart the gateway**. Symptom: **`openclaw status`** shows an empty Channels table and logs have **no** **`[telegram]`** lines at startup.
+
 - **Telegram plugin: fails to load**  
   Logs show:
   `telegram failed to load from /app/extensions/telegram/index.ts: Error: Cannot find module '../../../src/infra/outbound/send-deps.js'`  
