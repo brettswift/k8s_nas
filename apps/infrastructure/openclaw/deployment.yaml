@@ -113,6 +113,26 @@ spec:
               mkdir -p /data/.openclaw/workspace
               chown 1000:1000 /data/.openclaw/workspace
               chmod 755 /data/.openclaw/workspace
+              # After recursive chmod, OpenSSH private keys must be 0600 (no group read).
+              # Detect PEM/private-key headers so any key filename works (id_ed25519, deploy keys, etc.).
+              ssh_d="/data/.ssh"
+              if [ -d "$ssh_d" ]; then
+                chmod 700 "$ssh_d" 2>/dev/null || true
+                find "$ssh_d" -type f 2>/dev/null | while IFS= read -r keyf; do
+                  case "$keyf" in
+                    *.pub) continue ;;
+                  esac
+                  case "$keyf" in
+                    */known_hosts|*/known_hosts.old|*/authorized_keys|*/config|*/authorized_keys2)
+                      continue ;;
+                  esac
+                  [ -r "$keyf" ] && [ -s "$keyf" ] || continue
+                  first=$(head -n 1 "$keyf" 2>/dev/null) || continue
+                  case "$first" in
+                    -----BEGIN*PRIVATE*KEY-----*) chmod 600 "$keyf" || true ;;
+                  esac
+                done
+              fi
               touch /data/.gateway-starting
               chown 1000:1000 /data/.gateway-starting
           volumeMounts:

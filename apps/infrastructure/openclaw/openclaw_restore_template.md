@@ -113,6 +113,11 @@ with `kubectl cp` or an editor, mode `600`, owner the gateway user (`node`).
 
 ### Mode 0640 on the gateway pod (chmod “does not persist”)
 
+The gateway Deployment’s `ensure-workspace-perms` init container runs a recursive
+`chmod` that adds group-read on `/data`, then **re-tightens SSH private keys** by
+scanning `/data/.ssh` for PEM / `BEGIN … PRIVATE KEY` headers and `chmod 600`
+those files. You should not need to fix keys by hand after restarts.
+
 OpenSSH requires private keys **not** be readable by group or other (`0600` only).
 If you see **Permissions 0640 … are too open**, the usual cause on Kubernetes is
 **`pod.spec.securityContext.fsGroup`** (or similar volume ownership): the kubelet
