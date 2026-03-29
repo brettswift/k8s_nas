@@ -12,6 +12,9 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 
 ## What status shows
 
+- **Gateway: unreachable (missing scope: operator.read)**  
+  `status` from **inside the pod** opens a loopback WebSocket **without** the Control UI’s token handshake, so this line is often a **false alarm** while the process is actually listening (`listening on ws://0.0.0.0:18789` in logs). Confirm with `curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18789/healthz` in the **gateway** container (expect **200**), or use Telegram / the Control UI. The **`OPENCLAW_GATEWAY_SCOPES`** env on the Deployment is for authenticated clients (browser/token), not this diagnostic.
+
 - **Update: pnpm · npm latest unknown**  
   The gateway image runs Node and loads plugins from the image and from the PVC. It does not run `npm` or `pnpm` inside the container, so the CLI cannot resolve "latest" version. This is expected in the containerized setup and is not caused by moving `node_modules` unless you overwrote image or extension files.
 
@@ -57,7 +60,18 @@ want **`apply_patch`** available.
 OpenClaw defaults exec to the **sandbox** host; this image/pod has **no Docker
 sandbox**. The model agrees to run commands then nothing useful happens. Set
 **`tools.exec.host: "gateway"`** in `openclaw.json` so shell/exec runs on the
-gateway pod (see tracked `backup/k8s_openclaw.json`).
+gateway pod (see `buddy_vault/backup/k8s_openclaw.json`).
+
+**Heartbeat / scripts blocked (“exec approval required”)**  
+Headless gateways have **no Control UI** to answer approval prompts. If policy
+defaults to **allowlist** + **`ask: on-miss`**, **`askFallback: deny`** in
+**`exec-approvals.json`** wins and runs never start. For a **single-user** pod
+where you want **cron and scripts to run without prompts**, set
+**`tools.exec.security: "full"`** and **`tools.exec.ask: "off"`** in
+`openclaw.json` (see **`buddy_vault/backup/k8s_openclaw.json`**), plus
+**`askFallback: "full"`** (and matching **`security` / `ask`**) under
+**`defaults`** and **`agents.main`** in **`~/.openclaw/exec-approvals.json`**
+only — **`askFallback` is not** a `tools.exec` key in current OpenClaw builds.
 
 **Optional:** switch to **`coding`** once **`agents.defaults.memorySearch`**
 is fully configured (embedding provider); otherwise leave memory off and accept

@@ -2,13 +2,12 @@
 # Move the live OpenClaw config aside and replace openclaw.json with a symlink
 # to backup/k8s_openclaw.json under the state directory (typically ~/.openclaw).
 #
-# On the gateway pod, copy backup/k8s_openclaw.json from this repo into
-#   /home/node/.openclaw/backup/k8s_openclaw.json
-# then run:
+# On the gateway pod, copy backup/k8s_openclaw.json from the buddy_vault
+# repo into /home/node/.openclaw/backup/k8s_openclaw.json, then run:
 #   OPENCLAW_STATE_DIR=/home/node/.openclaw sh setup-openclaw-json-symlink.sh
 #
-# Git tracks backup/k8s_openclaw.json (gateway tokens stripped; use the
-# openclaw-gateway-token secret / OPENCLAW_GATEWAY_TOKEN on cluster).
+# Canonical file: buddy_vault/backup/k8s_openclaw.json (gateway tokens
+# stripped; cluster uses openclaw-gateway-token / OPENCLAW_GATEWAY_TOKEN).
 
 set -eu
 
@@ -24,7 +23,7 @@ if [ -L openclaw.json ]; then
 fi
 
 if [ ! -f "$TARGET_REL" ]; then
-  echo "missing ${DIR}/${TARGET_REL} — copy backup/k8s_openclaw.json from git into backup/ first" >&2
+  echo "missing ${DIR}/${TARGET_REL} — copy buddy_vault/backup/k8s_openclaw.json here first" >&2
   exit 1
 fi
 

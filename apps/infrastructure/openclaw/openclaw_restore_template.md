@@ -66,7 +66,7 @@ in **`openclaw.json`** with at least one numeric sender id (same values as
 here). The credentials file alone is not enough for config validation.
 
 Set `channels.telegram.dmPolicy` to **`allowlist`** in `openclaw.json` (see
-`buddy_workspace/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
+`buddy_vault/backup/k8s_openclaw.json`). With **`pairing`**, unknown users
 still need an approved pairing code even if this file exists.
 
 ### Telegram groups (`groupPolicy` / `groupAllowFrom`)

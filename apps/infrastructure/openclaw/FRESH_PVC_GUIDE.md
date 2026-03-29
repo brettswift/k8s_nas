@@ -14,7 +14,7 @@ the same Deployment and namespace.
 | Upstream doc | This repo |
 | --- | --- |
 | `./scripts/k8s/deploy.sh` | ArgoCD sync of `apps/infrastructure/openclaw` |
-| CM holds `openclaw.json` | PVC `~/.openclaw/`; optional Git file (Path A) |
+| CM holds `openclaw.json` | PVC `~/.openclaw/`; optional Git file in `buddy_vault` (Path A) |
 | Loopback + port-forward | Ingress + gateway bind (see `deployment.yaml`) |
 | Secret `openclaw-secrets` | Your secrets: gateway token, Telegram, etc. |
 
@@ -44,16 +44,16 @@ variables**:
 
 ## Path A — Git-tracked config + `.env` (recommended baseline)
 
-Best when [`backup/k8s_openclaw.json`](../../../backup/k8s_openclaw.json) is how
-you want the gateway to behave (no gateway tokens in Git; cluster uses the
-secret).
+Best when **`buddy_vault/backup/k8s_openclaw.json`** is how you want the
+gateway to behave (no gateway tokens in Git; cluster uses the secret).
 
-1. **Copy the tracked config onto the PVC** (from your laptop, repo root):
+1. **Copy the tracked config onto the PVC** (from your laptop; path is the
+   `buddy_vault` checkout next to this repo, or wherever you keep it):
 
    ```bash
    kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- \
      mkdir -p /home/node/.openclaw/backup
-   cat backup/k8s_openclaw.json | kubectl exec -i -n openclaw \
+   cat ../buddy_vault/backup/k8s_openclaw.json | kubectl exec -i -n openclaw \
      deploy/openclaw-gateway -c gateway -- \
      sh -c 'cat > /home/node/.openclaw/backup/k8s_openclaw.json'
    ```
