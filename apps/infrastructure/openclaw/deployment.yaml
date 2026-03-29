@@ -133,6 +133,9 @@ spec:
                   esac
                 done
               fi
+              # Config and credentials: no group/other read (same PVC chmod as SSH keys).
+              [ -f /data/.openclaw/openclaw.json ] && chmod 600 /data/.openclaw/openclaw.json || true
+              [ -d /data/.openclaw/credentials ] && chmod 700 /data/.openclaw/credentials || true
               touch /data/.gateway-starting
               chown 1000:1000 /data/.gateway-starting
           volumeMounts:
