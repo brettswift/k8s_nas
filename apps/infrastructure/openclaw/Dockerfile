@@ -1,7 +1,9 @@
 # Extend official OpenClaw image with vim, bat, Python pip, RTK CLI, and vendored RTK plugin.
 # GitOps merges rtk-rewrite into openclaw.json and seeds the extension; see deployment.yaml
 # and rtk-plugin/README.md.
-FROM ghcr.io/openclaw/openclaw:2026.3.13-1
+# 2026.3.13 had WS regression: operator.read rejected for status/system-presence/config.get
+# (device-auth too strict). Use 2026.3.23+; verify Telegram after upgrade.
+FROM ghcr.io/openclaw/openclaw:2026.3.23
 
 ARG RTK_VERSION=v0.33.1
 

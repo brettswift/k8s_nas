@@ -13,7 +13,10 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 ## What status shows
 
 - **Gateway: unreachable (missing scope: operator.read)**  
-  `status` from **inside the pod** opens a loopback WebSocket **without** the Control UI’s token handshake, so this line is often a **false alarm** while the process is actually listening (`listening on ws://0.0.0.0:18789` in logs). Confirm with `curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18789/healthz` in the **gateway** container (expect **200**), or use Telegram / the Control UI. The **`OPENCLAW_GATEWAY_SCOPES`** env on the Deployment is for authenticated clients (browser/token), not this diagnostic.
+  The in-pod **`openclaw status`** CLI opens loopback WS **without** the same device/session path as the Control UI, so this table row is often misleading while the gateway is up. Confirm with **`curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18789/healthz`** in the **gateway** container (expect **200**), or use Telegram / the Control UI.
+
+- **Logs: `[ws] ⇄ res ✗` … `missing scope: operator.read` on `status` / `system-presence` / `config.get`**  
+  This is a **known OpenClaw 2026.3.13 regression**: stricter device-auth rejects those RPCs for token-based WS clients that lack a registered device identity, so the gateway logs **INVALID_REQUEST** even when your cluster secret and UI token are fine. Chat (e.g. Telegram) can still work. Upstream: [openclaw#47640](https://github.com/openclaw/openclaw/issues/47640) (fixed in later releases; **2026.3.23** also hardens Control UI operator scopes). **Remediation:** rebuild and deploy the custom gateway image from **`apps/infrastructure/openclaw/Dockerfile`** using base **`ghcr.io/openclaw/openclaw:2026.3.23`** (or newer stable), then confirm Telegram and the Control UI.
 
 - **Update: pnpm · npm latest unknown**  
   The gateway image runs Node and loads plugins from the image and from the PVC. It does not run `npm` or `pnpm` inside the container, so the CLI cannot resolve "latest" version. This is expected in the containerized setup and is not caused by moving `node_modules` unless you overwrote image or extension files.
