@@ -38,6 +38,45 @@ kubectl exec -n openclaw deploy/openclaw-gateway -c gateway -- node /app/dist/in
 - **node_modules on the PVC**  
   The only `node_modules` directory on the PVC in a typical install is under `extensions/openclaw-linear/node_modules` (for the Linear extension). The rest of OpenClaw runs from the image. If you copied a full `node_modules` tree into the PVC (e.g. under `~/.openclaw`), it can conflict with how the image resolves modules. Prefer not to put image-level dependencies on the PVC; only extension-specific `node_modules` (e.g. for user-installed extensions) belong there.
 
+## Telegram: typing indicator, then silence
+
+**Symptoms:** The bot shows “typing” for a long time, then stops with no message.
+Logs often include:
+
+- `[tools] read failed: Missing required parameter: path`
+- `[agent/embedded] read tool called without path`
+- `read failed: ENOENT` where the “path” is clearly a **shell command** pasted into
+  the tool
+- `typing TTL reached (2m); stopping typing indicator`
+- `write failed: Missing required parameter: content` or `image failed: image required`
+
+**Typical cause:** The **DM session transcript grew very large** (hundreds of
+thousands of input tokens). The model starts emitting **invalid tool calls**;
+each failure burns another turn until the typing window expires.
+
+**Check (in the gateway container):**
+
+```bash
+openclaw sessions --json | grep -A6 'telegram:direct'
+```
+
+If **`inputTokens`** is huge for
+`agent:main:telegram:direct:<your_user_id>`, reset that session.
+
+**Reset one Telegram DM session (PVC-backed):**
+
+1. Find the key **`agent:main:telegram:direct:<telegram_user_id>`** and its
+   **`sessionId`** in **`~/.openclaw/agents/main/sessions/sessions.json`**.
+2. **Back up** `sessions.json`, **remove** that object key from the JSON, and
+   **rename** **`<sessionId>.jsonl`** to something like
+   **`<sessionId>.jsonl.deleted.<timestamp>`** in the same directory (same
+   pattern as other `.deleted.*` files already on disk).
+3. **`kubectl rollout restart deployment/openclaw-gateway -n openclaw`** so the
+   gateway drops any in-memory copy of the old session.
+
+The next DM starts a **fresh** conversation (pairing / allowlist rules
+unchanged).
+
 ## Control UI: WebSocket `gateway token missing`
 
 **Symptom:** Logs show `reason=unauthorized: gateway token missing` and `code=1008` for connections from the browser (`openclaw-control-ui`), often with `remote=10.42.0.1` (ingress) and your LAN IP in `fwd=`.
