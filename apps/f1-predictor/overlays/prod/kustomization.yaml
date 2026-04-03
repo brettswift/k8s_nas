@@ -14,5 +14,5 @@ patches:
 
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
-  newName: ghcr.io/brettswift/f1-predictor
+  newName: ghcr.io/brettswift/f1-predictor-app
   newTag: live
