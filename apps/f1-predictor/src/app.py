@@ -1064,3 +1064,15 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
+
+@app.route('/admin/force-lock-race')
+def force_lock_race():
+    """Debug: force-lock a race by ID (for testing)."""
+    import os
+    race_id = request.args.get('race_id', type=int)
+    if not race_id:
+        return 'race_id required', 400
+    db = get_db()
+    db.execute('UPDATE races SET status = ? WHERE id = ? AND status = ?', ('locked', race_id, 'open'))
+    db.commit()
+    return f'Race {race_id} locked', 200
