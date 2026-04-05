@@ -69,6 +69,7 @@ def init_db():
             date TEXT,
             time TEXT,
             start_override TEXT,
+            finish_override TEXT,
             has_results INTEGER DEFAULT 0,
             p1_driver_id TEXT,
             p2_driver_id TEXT,
@@ -274,7 +275,13 @@ def _driver_to_ergast(drv_row):
 
 
 def _get_results_for_race(season, round_no):
-    """Build Ergast Results array for a race from podium (p1,p2,p3)."""
+    """Build Ergast Results array for a race from podium (p1,p2,p3).
+    
+    Results are only returned if:
+    1. has_results=1 AND
+    2. finish_override is null (immediate) OR now >= finish_override
+    """
+    from datetime import datetime, timezone
     db = get_db()
     race = db.execute(
         "SELECT * FROM races WHERE season = ? AND round = ?",
@@ -282,6 +289,13 @@ def _get_results_for_race(season, round_no):
     ).fetchone()
     if not race or not race["has_results"]:
         return []
+    
+    # Check finish_override — results delayed until this time
+    finish_override = race.get("finish_override")
+    if finish_override:
+        finish_dt = datetime.fromisoformat(finish_override.replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) < finish_dt:
+            return []  # Too early, results not yet available
 
     p1, p2, p3 = race["p1_driver_id"], race["p2_driver_id"], race["p3_driver_id"]
     if not any((p1, p2, p3)):
@@ -429,19 +443,20 @@ def admin():
         (season,),
     ).fetchall()
 
-    # Format start_override for datetime-local input (YYYY-MM-DDTHH:mm)
+    # Format start_override and finish_override for datetime-local input (YYYY-MM-DDTHH:mm)
     race_list = []
     for r in races:
         d = dict(r)
-        so = d.get("start_override")
-        if so:
-            try:
-                dt = datetime.fromisoformat(so.replace("Z", "+00:00"))
-                d["start_override_input"] = dt.strftime("%Y-%m-%dT%H:%M")
-            except Exception:
-                d["start_override_input"] = so[:16] if len(so) >= 16 else so
-        else:
-            d["start_override_input"] = ""
+        for field in ("start_override", "finish_override"):
+            val = d.get(field)
+            if val:
+                try:
+                    dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                    d[field + "_input"] = dt.strftime("%Y-%m-%dT%H:%M")
+                except Exception:
+                    d[field + "_input"] = val[:16] if len(val) >= 16 else val
+            else:
+                d[field + "_input"] = ""
         race_list.append(d)
 
     return render_template(
@@ -461,6 +476,27 @@ def admin_set_start(race_id: int):
     db.execute("UPDATE races SET start_override = ? WHERE id = ?", (override or None, race_id))
     db.commit()
     flash("Start time updated" if override else "Start time cleared")
+    return redirect(url_for("admin", season=request.form.get("season", "")))
+
+
+@app.route("/admin/race/<int:race_id>/finish", methods=["POST"])
+def admin_set_finish(race_id: int):
+    """Set race finish time — results only visible after this datetime.
+    
+    Also sets has_results=1 so f1-predictor knows results are coming.
+    """
+    override = request.form.get("finish_override", "").strip()
+    db = get_db()
+    if override:
+        db.execute(
+            "UPDATE races SET finish_override = ?, has_results = 1 WHERE id = ?",
+            (override, race_id),
+        )
+        flash(f"Finish scheduled: {override}")
+    else:
+        db.execute("UPDATE races SET finish_override = NULL WHERE id = ?", (race_id,))
+        flash("Finish time cleared")
+    db.commit()
     return redirect(url_for("admin", season=request.form.get("season", "")))
 
 

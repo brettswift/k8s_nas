@@ -97,10 +97,16 @@
                 <input type="hidden" name="season" value="{{ current_season }}">
                 <button type="submit">Clear results</button>
               </form>
+              {% if race.finish_override %}
+                <div class="finish-override">
+                  <small>Results visible after: {{ race.finish_override }}</small>
+                </div>
+              {% endif %}
             {% else %}
-              <form action="{{ url_for('admin_finish_race', race_id=race.id) }}" method="post" class="form-inline">
+              <form action="{{ url_for('admin_set_finish', race_id=race.id) }}" method="post" class="form-inline">
                 <input type="hidden" name="season" value="{{ current_season }}">
-                <button type="submit">Finish race</button>
+                <input type="datetime-local" name="finish_override" value="{{ race.finish_override_input or '' }}">
+                <button type="submit">Schedule finish</button>
               </form>
             {% endif %}
             <form action="{{ url_for('admin_set_podium', race_id=race.id) }}" method="post" class="form-inline">
