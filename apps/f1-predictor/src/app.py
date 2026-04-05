@@ -1057,14 +1057,6 @@ def before_request():
     auto_lock_races()
 
 
-# Initialize database on startup
-with app.app_context():
-    init_db()
-    auto_lock_races()
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
-
 @app.route('/admin/force-lock-race')
 def force_lock_race():
     """Debug: force-lock a race by ID (for testing)."""
@@ -1084,3 +1076,11 @@ def admin_reset_races():
     db.execute('DELETE FROM races')
     db.commit()
     return 'Races cleared - reload from API on next app restart', 200
+
+# Initialize database on startup
+with app.app_context():
+    init_db()
+    auto_lock_races()
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
