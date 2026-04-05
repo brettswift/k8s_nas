@@ -1068,7 +1068,6 @@ if __name__ == '__main__':
 @app.route('/admin/force-lock-race')
 def force_lock_race():
     """Debug: force-lock a race by ID (for testing)."""
-    import os
     race_id = request.args.get('race_id', type=int)
     if not race_id:
         return 'race_id required', 400
@@ -1076,3 +1075,12 @@ def force_lock_race():
     db.execute('UPDATE races SET status = ? WHERE id = ? AND status = ?', ('locked', race_id, 'open'))
     db.commit()
     return f'Race {race_id} locked', 200
+
+
+@app.route('/admin/reset-races')
+def admin_reset_races():
+    """Debug: clear races table and reload from API on next request."""
+    db = get_db()
+    db.execute('DELETE FROM races')
+    db.commit()
+    return 'Races cleared - reload from API on next app restart', 200
