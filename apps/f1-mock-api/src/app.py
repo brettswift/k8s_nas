@@ -19,6 +19,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 app.config['DATABASE'] = os.environ.get('DATABASE_PATH', '/data/f1_mock.db')
 app.config['ERGAST_BASE'] = os.environ.get('ERGAST_BASE', 'https://api.jolpi.ca/ergast/f1/')
 app.config['DEFAULT_SEASON'] = int(os.environ.get('DEFAULT_SEASON', '2024'))
+app.config['USE_FIXTURES'] = os.environ.get('USE_FIXTURES', 'false').lower() in ('true', '1', 'yes')
 
 # Placeholder constructor for admin-set podium results (no constructor in drivers API)
 PLACEHOLDER_CONSTRUCTOR = {
@@ -190,14 +191,48 @@ def _seed_season(season: str) -> bool:
     return True
 
 
+def _seed_fixtures(season: str = "2026"):
+    """Seed hardcoded test fixture races into the given season."""
+    db = get_db()
+    races = [
+        {"round": "1", "raceName": "Test Race 1", "circuitId": "albert_park", "circuitName": "Albert Park Circuit", "locality": "Melbourne", "country": "Australia", "date": "2026-04-05", "time": "13:30:00", "start_override": "2026-04-05T13:30:00", "finish_override": "2026-04-05T13:45:00", "p1": "max_verstappen", "p2": "lando_norris", "p3": "george_russell"},
+        {"round": "2", "raceName": "Test Race 2", "circuitId": "shanghai", "circuitName": "Shanghai International Circuit", "locality": "Shanghai", "country": "China", "date": "2026-04-05", "time": "14:00:00", "start_override": "2026-04-05T14:00:00", "finish_override": "2026-04-05T14:15:00", "p1": "charles_leclerc", "p2": "oscar_piastri", "p3": "carlos_sainz"},
+        {"round": "3", "raceName": "Test Race 3", "circuitId": "suzuka", "circuitName": "Suzuka International Racing Course", "locality": "Suzuka", "country": "Japan", "date": "2026-04-05", "time": "14:30:00", "start_override": "2026-04-05T14:30:00", "finish_override": "2026-04-05T14:45:00", "p1": "lewis_hamilton", "p2": "fernando_alonso", "p3": "lando_norris"},
+        {"round": "4", "raceName": "Test Race 4", "circuitId": "bahrain", "circuitName": "Bahrain International Circuit", "locality": "Sakhir", "country": "Bahrain", "date": "2026-04-05", "time": "15:00:00", "start_override": "2026-04-05T15:00:00", "finish_override": "2026-04-05T15:15:00", "p1": "max_verstappen", "p2": "charles_leclerc", "p3": "oscar_piastri"},
+    ]
+    drivers = {
+        "max_verstappen": ("VER", "Max", "Verstappen", "Netherlands"),
+        "lando_norris": ("NOR", "Lando", "Norris", "United Kingdom"),
+        "george_russell": ("RUS", "George", "Russell", "United Kingdom"),
+        "charles_leclerc": ("LEC", "Charles", "Leclerc", "Monaco"),
+        "oscar_piastri": ("PIA", "Oscar", "Piastri", "Australia"),
+        "carlos_sainz": ("SAI", "Carlos", "Sainz", "Spain"),
+        "lewis_hamilton": ("HAM", "Lewis", "Hamilton", "United Kingdom"),
+        "fernando_alonso": ("ALO", "Fernando", "Alonso", "Spain"),
+    }
+    db.execute("INSERT OR IGNORE INTO seasons (season) VALUES (?)", (season,))
+    for did, (code, given, family, nat) in drivers.items():
+        db.execute("INSERT OR IGNORE INTO drivers (season, driver_id, code, given_name, family_name, nationality) VALUES (?, ?, ?, ?, ?, ?)", (season, did, code, given, family, nat))
+    for r in races:
+        db.execute("""
+            INSERT OR REPLACE INTO races
+            (season, round, race_name, circuit_id, circuit_name, locality, country, lat, long, race_url, date, time, start_override, finish_override, has_results, p1_driver_id, p2_driver_id, p3_driver_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, '', '', '', ?, ?, ?, ?, 1, ?, ?, ?)
+        """, (season, r["round"], r["raceName"], r["circuitId"], r["circuitName"], r["locality"], r["country"], r["date"], r["time"], r["start_override"], r["finish_override"], r["p1"], r["p2"], r["p3"]))
+    db.commit()
+    app.logger.info("Seeded %d fixture races for season %s", len(races), season)
+
 def seed_if_empty():
-    """Seed from Ergast if database is empty."""
+    """Seed from Ergast if database is empty, or from fixtures if USE_FIXTURES is set."""
     if _is_empty():
-        season = str(app.config['DEFAULT_SEASON'])
-        if _seed_season(season):
-            app.logger.info("Seeded season %s from Ergast", season)
+        if app.config['USE_FIXTURES']:
+            _seed_fixtures(str(app.config['DEFAULT_SEASON']))
         else:
-            app.logger.warning("Seed failed for season %s", season)
+            season = str(app.config['DEFAULT_SEASON'])
+            if _seed_season(season):
+                app.logger.info("Seeded season %s from Ergast", season)
+            else:
+                app.logger.warning("Seed failed for season %s", season)
 
 
 def _race_to_ergast(race_row, include_results=False):
