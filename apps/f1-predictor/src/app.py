@@ -24,11 +24,24 @@ app.config['DATABASE'] = os.environ.get('DATABASE_PATH', '/data/f1_predictions.d
 app.config['ENVIRONMENT'] = os.environ.get('ENVIRONMENT', 'dev')
 app.config['API_BASE_URL'] = os.environ.get('API_BASE_URL', '')
 app.config['USE_STUB_API'] = os.environ.get('USE_STUB_API', 'false').lower() == 'true'
+app.config['USE_FIXTURES'] = os.environ.get('USE_FIXTURES', 'false').lower() == 'true'
 app.config['F1_API_URL'] = os.environ.get('F1_API_URL', 'https://api.jolpi.ca/ergast/f1')
 app.config['F1_SEASON'] = int(os.environ.get('F1_SEASON', '2026'))
 app.config['DRIVER_REFRESH_SECRET'] = os.environ.get('DRIVER_REFRESH_SECRET', '')
 RESULTS_CHECK_DELAY_MIN = 90  # Only check races that started 90+ min ago
 MAX_RETRIES = 10
+
+# Hardcoded test fixture races (used when USE_FIXTURES=true)
+FIXTURE_RACES = [
+    {"name": "Test Race 1", "round": 1, "date": "2026-04-05", "time": "13:30:00",
+     "p1_driver_id": "max_verstappen", "p2_driver_id": "lando_norris", "p3_driver_id": "george_russell"},
+    {"name": "Test Race 2", "round": 2, "date": "2026-04-05", "time": "14:00:00",
+     "p1_driver_id": "charles_leclerc", "p2_driver_id": "oscar_piastri", "p3_driver_id": "carlos_sainz"},
+    {"name": "Test Race 3", "round": 3, "date": "2026-04-05", "time": "14:30:00",
+     "p1_driver_id": "lewis_hamilton", "p2_driver_id": "fernando_alonso", "p3_driver_id": "lando_norris"},
+    {"name": "Test Race 4", "round": 4, "date": "2026-04-05", "time": "15:00:00",
+     "p1_driver_id": "max_verstappen", "p2_driver_id": "charles_leclerc", "p3_driver_id": "oscar_piastri"},
+]
 RETRY_INTERVAL_SEC = 120
 
 def auto_lock_races():
@@ -297,10 +310,50 @@ def fetch_races_from_api():
         return None
 
 def ensure_races_loaded(db):
-    """Ensure races are loaded from API. Called on startup if empty. No fallback."""
+    """Ensure races are loaded from API or fixtures. Called on startup if empty."""
     count = db.execute('SELECT COUNT(*) FROM races').fetchone()[0]
 
     if count > 0:
+        return
+
+    if app.config['USE_FIXTURES']:
+        app.logger.info("USE_FIXTURES=true - loading fixture races and drivers...")
+        fixture_drivers = [
+            {"driver_id": "max_verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 1, "code": "VER", "nationality": "Dutch"},
+            {"driver_id": "lando_norris", "name": "Lando Norris", "team": "McLaren", "number": 4, "code": "NOR", "nationality": "British"},
+            {"driver_id": "george_russell", "name": "George Russell", "team": "Mercedes", "number": 63, "code": "RUS", "nationality": "British"},
+            {"driver_id": "charles_leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16, "code": "LEC", "nationality": "Monegasque"},
+            {"driver_id": "oscar_piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81, "code": "PIA", "nationality": "Australian"},
+            {"driver_id": "carlos_sainz", "name": "Carlos Sainz", "team": "Ferrari", "number": 55, "code": "SAI", "nationality": "Spanish"},
+            {"driver_id": "lewis_hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44, "code": "HAM", "nationality": "British"},
+            {"driver_id": "fernando_alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14, "code": "ALO", "nationality": "Spanish"},
+        ]
+        driver_ids = {}
+        for d in fixture_drivers:
+            db.execute('''
+                INSERT OR IGNORE INTO drivers (driver_id, name, team, number, code, nationality)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (d['driver_id'], d['name'], d['team'], d['number'], d['code'], d['nationality']))
+            row = db.execute('SELECT id FROM drivers WHERE driver_id = ?', (d['driver_id'],)).fetchone()
+            driver_ids[d['driver_id']] = row['id'] if row else None
+
+        for race in FIXTURE_RACES:
+            date_str = f"{race['date']} {race['time']}"
+            db.execute(
+                'INSERT INTO races (name, round, date, status) VALUES (?, ?, ?, ?)',
+                (race['name'], race['round'], date_str, 'open')
+            )
+            race_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            p1 = driver_ids.get(race['p1_driver_id'])
+            p2 = driver_ids.get(race['p2_driver_id'])
+            p3 = driver_ids.get(race['p3_driver_id'])
+            if all([p1, p2, p3]):
+                db.execute(
+                    'INSERT OR IGNORE INTO results (race_id, p1_driver_id, p2_driver_id, p3_driver_id) VALUES (?, ?, ?, ?)',
+                    (race_id, p1, p2, p3)
+                )
+        db.commit()
+        app.logger.info(f"Loaded {len(FIXTURE_RACES)} fixture races with results")
         return
 
     app.logger.info("No races found - fetching from API...")
