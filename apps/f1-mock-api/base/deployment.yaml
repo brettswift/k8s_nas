@@ -22,6 +22,9 @@ spec:
       - name: f1-mock-api
         image: ghcr.io/brettswift/f1-mock-api:dev
         imagePullPolicy: Always
+        env:
+        - name: LAST_DEPLOYED
+          value: "2026-04-05T13:18Z"
         ports:
         - containerPort: 5000
           name: http
