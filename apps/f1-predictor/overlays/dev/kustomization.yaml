@@ -26,6 +26,11 @@ patches:
       value:
         name: F1_API_URL
         value: "http://f1-mock-api:80"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: USE_FIXTURES
+        value: "true"
 
 images:
 - name: ghcr.io/brettswift/f1-predictor:latest
