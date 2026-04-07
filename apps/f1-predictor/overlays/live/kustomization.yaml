@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: f1-live
+
+resources:
+- namespace.yaml
+- pvc.yaml
+- ../../base
+- ingress.yaml
+
+images:
+- name: ghcr.io/brettswift/f1-predictor:latest
+  newName: ghcr.io/brettswift/f1-predictor
+  newTag: live
+
+patches:
+- target:
+    kind: Deployment
+    name: f1-predictor
+  patch: |
+    - op: replace
+      path: /spec/template/spec/containers/0/env
+      value:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: f1-predictor-secret
+              key: secret-key
+              optional: true
+        - name: DATABASE_PATH
+          value: "/data/f1_predictions.db"
+        - name: ENVIRONMENT
+          value: "live"
+        - name: API_BASE_URL
+          value: ""
+        - name: USE_STUB_API
+          value: "false"
+        - name: USE_FIXTURES
+          value: "false"
+        - name: F1_API_URL
+          value: "https://api.jolpi.ca/ergast/f1"
+    - op: replace
+      path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
+      value: f1-live-data
