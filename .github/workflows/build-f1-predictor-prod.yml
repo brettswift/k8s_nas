@@ -2,7 +2,7 @@ name: Build f1-predictor prod image
 
 on:
   push:
-    branches: [live]
+    branches: [main]
     tags: [v*]
     paths:
       - "apps/f1-predictor/**"
@@ -43,4 +43,6 @@ jobs:
           push: true
           build-args: |
             APP_VERSION=${{ steps.version.outputs.version }}
-          tags: ghcr.io/${{ github.repository_owner }}/f1-predictor:live
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/f1-predictor:dev
+            ghcr.io/${{ github.repository_owner }}/f1-predictor:live
