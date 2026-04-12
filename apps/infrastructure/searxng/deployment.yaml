@@ -41,7 +41,11 @@ spec:
               mountPath: /var/cache/searxng
       containers:
         - name: searxng
+<<<<<<< HEAD
           image: docker.io/searxng/searxng:latest
+=======
+          image: docker.io/searxng/searxng:latest
+>>>>>>> origin/live
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -55,6 +59,12 @@ spec:
                   name: searxng-secrets
                   key: secret
                   optional: true
+<<<<<<< HEAD
+=======
+            # Optional: enable valkey for bot protection
+            # - name: SEARXNG_REDIS_URL
+            #   value: "redis://valkey:6379/0"
+>>>>>>> origin/live
           volumeMounts:
             - name: config
               mountPath: /etc/searxng

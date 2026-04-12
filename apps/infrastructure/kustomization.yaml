@@ -4,5 +4,5 @@ resources:
   - cert-manager/
   - external-dns/
   - mcp-server/
-# argocd/ removed - managed by argocd-config Application separately
-# monitoring/ removed - managed by monitoring Application separately
+  - openclaw/
+  - searxng/

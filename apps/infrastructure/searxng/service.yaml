@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng
+  namespace: openclaw
+  labels:
+    app: searxng
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: search.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+spec:
+  selector:
+    app: searxng
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
