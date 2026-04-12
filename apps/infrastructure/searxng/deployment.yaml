@@ -18,6 +18,9 @@ spec:
       labels:
         app: searxng
     spec:
+      # Avoid Kubernetes injecting *_SERVICE_* / legacy link env vars; the Service is
+      # also named "searxng", which confused Granian's --port (invalid tcp://... value).
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -47,6 +50,8 @@ spec:
             - containerPort: 8080
               name: http
           env:
+            - name: PORT
+              value: "8080"
             - name: SEARXNG_BASE_URL
               value: "https://search.home.brettswift.com/"
             - name: SEARXNG_SECRET
