@@ -9,6 +9,208 @@
 * **BUD-83:** use docker.io registry for searxng image\n\n- GHCR mirror may require auth; switch to official Docker Hub image\n- docker.io/searxng/searxng:latest is the public confirmed image ([99279ec](https://github.com/brettswift/k8s_nas/commit/99279ec57f62cb7a68bfd8b10665e2ced16ff308))
 * **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
 * **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
+* **infrastructure:** deploy OpenClaw and SearXNG only via openclaw app ([44d5b98](https://github.com/brettswift/k8s_nas/commit/44d5b98539f2abb143851ec4a2287f9162ebe704))
+* **infrastructure:** unblock kustomize for blocky removal and SearXNG ([f7ece44](https://github.com/brettswift/k8s_nas/commit/f7ece44cc9c47941d87e98ff99b6171e80433073))
+* **ingress:** disable publishService when using publish-status-address ([8831283](https://github.com/brettswift/k8s_nas/commit/8831283a15e590712cb4f04b7d8ed03cc6c9adb8))
+* **ingress:** force status updates with publish-status-address ([304f866](https://github.com/brettswift/k8s_nas/commit/304f8667052a7c7e79d3584e30711f7ec96702e7))
+* **ingress:** publish stable status address for ingress health ([0dda914](https://github.com/brettswift/k8s_nas/commit/0dda914615fc42cd6b06fab11223da1f8fdfbcec))
+* **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
+* **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
+* **openclaw:** align backup/k8s_openclaw.json with buddy_workspace ([1138e7c](https://github.com/brettswift/k8s_nas/commit/1138e7c482da1b7f93a509b2ffa862daba2e5563))
+* **openclaw:** bump gateway base image past 2026.3.13 operator.read WS regression ([0cb505a](https://github.com/brettswift/k8s_nas/commit/0cb505a4bd7457cd678b8d18f715c96d50a15a2b))
+* **openclaw:** chmod 600 openclaw.json and 700 credentials after PVC chmod ([86bd545](https://github.com/brettswift/k8s_nas/commit/86bd54501ec136d999c909e706d85344371ebc07))
+* **openclaw:** drop TELEGRAM_BOT_TOKEN from Deployment env ([a7cdd15](https://github.com/brettswift/k8s_nas/commit/a7cdd1586b4141e0379840a1d99a0c90f52a64b5))
+* **openclaw:** remove RTK from image and GitOps; strip PVC plugin artifacts ([2217ae9](https://github.com/brettswift/k8s_nas/commit/2217ae931538a51860dcd5868da19728db99e71e))
+* **openclaw:** strip rtk-rewrite from PVC after RTK revert ([91c5e35](https://github.com/brettswift/k8s_nas/commit/91c5e35ac113cf7cf56e9499da33c93b9ffeffe4))
+* **openclaw:** telegram streaming off for reliable final send ([d764f85](https://github.com/brettswift/k8s_nas/commit/d764f85a4bf3564fb4790dbd8747720715c4e0ac))
+* **openclaw:** tighten SSH private key modes after PVC chmod in init ([eef900d](https://github.com/brettswift/k8s_nas/commit/eef900d3464202e183c4e623151b3866967609e4))
+* **openclaw:** tools.exec.host gateway for pod without sandbox runtime ([4153ad0](https://github.com/brettswift/k8s_nas/commit/4153ad037032acf7fd68822e814ed1a2ab45183a))
+* **searxng:** pin PORT and disable service link env injection ([510edb2](https://github.com/brettswift/k8s_nas/commit/510edb27c3e8372c2b6001a450a91210a17460b5))
+
+
+### Features
+
+* **BUD-82:** add SearXNG to openclaw namespace\n\n- Deployment using ghcr.io/searxng/searxng:latest\n- PVCs for config (64Mi) and data (256Mi)\n- Ingress: search.home.brettswift.com\n- Network policy allows openclaw pod to reach it\n- Follows openclaw namespace pattern from existing app ([9722215](https://github.com/brettswift/k8s_nas/commit/9722215f9a5a7848eca9f6342b6b136243a70e6e))
+* **f1:** API-driven data, auto-lock at race start, poll for results ([5376cf5](https://github.com/brettswift/k8s_nas/commit/5376cf5adcd82821ec7ab0387d19a900cccf33cf))
+* **f1:** browser auto-retry for race results (replace background thread) ([5a9d3bc](https://github.com/brettswift/k8s_nas/commit/5a9d3bcbc15b5d12ecc509c8146a118bd74ec6f8))
+* **f1:** orange for correct driver wrong position in race detail ([808b5f5](https://github.com/brettswift/k8s_nas/commit/808b5f518c9258933d5a773093b130904cb68cf3))
+* **f1:** race slug URL, points legend, red for winning picks ([066fd76](https://github.com/brettswift/k8s_nas/commit/066fd76ce5f3603d6fc8b7456e357e9e8e484f37))
+* **f1:** race-weekend state machine replacing hourly fetch CronJob ([c678a00](https://github.com/brettswift/k8s_nas/commit/c678a004cce41f19593b2ab527f079f7d74155f6))
+* **f1:** View button for locked/completed races, race detail page ([fac9a7e](https://github.com/brettswift/k8s_nas/commit/fac9a7ee3c9961bd8fee56bc5c2a127d8249abb4))
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+* **openclaw:** bash aliases, bat symlink, fix Dockerfile RTK comment ([685ebba](https://github.com/brettswift/k8s_nas/commit/685ebba232fcf86825b21b9dec2868e8ad5eb26e))
+* **openclaw:** restore RTK binary and rtk-rewrite GitOps plugin ([995648c](https://github.com/brettswift/k8s_nas/commit/995648c59e9bef6b38e7958538b27ab4511ad6a9))
+* **openclaw:** restore RTK GitOps plugin; slash CPU requests for home cluster ([baceae4](https://github.com/brettswift/k8s_nas/commit/baceae496721e4f8210d93f3fc4cdf0fffd696a3))
+* **openclaw:** ship RTK CLI in image without enabling plugin via GitOps ([670dfa7](https://github.com/brettswift/k8s_nas/commit/670dfa77277544fa1a14463a8f7c16603688bd1d))
+* **openclaw:** track k8s_openclaw.json in git with PVC symlink setup ([7e9c561](https://github.com/brettswift/k8s_nas/commit/7e9c561f0cdb15adcba651d7f43253fc86b0aa04))
+
+
+### Performance Improvements
+
+* **k8s:** reduce CPU requests for sabnzbd VPN and background services ([d706dd3](https://github.com/brettswift/k8s_nas/commit/d706dd3fd1787fd5be768e580257566d24bbfc38))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* **argocd:** manage ingress-nginx with Recreate strategy for hostNetwork ([e82d8ac](https://github.com/brettswift/k8s_nas/commit/e82d8ac55cfd0539d79b5a38115341368a77533d))
+* **argocd:** use default project for ingress-nginx Helm chart ([bbd747c](https://github.com/brettswift/k8s_nas/commit/bbd747ceb432bb783365168ebc75dbd8ee109e28))
+* **BUD-83:** use docker.io registry for searxng image ([b16928d](https://github.com/brettswift/k8s_nas/commit/b16928d6dec648d9fd4466445bb98be1556dcf52))
+* **BUD-83:** use docker.io registry for searxng image\n\n- GHCR mirror may require auth; switch to official Docker Hub image\n- docker.io/searxng/searxng:latest is the public confirmed image ([99279ec](https://github.com/brettswift/k8s_nas/commit/99279ec57f62cb7a68bfd8b10665e2ced16ff308))
+* **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
+* **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
+* **infrastructure:** deploy OpenClaw and SearXNG only via openclaw app ([44d5b98](https://github.com/brettswift/k8s_nas/commit/44d5b98539f2abb143851ec4a2287f9162ebe704))
+* **infrastructure:** unblock kustomize for blocky removal and SearXNG ([f7ece44](https://github.com/brettswift/k8s_nas/commit/f7ece44cc9c47941d87e98ff99b6171e80433073))
+* **ingress:** disable publishService when using publish-status-address ([8831283](https://github.com/brettswift/k8s_nas/commit/8831283a15e590712cb4f04b7d8ed03cc6c9adb8))
+* **ingress:** force status updates with publish-status-address ([304f866](https://github.com/brettswift/k8s_nas/commit/304f8667052a7c7e79d3584e30711f7ec96702e7))
+* **ingress:** publish stable status address for ingress health ([0dda914](https://github.com/brettswift/k8s_nas/commit/0dda914615fc42cd6b06fab11223da1f8fdfbcec))
+* **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
+* **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
+* **openclaw:** align backup/k8s_openclaw.json with buddy_workspace ([1138e7c](https://github.com/brettswift/k8s_nas/commit/1138e7c482da1b7f93a509b2ffa862daba2e5563))
+* **openclaw:** bump gateway base image past 2026.3.13 operator.read WS regression ([0cb505a](https://github.com/brettswift/k8s_nas/commit/0cb505a4bd7457cd678b8d18f715c96d50a15a2b))
+* **openclaw:** chmod 600 openclaw.json and 700 credentials after PVC chmod ([86bd545](https://github.com/brettswift/k8s_nas/commit/86bd54501ec136d999c909e706d85344371ebc07))
+* **openclaw:** drop TELEGRAM_BOT_TOKEN from Deployment env ([a7cdd15](https://github.com/brettswift/k8s_nas/commit/a7cdd1586b4141e0379840a1d99a0c90f52a64b5))
+* **openclaw:** remove RTK from image and GitOps; strip PVC plugin artifacts ([2217ae9](https://github.com/brettswift/k8s_nas/commit/2217ae931538a51860dcd5868da19728db99e71e))
+* **openclaw:** strip rtk-rewrite from PVC after RTK revert ([91c5e35](https://github.com/brettswift/k8s_nas/commit/91c5e35ac113cf7cf56e9499da33c93b9ffeffe4))
+* **openclaw:** telegram streaming off for reliable final send ([d764f85](https://github.com/brettswift/k8s_nas/commit/d764f85a4bf3564fb4790dbd8747720715c4e0ac))
+* **openclaw:** tighten SSH private key modes after PVC chmod in init ([eef900d](https://github.com/brettswift/k8s_nas/commit/eef900d3464202e183c4e623151b3866967609e4))
+* **openclaw:** tools.exec.host gateway for pod without sandbox runtime ([4153ad0](https://github.com/brettswift/k8s_nas/commit/4153ad037032acf7fd68822e814ed1a2ab45183a))
+
+
+### Features
+
+* **BUD-82:** add SearXNG to openclaw namespace\n\n- Deployment using ghcr.io/searxng/searxng:latest\n- PVCs for config (64Mi) and data (256Mi)\n- Ingress: search.home.brettswift.com\n- Network policy allows openclaw pod to reach it\n- Follows openclaw namespace pattern from existing app ([9722215](https://github.com/brettswift/k8s_nas/commit/9722215f9a5a7848eca9f6342b6b136243a70e6e))
+* **f1:** API-driven data, auto-lock at race start, poll for results ([5376cf5](https://github.com/brettswift/k8s_nas/commit/5376cf5adcd82821ec7ab0387d19a900cccf33cf))
+* **f1:** browser auto-retry for race results (replace background thread) ([5a9d3bc](https://github.com/brettswift/k8s_nas/commit/5a9d3bcbc15b5d12ecc509c8146a118bd74ec6f8))
+* **f1:** orange for correct driver wrong position in race detail ([808b5f5](https://github.com/brettswift/k8s_nas/commit/808b5f518c9258933d5a773093b130904cb68cf3))
+* **f1:** race slug URL, points legend, red for winning picks ([066fd76](https://github.com/brettswift/k8s_nas/commit/066fd76ce5f3603d6fc8b7456e357e9e8e484f37))
+* **f1:** race-weekend state machine replacing hourly fetch CronJob ([c678a00](https://github.com/brettswift/k8s_nas/commit/c678a004cce41f19593b2ab527f079f7d74155f6))
+* **f1:** View button for locked/completed races, race detail page ([fac9a7e](https://github.com/brettswift/k8s_nas/commit/fac9a7ee3c9961bd8fee56bc5c2a127d8249abb4))
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+* **openclaw:** bash aliases, bat symlink, fix Dockerfile RTK comment ([685ebba](https://github.com/brettswift/k8s_nas/commit/685ebba232fcf86825b21b9dec2868e8ad5eb26e))
+* **openclaw:** restore RTK binary and rtk-rewrite GitOps plugin ([995648c](https://github.com/brettswift/k8s_nas/commit/995648c59e9bef6b38e7958538b27ab4511ad6a9))
+* **openclaw:** restore RTK GitOps plugin; slash CPU requests for home cluster ([baceae4](https://github.com/brettswift/k8s_nas/commit/baceae496721e4f8210d93f3fc4cdf0fffd696a3))
+* **openclaw:** ship RTK CLI in image without enabling plugin via GitOps ([670dfa7](https://github.com/brettswift/k8s_nas/commit/670dfa77277544fa1a14463a8f7c16603688bd1d))
+* **openclaw:** track k8s_openclaw.json in git with PVC symlink setup ([7e9c561](https://github.com/brettswift/k8s_nas/commit/7e9c561f0cdb15adcba651d7f43253fc86b0aa04))
+
+
+### Performance Improvements
+
+* **k8s:** reduce CPU requests for sabnzbd VPN and background services ([d706dd3](https://github.com/brettswift/k8s_nas/commit/d706dd3fd1787fd5be768e580257566d24bbfc38))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* **argocd:** manage ingress-nginx with Recreate strategy for hostNetwork ([e82d8ac](https://github.com/brettswift/k8s_nas/commit/e82d8ac55cfd0539d79b5a38115341368a77533d))
+* **argocd:** use default project for ingress-nginx Helm chart ([bbd747c](https://github.com/brettswift/k8s_nas/commit/bbd747ceb432bb783365168ebc75dbd8ee109e28))
+* **BUD-83:** use docker.io registry for searxng image ([b16928d](https://github.com/brettswift/k8s_nas/commit/b16928d6dec648d9fd4466445bb98be1556dcf52))
+* **BUD-83:** use docker.io registry for searxng image\n\n- GHCR mirror may require auth; switch to official Docker Hub image\n- docker.io/searxng/searxng:latest is the public confirmed image ([99279ec](https://github.com/brettswift/k8s_nas/commit/99279ec57f62cb7a68bfd8b10665e2ced16ff308))
+* **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
+* **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
+* **infrastructure:** unblock kustomize for blocky removal and SearXNG ([f7ece44](https://github.com/brettswift/k8s_nas/commit/f7ece44cc9c47941d87e98ff99b6171e80433073))
+* **ingress:** disable publishService when using publish-status-address ([8831283](https://github.com/brettswift/k8s_nas/commit/8831283a15e590712cb4f04b7d8ed03cc6c9adb8))
+* **ingress:** force status updates with publish-status-address ([304f866](https://github.com/brettswift/k8s_nas/commit/304f8667052a7c7e79d3584e30711f7ec96702e7))
+* **ingress:** publish stable status address for ingress health ([0dda914](https://github.com/brettswift/k8s_nas/commit/0dda914615fc42cd6b06fab11223da1f8fdfbcec))
+* **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
+* **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
+* **openclaw:** align backup/k8s_openclaw.json with buddy_workspace ([1138e7c](https://github.com/brettswift/k8s_nas/commit/1138e7c482da1b7f93a509b2ffa862daba2e5563))
+* **openclaw:** bump gateway base image past 2026.3.13 operator.read WS regression ([0cb505a](https://github.com/brettswift/k8s_nas/commit/0cb505a4bd7457cd678b8d18f715c96d50a15a2b))
+* **openclaw:** chmod 600 openclaw.json and 700 credentials after PVC chmod ([86bd545](https://github.com/brettswift/k8s_nas/commit/86bd54501ec136d999c909e706d85344371ebc07))
+* **openclaw:** drop TELEGRAM_BOT_TOKEN from Deployment env ([a7cdd15](https://github.com/brettswift/k8s_nas/commit/a7cdd1586b4141e0379840a1d99a0c90f52a64b5))
+* **openclaw:** remove RTK from image and GitOps; strip PVC plugin artifacts ([2217ae9](https://github.com/brettswift/k8s_nas/commit/2217ae931538a51860dcd5868da19728db99e71e))
+* **openclaw:** strip rtk-rewrite from PVC after RTK revert ([91c5e35](https://github.com/brettswift/k8s_nas/commit/91c5e35ac113cf7cf56e9499da33c93b9ffeffe4))
+* **openclaw:** telegram streaming off for reliable final send ([d764f85](https://github.com/brettswift/k8s_nas/commit/d764f85a4bf3564fb4790dbd8747720715c4e0ac))
+* **openclaw:** tighten SSH private key modes after PVC chmod in init ([eef900d](https://github.com/brettswift/k8s_nas/commit/eef900d3464202e183c4e623151b3866967609e4))
+* **openclaw:** tools.exec.host gateway for pod without sandbox runtime ([4153ad0](https://github.com/brettswift/k8s_nas/commit/4153ad037032acf7fd68822e814ed1a2ab45183a))
+
+
+### Features
+
+* **BUD-82:** add SearXNG to openclaw namespace\n\n- Deployment using ghcr.io/searxng/searxng:latest\n- PVCs for config (64Mi) and data (256Mi)\n- Ingress: search.home.brettswift.com\n- Network policy allows openclaw pod to reach it\n- Follows openclaw namespace pattern from existing app ([9722215](https://github.com/brettswift/k8s_nas/commit/9722215f9a5a7848eca9f6342b6b136243a70e6e))
+* **f1:** API-driven data, auto-lock at race start, poll for results ([5376cf5](https://github.com/brettswift/k8s_nas/commit/5376cf5adcd82821ec7ab0387d19a900cccf33cf))
+* **f1:** browser auto-retry for race results (replace background thread) ([5a9d3bc](https://github.com/brettswift/k8s_nas/commit/5a9d3bcbc15b5d12ecc509c8146a118bd74ec6f8))
+* **f1:** orange for correct driver wrong position in race detail ([808b5f5](https://github.com/brettswift/k8s_nas/commit/808b5f518c9258933d5a773093b130904cb68cf3))
+* **f1:** race slug URL, points legend, red for winning picks ([066fd76](https://github.com/brettswift/k8s_nas/commit/066fd76ce5f3603d6fc8b7456e357e9e8e484f37))
+* **f1:** race-weekend state machine replacing hourly fetch CronJob ([c678a00](https://github.com/brettswift/k8s_nas/commit/c678a004cce41f19593b2ab527f079f7d74155f6))
+* **f1:** View button for locked/completed races, race detail page ([fac9a7e](https://github.com/brettswift/k8s_nas/commit/fac9a7ee3c9961bd8fee56bc5c2a127d8249abb4))
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+* **openclaw:** bash aliases, bat symlink, fix Dockerfile RTK comment ([685ebba](https://github.com/brettswift/k8s_nas/commit/685ebba232fcf86825b21b9dec2868e8ad5eb26e))
+* **openclaw:** restore RTK binary and rtk-rewrite GitOps plugin ([995648c](https://github.com/brettswift/k8s_nas/commit/995648c59e9bef6b38e7958538b27ab4511ad6a9))
+* **openclaw:** restore RTK GitOps plugin; slash CPU requests for home cluster ([baceae4](https://github.com/brettswift/k8s_nas/commit/baceae496721e4f8210d93f3fc4cdf0fffd696a3))
+* **openclaw:** ship RTK CLI in image without enabling plugin via GitOps ([670dfa7](https://github.com/brettswift/k8s_nas/commit/670dfa77277544fa1a14463a8f7c16603688bd1d))
+* **openclaw:** track k8s_openclaw.json in git with PVC symlink setup ([7e9c561](https://github.com/brettswift/k8s_nas/commit/7e9c561f0cdb15adcba651d7f43253fc86b0aa04))
+
+
+### Performance Improvements
+
+* **k8s:** reduce CPU requests for sabnzbd VPN and background services ([d706dd3](https://github.com/brettswift/k8s_nas/commit/d706dd3fd1787fd5be768e580257566d24bbfc38))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* **argocd:** manage ingress-nginx with Recreate strategy for hostNetwork ([e82d8ac](https://github.com/brettswift/k8s_nas/commit/e82d8ac55cfd0539d79b5a38115341368a77533d))
+* **argocd:** use default project for ingress-nginx Helm chart ([bbd747c](https://github.com/brettswift/k8s_nas/commit/bbd747ceb432bb783365168ebc75dbd8ee109e28))
+* **BUD-83:** use docker.io registry for searxng image ([b16928d](https://github.com/brettswift/k8s_nas/commit/b16928d6dec648d9fd4466445bb98be1556dcf52))
+* **BUD-83:** use docker.io registry for searxng image\n\n- GHCR mirror may require auth; switch to official Docker Hub image\n- docker.io/searxng/searxng:latest is the public confirmed image ([99279ec](https://github.com/brettswift/k8s_nas/commit/99279ec57f62cb7a68bfd8b10665e2ced16ff308))
+* **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
+* **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
+* **ingress:** disable publishService when using publish-status-address ([8831283](https://github.com/brettswift/k8s_nas/commit/8831283a15e590712cb4f04b7d8ed03cc6c9adb8))
+* **ingress:** force status updates with publish-status-address ([304f866](https://github.com/brettswift/k8s_nas/commit/304f8667052a7c7e79d3584e30711f7ec96702e7))
+* **ingress:** publish stable status address for ingress health ([0dda914](https://github.com/brettswift/k8s_nas/commit/0dda914615fc42cd6b06fab11223da1f8fdfbcec))
+* **monitoring:** do not delete Pending sabnzbd pod (avoid CPU scheduling loop) ([a016fe8](https://github.com/brettswift/k8s_nas/commit/a016fe8732c6305978f1c387071e74c40f27458e))
+* **monitoring:** sabnzbd VPN check deletes unhealthy pod + structured logs ([356df86](https://github.com/brettswift/k8s_nas/commit/356df863b25e3def9f51b5140c3d59c197efd71a))
+* **openclaw:** align backup/k8s_openclaw.json with buddy_workspace ([1138e7c](https://github.com/brettswift/k8s_nas/commit/1138e7c482da1b7f93a509b2ffa862daba2e5563))
+* **openclaw:** bump gateway base image past 2026.3.13 operator.read WS regression ([0cb505a](https://github.com/brettswift/k8s_nas/commit/0cb505a4bd7457cd678b8d18f715c96d50a15a2b))
+* **openclaw:** chmod 600 openclaw.json and 700 credentials after PVC chmod ([86bd545](https://github.com/brettswift/k8s_nas/commit/86bd54501ec136d999c909e706d85344371ebc07))
+* **openclaw:** drop TELEGRAM_BOT_TOKEN from Deployment env ([a7cdd15](https://github.com/brettswift/k8s_nas/commit/a7cdd1586b4141e0379840a1d99a0c90f52a64b5))
+* **openclaw:** remove RTK from image and GitOps; strip PVC plugin artifacts ([2217ae9](https://github.com/brettswift/k8s_nas/commit/2217ae931538a51860dcd5868da19728db99e71e))
+* **openclaw:** strip rtk-rewrite from PVC after RTK revert ([91c5e35](https://github.com/brettswift/k8s_nas/commit/91c5e35ac113cf7cf56e9499da33c93b9ffeffe4))
+* **openclaw:** telegram streaming off for reliable final send ([d764f85](https://github.com/brettswift/k8s_nas/commit/d764f85a4bf3564fb4790dbd8747720715c4e0ac))
+* **openclaw:** tighten SSH private key modes after PVC chmod in init ([eef900d](https://github.com/brettswift/k8s_nas/commit/eef900d3464202e183c4e623151b3866967609e4))
+* **openclaw:** tools.exec.host gateway for pod without sandbox runtime ([4153ad0](https://github.com/brettswift/k8s_nas/commit/4153ad037032acf7fd68822e814ed1a2ab45183a))
+
+
+### Features
+
+* **BUD-82:** add SearXNG to openclaw namespace\n\n- Deployment using ghcr.io/searxng/searxng:latest\n- PVCs for config (64Mi) and data (256Mi)\n- Ingress: search.home.brettswift.com\n- Network policy allows openclaw pod to reach it\n- Follows openclaw namespace pattern from existing app ([9722215](https://github.com/brettswift/k8s_nas/commit/9722215f9a5a7848eca9f6342b6b136243a70e6e))
+* **f1:** API-driven data, auto-lock at race start, poll for results ([5376cf5](https://github.com/brettswift/k8s_nas/commit/5376cf5adcd82821ec7ab0387d19a900cccf33cf))
+* **f1:** browser auto-retry for race results (replace background thread) ([5a9d3bc](https://github.com/brettswift/k8s_nas/commit/5a9d3bcbc15b5d12ecc509c8146a118bd74ec6f8))
+* **f1:** orange for correct driver wrong position in race detail ([808b5f5](https://github.com/brettswift/k8s_nas/commit/808b5f518c9258933d5a773093b130904cb68cf3))
+* **f1:** race slug URL, points legend, red for winning picks ([066fd76](https://github.com/brettswift/k8s_nas/commit/066fd76ce5f3603d6fc8b7456e357e9e8e484f37))
+* **f1:** race-weekend state machine replacing hourly fetch CronJob ([c678a00](https://github.com/brettswift/k8s_nas/commit/c678a004cce41f19593b2ab527f079f7d74155f6))
+* **f1:** View button for locked/completed races, race detail page ([fac9a7e](https://github.com/brettswift/k8s_nas/commit/fac9a7ee3c9961bd8fee56bc5c2a127d8249abb4))
+* **openclaw:** add gateway scopes for cron and operator access ([83502e5](https://github.com/brettswift/k8s_nas/commit/83502e5731429e5e9165db53f188e591a346c12c))
+* **openclaw:** add python3-pip to custom image, prepare for PVC-based duckdb install ([36e4a3a](https://github.com/brettswift/k8s_nas/commit/36e4a3a9532d10e2242f9f4f2e02226459772ff6))
+* **openclaw:** bash aliases, bat symlink, fix Dockerfile RTK comment ([685ebba](https://github.com/brettswift/k8s_nas/commit/685ebba232fcf86825b21b9dec2868e8ad5eb26e))
+* **openclaw:** restore RTK binary and rtk-rewrite GitOps plugin ([995648c](https://github.com/brettswift/k8s_nas/commit/995648c59e9bef6b38e7958538b27ab4511ad6a9))
+* **openclaw:** restore RTK GitOps plugin; slash CPU requests for home cluster ([baceae4](https://github.com/brettswift/k8s_nas/commit/baceae496721e4f8210d93f3fc4cdf0fffd696a3))
+* **openclaw:** ship RTK CLI in image without enabling plugin via GitOps ([670dfa7](https://github.com/brettswift/k8s_nas/commit/670dfa77277544fa1a14463a8f7c16603688bd1d))
+* **openclaw:** track k8s_openclaw.json in git with PVC symlink setup ([7e9c561](https://github.com/brettswift/k8s_nas/commit/7e9c561f0cdb15adcba651d7f43253fc86b0aa04))
+
+
+### Performance Improvements
+
+* **k8s:** reduce CPU requests for sabnzbd VPN and background services ([d706dd3](https://github.com/brettswift/k8s_nas/commit/d706dd3fd1787fd5be768e580257566d24bbfc38))
+
+# [1.12.0](https://github.com/brettswift/k8s_nas/compare/v1.11.3...v1.12.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* **argocd:** manage ingress-nginx with Recreate strategy for hostNetwork ([e82d8ac](https://github.com/brettswift/k8s_nas/commit/e82d8ac55cfd0539d79b5a38115341368a77533d))
+* **argocd:** use default project for ingress-nginx Helm chart ([bbd747c](https://github.com/brettswift/k8s_nas/commit/bbd747ceb432bb783365168ebc75dbd8ee109e28))
+* **BUD-83:** use docker.io registry for searxng image ([b16928d](https://github.com/brettswift/k8s_nas/commit/b16928d6dec648d9fd4466445bb98be1556dcf52))
+* **BUD-83:** use docker.io registry for searxng image\n\n- GHCR mirror may require auth; switch to official Docker Hub image\n- docker.io/searxng/searxng:latest is the public confirmed image ([99279ec](https://github.com/brettswift/k8s_nas/commit/99279ec57f62cb7a68bfd8b10665e2ced16ff308))
+* **f1:** image-refresh poll for new image; release token fallback; build permissions ([0105ecd](https://github.com/brettswift/k8s_nas/commit/0105ecdfeb1ef84fe104d333bc70ffa51d350e80))
+* **f1:** Jolpica results API, cron auto-lock, hourly fetch CronJob ([74598b7](https://github.com/brettswift/k8s_nas/commit/74598b75f1c506a9b82018f768354bd10ee20669))
 * **ingress:** disable publishService when using publish-status-address ([8831283](https://github.com/brettswift/k8s_nas/commit/8831283a15e590712cb4f04b7d8ed03cc6c9adb8))
 * **ingress:** force status updates with publish-status-address ([304f866](https://github.com/brettswift/k8s_nas/commit/304f8667052a7c7e79d3584e30711f7ec96702e7))
 * **ingress:** publish stable status address for ingress health ([0dda914](https://github.com/brettswift/k8s_nas/commit/0dda914615fc42cd6b06fab11223da1f8fdfbcec))
