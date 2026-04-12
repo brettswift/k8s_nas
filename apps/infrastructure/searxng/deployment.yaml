@@ -18,20 +18,15 @@ spec:
       labels:
         app: searxng
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-        fsGroup: 999
       initContainers:
         - name: permissions
-          image: busybox:1.36
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
+          image: docker.io/searxng/searxng:latest
+          imagePullPolicy: Always
           command:
             - sh
             - -c
             - |
+              mkdir -p /etc/searxng /var/cache/searxng
               chown -R 999:999 /etc/searxng /var/cache/searxng
               chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng
           volumeMounts:
@@ -39,6 +34,9 @@ spec:
               mountPath: /etc/searxng
             - name: data
               mountPath: /var/cache/searxng
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
       containers:
         - name: searxng
           image: docker.io/searxng/searxng:latest
@@ -57,10 +55,13 @@ spec:
               value: "html json"
             - name: USE_DEFAULT_SETTINGS
               value: "false"
+            - name: SEARXNG_LIMITER
+              value: "false"
+            - name: SEARXNG_PUBLIC_INSTANCE
+              value: "false"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng
-              readOnly: true
             - name: data
               mountPath: /var/cache/searxng
           resources:
@@ -87,8 +88,7 @@ spec:
             failureThreshold: 2
       volumes:
         - name: config
-          configMap:
-            name: searxng-settings
+          emptyDir: {}
         - name: data
           persistentVolumeClaim:
             claimName: searxng-data
