@@ -29,7 +29,6 @@ spec:
               cp /etc/searxng-defaults/settings.yml /etc/searxng/settings.yml
               chown -R 999:999 /etc/searxng /var/cache/searxng
               chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng
-              ls -la /etc/searxng/
           volumeMounts:
             - name: config-defaults
               mountPath: /etc/searxng-defaults
@@ -52,6 +51,10 @@ spec:
               value: "https://search.home.brettswift.com/"
             - name: SEARXNG_SECRET
               value: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
+            - name: SEARXNG_JSON
+              value: "1"
+            - name: SEARXNG_FORMAT
+              value: "json"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng
