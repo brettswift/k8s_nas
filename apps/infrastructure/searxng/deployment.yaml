@@ -18,6 +18,7 @@ spec:
       labels:
         app: searxng
     spec:
+      enableServiceLinks: false
       initContainers:
         - name: init
           image: docker.io/searxng/searxng:latest
