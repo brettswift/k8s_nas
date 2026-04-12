@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     branches: [live]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'memory/**'
+      - 'skills/**'
+      - 'scripts/openclaw-health-snapshot.sh'
   pull_request:
     branches: [live]
   workflow_dispatch:
