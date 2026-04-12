@@ -27,7 +27,8 @@ spec:
         # cleanup, rtk-rewrite). Replaces seed-config + merge-openclaw-rtk-config + seed-rtk-plugin
         # — all were idempotent every pod start, not one-off jobs.
         - name: bootstrap-openclaw-config
-          image: ghcr.io/brettswift/openclaw-gateway:live
+          # Pinned to match Dockerfile FROM (upstream OpenClaw). CI also pushes :live.
+          image: ghcr.io/brettswift/openclaw-gateway:2026.4.11
           imagePullPolicy: Always
           command:
             - sh
@@ -148,7 +149,7 @@ spec:
               readOnly: true
       containers:
         - name: gateway
-          image: ghcr.io/brettswift/openclaw-gateway:live
+          image: ghcr.io/brettswift/openclaw-gateway:2026.4.11
           imagePullPolicy: Always
           workingDir: /home/node/.openclaw/workspace
           args:
