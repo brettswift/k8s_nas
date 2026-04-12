@@ -22,7 +22,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: f1-mock-api
+            name: f1-predictor
             port:
               number: 80
       - path: /
