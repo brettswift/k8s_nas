@@ -52,14 +52,24 @@ spec:
               if os.path.isfile(path):
                   with open(path, encoding="utf-8") as f:
                       data = json.load(f)
+
               plugins = data.setdefault("plugins", {})
+
+              # Clean up stale searxng plugin entries (plugin not installed)
+              if "searxng" in plugins.get("allow", []):
+                  plugins["allow"] = [p for p in plugins["allow"] if p != "searxng"]
               entries = plugins.setdefault("entries", {})
+              if "searxng" in entries:
+                  del entries["searxng"]
+
+              # Ensure rtk-rewrite is properly configured
               rtk = entries.get("rtk-rewrite", {})
               rtk["enabled"] = True
               cfg = rtk.setdefault("config", {})
               cfg.setdefault("enabled", True)
               cfg.setdefault("verbose", False)
               entries["rtk-rewrite"] = rtk
+
               with open(path, "w", encoding="utf-8") as f:
                   json.dump(data, f, indent=2)
                   f.write("\n")
@@ -184,6 +194,8 @@ spec:
                   optional: true
             - name: RTK_TELEMETRY_DISABLED
               value: "1"
+            - name: SEARXNG_BASE_URL
+              value: "http://searxng.openclaw.svc"
             # Telegram + other API keys: set in ~/.openclaw/.env on the PVC (avoid
             # duplicating TELEGRAM_BOT_TOKEN as a K8s env secret — it overrides .env).
           volumeMounts:
