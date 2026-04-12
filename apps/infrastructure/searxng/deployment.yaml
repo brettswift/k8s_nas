@@ -26,13 +26,10 @@ spec:
             - sh
             - -c
             - |
-              echo "SEARXNG init: copying settings and setting permissions"
-              cp /etc/searxng-defaults/settings.yml /etc/searxng/settings.yml 2>/dev/null || true
-              mkdir -p /var/cache/searxng
-              chown -R 999:999 /etc/searxng /var/cache/searxng 2>/dev/null || true
-              chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng 2>/dev/null || true
-              echo "Done. Files in /etc/searxng:"
-              ls -la /etc/searxng/ 2>/dev/null || echo "dir empty"
+              cp /etc/searxng-defaults/settings.yml /etc/searxng/settings.yml
+              chown -R 999:999 /etc/searxng /var/cache/searxng
+              chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng
+              ls -la /etc/searxng/
           volumeMounts:
             - name: config-defaults
               mountPath: /etc/searxng-defaults
@@ -55,8 +52,6 @@ spec:
               value: "https://search.home.brettswift.com/"
             - name: SEARXNG_SECRET
               value: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
-            - name: USE_DEFAULT_SETTINGS
-              value: "false"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng
