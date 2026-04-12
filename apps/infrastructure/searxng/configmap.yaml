@@ -5,15 +5,10 @@ metadata:
   namespace: openclaw
 data:
   settings.yml: |
-    use_default_settings: false
+    use_default_settings: true
 
     general:
       instance_name: "Brett's SearXNG"
-      privacypolicy_url: false
-      donation_url: false
-      contact_url: false
-      enable_stats: false
-      max_results: 20
 
     search:
       formats:
@@ -22,10 +17,5 @@ data:
 
     server:
       secret_key: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
-      bind_address: "0.0.0.0"
-      port: 8080
       limiter: false
       public_instance: false
-
-    outgoing:
-      request_timeout: 10.0
