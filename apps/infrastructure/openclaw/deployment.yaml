@@ -23,26 +23,20 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
       initContainers:
-        - name: seed-config
-          image: busybox:1.36
+        # Copy RTK plugin from ConfigMap + merge openclaw.json (Control UI defaults, searxng
+        # cleanup, rtk-rewrite). Replaces seed-config + merge-openclaw-rtk-config + seed-rtk-plugin
+        # — all were idempotent every pod start, not one-off jobs.
+        - name: bootstrap-openclaw-config
+          image: ghcr.io/brettswift/openclaw-gateway:live
+          imagePullPolicy: Always
           command:
             - sh
             - -c
             - |
-              mkdir -p /data/.openclaw
-              if [ ! -f /data/.openclaw/openclaw.json ] && [ ! -f /data/openclaw.json ]; then
-                echo '{"gateway":{"controlUi":{"allowedOrigins":["https://home.brettswift.com","https://openclaw.home.brettswift.com"]}}}' > /data/.openclaw/openclaw.json
-              fi
-          volumeMounts:
-            - name: data
-              mountPath: /data
-        - name: merge-openclaw-rtk-config
-          image: ghcr.io/brettswift/openclaw-gateway:live
-          imagePullPolicy: Always
-          command:
-            - python3
-            - -c
-            - |
+              set -e
+              mkdir -p /data/.openclaw/extensions/rtk-rewrite
+              cp /rtk/index.ts /rtk/openclaw.plugin.json /data/.openclaw/extensions/rtk-rewrite/
+              python3 - <<'PY'
               import json
               import os
 
@@ -53,8 +47,16 @@ spec:
                   with open(path, encoding="utf-8") as f:
                       data = json.load(f)
 
-              plugins = data.setdefault("plugins", {})
+              allowed = [
+                  "https://home.brettswift.com",
+                  "https://openclaw.home.brettswift.com",
+              ]
+              g = data.setdefault("gateway", {})
+              cu = g.setdefault("controlUi", {})
+              if not cu.get("allowedOrigins"):
+                  cu["allowedOrigins"] = allowed
 
+              plugins = data.setdefault("plugins", {})
               # Clean up stale searxng plugin entries (plugin not installed)
               if "searxng" in plugins.get("allow", []):
                   plugins["allow"] = [p for p in plugins["allow"] if p != "searxng"]
@@ -73,24 +75,14 @@ spec:
               with open(path, "w", encoding="utf-8") as f:
                   json.dump(data, f, indent=2)
                   f.write("\n")
-          volumeMounts:
-            - name: data
-              mountPath: /data
-        - name: seed-rtk-plugin
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              set -e
-              mkdir -p /data/.openclaw/extensions/rtk-rewrite
-              cp /rtk/index.ts /rtk/openclaw.plugin.json /data/.openclaw/extensions/rtk-rewrite/
+              PY
           volumeMounts:
             - name: data
               mountPath: /data
             - name: rtk-plugin-files
               mountPath: /rtk
               readOnly: true
+        # Root: migration from legacy paths, crash restore via sentinel, chown/chmod, SSH key perms
         - name: ensure-workspace-perms
           image: busybox:1.36
           securityContext:
