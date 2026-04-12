@@ -3,5 +3,5 @@ resources:
   - cert-manager/
   - external-dns/
   - mcp-server/
-  - openclaw/
-  - searxng/
+  # openclaw/ and searxng/ are deployed by the Argo CD Application "openclaw"
+  # (path apps/infrastructure/openclaw) to avoid duplicate resources with this app.
