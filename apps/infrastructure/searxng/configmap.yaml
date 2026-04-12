@@ -4,6 +4,7 @@ metadata:
   name: searxng-settings
   namespace: openclaw
 data:
+  # Mounted at /etc/searxng/settings.yml by the volume mount
   settings.yml: |
     general:
       debug: false

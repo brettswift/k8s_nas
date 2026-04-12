@@ -19,17 +19,20 @@ spec:
         app: searxng
     spec:
       initContainers:
-        - name: permissions
+        - name: init
           image: docker.io/searxng/searxng:latest
           imagePullPolicy: Always
           command:
             - sh
             - -c
             - |
-              mkdir -p /etc/searxng /var/cache/searxng
+              # Copy settings from ConfigMap (mounted read-only) to writable volume
+              cp /etc/searxng-defaults/settings.yml /etc/searxng/settings.yml
               chown -R 999:999 /etc/searxng /var/cache/searxng
               chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng
           volumeMounts:
+            - name: config-defaults
+              mountPath: /etc/searxng-defaults
             - name: config
               mountPath: /etc/searxng
             - name: data
@@ -53,11 +56,7 @@ spec:
               value: "1"
             - name: SEARXNG_FORMATS
               value: "html json"
-            - name: USE_DEFAULT_SETTINGS
-              value: "false"
             - name: SEARXNG_LIMITER
-              value: "false"
-            - name: SEARXNG_PUBLIC_INSTANCE
               value: "false"
           volumeMounts:
             - name: config
@@ -87,6 +86,9 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 2
       volumes:
+        - name: config-defaults
+          configMap:
+            name: searxng-settings
         - name: config
           emptyDir: {}
         - name: data
