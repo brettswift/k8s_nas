@@ -61,7 +61,7 @@ Claude invokes these skills automatically or on request:
 ```
 k8s_nas/
 ├── apps/                          # All application manifests
-│   ├── infrastructure/            # Core services (argocd, cert-manager, monitoring, blocky, external-dns)
+│   ├── infrastructure/            # Core services (argocd, cert-manager, monitoring, external-dns)
 │   ├── media-services/            # Starr apps (jellyfin, qbittorrent, starr/)
 │   ├── homeautomation/            # Home Assistant, Matter server
 │   └── homepage/                  # Homepage dashboard

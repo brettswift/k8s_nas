@@ -1,6 +1,5 @@
 resources:
   # - nvidia-device-plugin/  # Disabled - glibc incompatibility with host OS
-  - blocky/
   - cert-manager/
   - external-dns/
   - mcp-server/
