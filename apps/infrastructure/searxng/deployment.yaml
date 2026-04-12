@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: openclaw
+  labels:
+    app: searxng
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+      initContainers:
+        - name: permissions
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+          command:
+            - sh
+            - -c
+            - |
+              chown -R 999:999 /etc/searxng /var/cache/searxng
+              chmod -R u+rwX,g+rX,o-rwx /etc/searxng /var/cache/searxng
+          volumeMounts:
+            - name: config
+              mountPath: /etc/searxng
+            - name: data
+              mountPath: /var/cache/searxng
+      containers:
+        - name: searxng
+          image: ghcr.io/searxng/searxng:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: SEARXNG_BASE_URL
+              value: "https://search.home.brettswift.com/"
+            - name: SEARXNG_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: searxng-secrets
+                  key: secret
+                  optional: true
+            # Optional: enable valkey for bot protection
+            # - name: SEARXNG_REDIS_URL
+            #   value: "redis://valkey:6379/0"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/searxng
+            - name: data
+              mountPath: /var/cache/searxng
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: searxng-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: searxng-data
