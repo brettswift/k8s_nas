@@ -55,10 +55,8 @@ spec:
                   name: searxng-secrets
                   key: secret
                   optional: true
-            - name: SEARXNG_JSON
-              value: "1"
-            - name: SEARXNG_FORMATS
-              value: "html json"
+            - name: USE_DEFAULT_SETTINGS
+              value: "false"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng

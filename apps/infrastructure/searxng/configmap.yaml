@@ -4,8 +4,38 @@ metadata:
   name: searxng-settings
   namespace: openclaw
 data:
-  USE_DEFAULT_SETTINGS: "false"
-  SEARXNG_SECRET: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
-  SEARXNG_JSON: "1"
-  SEARXNG_FORMATS: "html json"
-  SEARXNG_INSTANCE_NAME: "Brett's SearXNG"
+  settings.yml: |
+    general:
+      debug: false
+      instance_name: "Brett's SearXNG"
+      privacypolicy_url: false
+      donation_url: false
+      contact_url: false
+      enable_stats: false
+      max_results: 20
+
+    search:
+      api_response_format: json
+      formats:
+        - html
+        - json
+      default_theme: simple
+      simple_style: simple
+
+    server:
+      secret_key: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
+      bind_address: "0.0.0.0"
+      port: 8080
+      limiter: false
+      public_instance: false
+      image_proxy: false
+      http_protocol_version: "1.1"
+
+    outgoing:
+      request_timeout: 10.0
+      max_pool_connections: 100
+      useragent_suffix: ""
+      pool_connections: 100
+      pool_max_size: 20
+
+    use_default_settings: false
