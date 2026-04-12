@@ -50,11 +50,11 @@ spec:
             - name: SEARXNG_BASE_URL
               value: "https://search.home.brettswift.com/"
             - name: SEARXNG_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: searxng-secrets
-                  key: secret
-                  optional: true
+              value: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
+            - name: SEARXNG_JSON
+              value: "1"
+            - name: SEARXNG_FORMATS
+              value: "html json"
             - name: USE_DEFAULT_SETTINGS
               value: "false"
           volumeMounts:
