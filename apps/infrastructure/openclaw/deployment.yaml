@@ -196,6 +196,8 @@ spec:
               value: "1"
             - name: SEARXNG_BASE_URL
               value: "http://searxng.openclaw.svc"
+            - name: SEARXNG_PORT
+              value: "18789"
             # Telegram + other API keys: set in ~/.openclaw/.env on the PVC (avoid
             # duplicating TELEGRAM_BOT_TOKEN as a K8s env secret — it overrides .env).
           volumeMounts:
