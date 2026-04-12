@@ -41,11 +41,7 @@ spec:
               mountPath: /var/cache/searxng
       containers:
         - name: searxng
-<<<<<<< HEAD
           image: docker.io/searxng/searxng:latest
-=======
-          image: docker.io/searxng/searxng:latest
->>>>>>> origin/live
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -59,15 +55,14 @@ spec:
                   name: searxng-secrets
                   key: secret
                   optional: true
-<<<<<<< HEAD
-=======
-            # Optional: enable valkey for bot protection
-            # - name: SEARXNG_REDIS_URL
-            #   value: "redis://valkey:6379/0"
->>>>>>> origin/live
+            - name: SEARXNG_JSON
+              value: "1"
+            - name: SEARXNG_FORMATS
+              value: "html json"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng
+              readOnly: true
             - name: data
               mountPath: /var/cache/searxng
           resources:
@@ -94,8 +89,8 @@ spec:
             failureThreshold: 2
       volumes:
         - name: config
-          persistentVolumeClaim:
-            claimName: searxng-config
+          configMap:
+            name: searxng-settings
         - name: data
           persistentVolumeClaim:
             claimName: searxng-data

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-settings
+  namespace: openclaw
+data:
+  USE_DEFAULT_SETTINGS: "false"
+  SEARXNG_SECRET: "UP7ucIULLX8uoKsQnJIk9UK21A10gZ2pydbntsy6aFc"
+  SEARXNG_JSON: "1"
+  SEARXNG_FORMATS: "html json"
+  SEARXNG_INSTANCE_NAME: "Brett's SearXNG"
