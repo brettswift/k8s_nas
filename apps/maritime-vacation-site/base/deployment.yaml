@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maritime-vacation-site
+  namespace: maritime-vacation-site
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maritime-vacation-site
+  template:
+    metadata:
+      labels:
+        app: maritime-vacation-site
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/buddybs/maritime-vacation-site:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"

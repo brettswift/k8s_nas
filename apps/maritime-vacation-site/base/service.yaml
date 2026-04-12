@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maritime-vacation-site
+  namespace: maritime-vacation-site
+spec:
+  selector:
+    app: maritime-vacation-site
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
