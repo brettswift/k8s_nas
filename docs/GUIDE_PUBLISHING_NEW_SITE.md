@@ -23,7 +23,8 @@ This guide covers the full flow from application code → Docker image → GitOp
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  GitHub: brettswift/k8s_nas (live branch)                                   │
 │  └── apps/maritime-vacation-site/base/                                      │
-│      ├── deployment.yaml     (image ref, ghcr-pull secret)                 │
+│      ├── deployment.yaml   (:latest, ghcr-pull, Always)                    │
+│      ├── image-refresh.* (PostSync job → rollout on digest change)        │
 │      ├── service.yaml                                                         │
 │      ├── ingress.yaml        (vacation.home.brettswift.com)                │
 │      └── namespace.yaml                                                       │
@@ -88,6 +89,20 @@ branch: main
 ```
 
 **Key:** Each project is a **nested folder**, not repo root.
+
+### 4. Image tag `:latest` + PostSync refresh job
+
+Keep the Deployment on **`ghcr.io/brettswift/<project>:latest`** with
+**`imagePullPolicy: Always`**. Kubernetes will not restart pods when the digest
+behind `:latest` changes unless something triggers a rollout.
+
+Add the same **Argo CD PostSync `Job` (`image-refresh`)** pattern as
+`f1-predictor`: after each sync it compares the **GHCR manifest digest** for
+`:latest` to the **running pod’s `imageID`** digest; if they differ, it runs
+**`kubectl rollout restart`**. Include **`image-refresh-hook.yaml`** and
+**`image-refresh-rbac.yaml`** in the app `kustomization.yaml` (see
+`apps/maritime-vacation-site/base/`). The hook mounts **`ghcr-pull`** to call
+the registry API (private packages).
 
 ---
 
@@ -168,7 +183,13 @@ spec:
       containers:
       - name: app
         image: ghcr.io/brettswift/maritime-vacation-site:latest
+        imagePullPolicy: Always
 ```
+
+Copy **`image-refresh-rbac.yaml`** and **`image-refresh-hook.yaml`** from
+`apps/maritime-vacation-site/base/` (adjust image repo, label selector, and
+deployment name for your app). The Job must use label selector
+**`app: <your-app>`** matching the Deployment pod template.
 
 **service.yaml:**
 ```yaml
@@ -201,7 +222,7 @@ spec:
   tls:
   - hosts:
     - vacation.home.brettswift.com
-    secretName: vacation-home-brettswift-com-tls  # ← cert-manager creates this
+    secretName: home-brettswift-com-tls  # wildcard *.home.brettswift.com
   rules:
   - host: vacation.home.brettswift.com
     http:
@@ -224,9 +245,11 @@ namespace: maritime-vacation-site
 
 resources:
   - namespace.yaml
+  - image-refresh-rbac.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - image-refresh-hook.yaml
 ```
 
 ### Phase 4: Add ArgoCD Application
@@ -320,9 +343,10 @@ kubectl get secret ghcr-pull -n <namespace>
 
 **Root Cause:** Missing or incorrect `secretName` in Ingress TLS block.
 
-**Fix:** Ensure cert-manager has created the secret:
+**Fix:** Ensure the TLS secret referenced in Ingress exists (e.g. synced copy of
+wildcard cert):
 ```bash
-kubectl get secret vacation-home-brettswift-com-tls -n maritime-vacation-site
+kubectl get secret home-brettswift-com-tls -n maritime-vacation-site
 ```
 
 ---
@@ -409,7 +433,10 @@ curl -H "Authorization: Bearer $(echo $GITHUB_TOKEN)" \
 4. **Check the actual error** — `kubectl describe pod`/`kubectl get events` tells you everything
 5. **Cert-manager creates TLS secrets** — reference them correctly in Ingress
 6. **The live branch is the source of truth** — ArgoCD watches it, not main
+7. **Use `image-refresh` PostSync job** — so `:latest` rebuilds roll out without
+   editing image digests in Git
 
 ---
 
-*Document created from gaps fixed during BUD-86 deployment (maritime-vacation-site).*
+*Document created from gaps fixed during BUD-86 deployment
+(maritime-vacation-site).*

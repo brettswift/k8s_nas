@@ -5,6 +5,8 @@ namespace: maritime-vacation-site
 
 resources:
   - namespace.yaml
+  - image-refresh-rbac.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - image-refresh-hook.yaml
