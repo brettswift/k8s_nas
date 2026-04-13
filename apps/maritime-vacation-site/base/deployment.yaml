@@ -4,7 +4,7 @@ metadata:
   name: maritime-vacation-site
   namespace: maritime-vacation-site
   annotations:
-    app.commit-sha: "73c44e959f61"
+    app.commit-sha: "dfde565a5b59"
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -16,13 +16,13 @@ spec:
       labels:
         app: maritime-vacation-site
       annotations:
-        app.commit-sha: "73c44e959f61"
+        app.commit-sha: "dfde565a5b59"
     spec:
       imagePullSecrets:
       - name: ghcr-pull
       containers:
       - name: app
-        image: ghcr.io/brettswift/maritime-vacation-site:dfde565a5b593e935f48dbe18081bd3b6b4be97a
+        image: ghcr.io/brettswift/maritime-vacation-site:dfde565a5b591b1055ccbf086a6a34680c1341f3
         imagePullPolicy: Always
         ports:
         - containerPort: 80
