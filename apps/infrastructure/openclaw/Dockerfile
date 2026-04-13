@@ -6,12 +6,20 @@
 FROM ghcr.io/openclaw/openclaw:2026.4.11
 
 ARG RTK_VERSION=v0.33.1
+# Pin client to cluster minor; bump when k3s upgrades.
+ARG KUBECTL_VERSION=v1.31.6
 
 USER root
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     vim bat python3-pip python3-venv curl ca-certificates && \
   rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/kubectl \
+    "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
+  install -m 0755 /tmp/kubectl /usr/local/bin/kubectl && \
+  rm /tmp/kubectl && \
+  kubectl version --client=true --output=yaml
 
 # Debian package "bat" installs /usr/bin/batcat; expose as `bat` for muscle memory.
 RUN if [ -x /usr/bin/batcat ]; then ln -sf /usr/bin/batcat /usr/local/bin/bat; fi

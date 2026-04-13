@@ -1,0 +1,5 @@
+# Optional: append these lines to ~/.openclaw/.env on the openclaw-data PVC.
+# Kubernetes access comes from the pod service account (see rbac.yaml); no kubeconfig file.
+KUBE_EDITOR=vim
+# Hint for operators / tools (OpenClaw does not require this variable):
+KUBECTL_IN_CLUSTER=true

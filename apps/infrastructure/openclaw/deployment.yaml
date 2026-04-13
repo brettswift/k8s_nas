@@ -18,6 +18,8 @@ spec:
       labels:
         app: openclaw-gateway
     spec:
+      serviceAccountName: openclaw-gateway
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -191,6 +193,11 @@ spec:
               value: "http://searxng.openclaw.svc"
             - name: SEARXNG_PORT
               value: "18789"
+            # kubectl: in-cluster credentials (service account + rbac.yaml).
+            - name: KUBE_EDITOR
+              value: vim
+            - name: KUBECTL_IN_CLUSTER
+              value: "true"
             # Telegram + other API keys: set in ~/.openclaw/.env on the PVC (avoid
             # duplicating TELEGRAM_BOT_TOKEN as a K8s env secret — it overrides .env).
           volumeMounts:
