@@ -22,7 +22,7 @@ spec:
       - name: ghcr-pull
       containers:
       - name: app
-        image: ghcr.io/brettswift/maritime-vacation-site:73c44e959f6152773140b2506088ff9ba350d7db
+        image: ghcr.io/brettswift/maritime-vacation-site:dfde565a5b593e935f48dbe18081bd3b6b4be97a
         imagePullPolicy: Always
         ports:
         - containerPort: 80
