@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: maritime-vacation-site
   namespace: maritime-vacation-site
+  annotations:
+    app.commit-sha: "73c44e959f61"
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -13,6 +15,8 @@ spec:
     metadata:
       labels:
         app: maritime-vacation-site
+      annotations:
+        app.commit-sha: "73c44e959f61"
     spec:
       imagePullSecrets:
       - name: ghcr-pull
