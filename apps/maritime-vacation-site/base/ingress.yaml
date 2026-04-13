@@ -13,7 +13,8 @@ spec:
   tls:
   - hosts:
     - vacation.home.brettswift.com
-    secretName: vacation-home-brettswift-com-tls
+    # Same wildcard cert as openclaw.home.brettswift.com (cert-manager / cluster TLS)
+    secretName: home-brettswift-com-tls
   rules:
   - host: vacation.home.brettswift.com
     http:

@@ -14,8 +14,7 @@ spec:
       labels:
         app: maritime-vacation-site
     spec:
-      imagePullSecrets:
-      - name: ghcr-pull
+      # ghcr.io/brettswift/* pulls like openclaw-gateway (no per-namespace ghcr-pull required)
       containers:
       - name: app
         image: ghcr.io/brettswift/maritime-vacation-site:latest
