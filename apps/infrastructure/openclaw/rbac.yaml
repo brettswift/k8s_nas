@@ -120,3 +120,19 @@ subjects:
   - kind: ServiceAccount
     name: openclaw-gateway
     namespace: openclaw
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openclaw-gateway-namespace-admin
+  namespace: maritime-vacation-site
+  labels:
+    app: openclaw-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: openclaw-gateway
+    namespace: openclaw
