@@ -14,7 +14,7 @@ spec:
       labels:
         app: maritime-vacation-site
       annotations:
-        rollme: "2026-04-14-0317"
+        rollme: "2026-04-14-0402"
     spec:
       imagePullSecrets:
       - name: ghcr-pull
