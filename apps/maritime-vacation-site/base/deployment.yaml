@@ -14,13 +14,13 @@ spec:
       labels:
         app: maritime-vacation-site
       annotations:
-        rollme: "2026-04-14-1140"
+        rollme: "2026-04-14-1155"
     spec:
       imagePullSecrets:
       - name: ghcr-pull
       containers:
       - name: app
-        image: ghcr.io/brettswift/maritime-vacation-site:0b81dee7f1f9d08cf8e27ba1e0440d91f60daef4
+        image: ghcr.io/brettswift/maritime-vacation-site:9781817bfd73c82fd4700882ddeefc02435bbaa0
         imagePullPolicy: Always
         env:
         - name: BUILD_DATE
