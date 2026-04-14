@@ -20,7 +20,7 @@ spec:
       - name: ghcr-pull
       containers:
       - name: app
-        image: ghcr.io/brettswift/maritime-vacation-site:latest
+        image: ghcr.io/brettswift/maritime-vacation-site:deb0509912dafa2bc3811f0ef91319c223586160
         imagePullPolicy: Always
         env:
         - name: BUILD_DATE
