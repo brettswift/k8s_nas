@@ -77,7 +77,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: openclaw-gateway-namespace-admin
-  namespace: f1-live
+  namespace: f1-predictor
   labels:
     app: openclaw-gateway
 roleRef:
