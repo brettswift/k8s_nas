@@ -14,14 +14,17 @@ spec:
       labels:
         app: maritime-vacation-site
       annotations:
-        rollme: "2026-04-14-0503"
+        rollme: "2026-04-14-0505"
     spec:
       imagePullSecrets:
       - name: ghcr-pull
       containers:
       - name: app
-        image: ghcr.io/brettswift/maritime-vacation-site:deb0509912da
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/brettswift/maritime-vacation-site:latest
+        imagePullPolicy: Always
+        env:
+        - name: BUILD_DATE
+          value: "2026-04-14-0505"
         ports:
         - containerPort: 80
           name: http
