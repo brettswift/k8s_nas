@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-planner
+  namespace: travel-planner
+  labels:
+    app: travel-planner
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: travel-planner
+  template:
+    metadata:
+      labels:
+        app: travel-planner
+    spec:
+      imagePullSecrets:
+      - name: ghcr-pull
+      containers:
+      - name: app
+        image: ghcr.io/brettswift/travel-planner:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: DATABASE_URL
+          value: "file:/data/travel.db"
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: travel-planner-secret
+              key: api-key
+              optional: true
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: travel-planner-data

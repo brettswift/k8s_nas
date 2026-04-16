@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: travel-planner
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: travel-planner
+    category: website
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  project: apps
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: live
+    path: apps/travel-planner/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: travel-planner
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

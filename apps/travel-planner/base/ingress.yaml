@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: travel-planner
+  namespace: travel-planner
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    external-dns.alpha.kubernetes.io/hostname: vacation.home.brettswift.com
+    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - vacation.home.brettswift.com
+    secretName: home-brettswift-com-tls
+  rules:
+  - host: vacation.home.brettswift.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: travel-planner
+            port:
+              number: 3000
