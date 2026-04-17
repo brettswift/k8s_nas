@@ -33,6 +33,6 @@ resources:
 - alloy-clusterrolebinding.yaml
 - alloy-daemonset.yaml
 # Uptime Kuma - starting fresh
-# - uptime-kuma/
+- uptime-kuma/
 # Netdata - removed: requires cloud login even in older versions
 # - netdata/
