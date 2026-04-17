@@ -1,6 +1,6 @@
 - AI:
     - OpenClaw:
-        - Control UI:
+        - Dashboard:
             href: https://openclaw.home.brettswift.com
             description: Personal AI assistant
             icon: openclaw.png
