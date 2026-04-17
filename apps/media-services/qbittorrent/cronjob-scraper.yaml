@@ -6,10 +6,15 @@ metadata:
 spec:
   # Run hourly from 7am-7pm Mountain Time, Thursday through Sunday
   schedule: "0 7-19 * * 0,4,5,6"
+  # Default is Allow — overlapping runs stacked dozens of pods when the scraper loop misbehaved.
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      # Kill stuck jobs (network hang, bug); normal run is seconds.
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 600
       template:
         spec:
           containers:

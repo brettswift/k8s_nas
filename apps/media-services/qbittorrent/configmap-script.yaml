@@ -216,7 +216,7 @@ data:
     \    \n        # Fetch torrents from API\n        torrent_links = get_torrent_links(SCRAPE_URL)\n\
     \        \n        if not torrent_links:\n            logger.info(\"No Formula.1\
     \ UHD torrents found\")\n            if TEST_MODE:\n                logger.info(\"\
-    [TEST MODE] Exiting after one check\")\n                break\n            logger.info(f\"\
+    [TEST MODE] Exiting after one check\")\n                break\n            if CRON_MODE:\n                logger.info(\"[CRON MODE] Exiting (no matching torrents)\")\n                break\n            logger.info(f\"\
     Sleeping for {CHECK_INTERVAL}s...\")\n            time.sleep(CHECK_INTERVAL)\n\
     \            continue\n        \n        # Display found torrents\n        logger.info(f\"\
     Found {len(torrent_links)} Formula.1 UHD torrent(s) (added within last {MAX_AGE_DAYS}\
