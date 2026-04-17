@@ -1,8 +1,13 @@
 - AI:
     - OpenClaw:
-        href: https://openclaw.home.brettswift.com
-        description: Personal AI assistant
-        icon: openclaw.png
+        - Control UI:
+            href: https://openclaw.home.brettswift.com
+            description: Personal AI assistant
+            icon: openclaw.png
+        - Travel planner:
+            href: https://vacation.home.brettswift.com
+            description: Trip plans, itineraries & travel research
+            icon: mdi-map-marker-path
 - Development:
     - Demo App:
         href: https://home.brettswift.com/demo
