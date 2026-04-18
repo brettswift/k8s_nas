@@ -27,23 +27,13 @@ spec:
           name: http
         env:
         - name: DATABASE_URL
-          value: "file:/data/travel.db"
+          value: file:/data/travel.db
         - name: API_KEY
           valueFrom:
             secretKeyRef:
               name: travel-planner-secret
               key: api-key
               optional: true
-        resources:
-          requests:
-            cpu: "25m"
-            memory: "64Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-        volumeMounts:
-        - name: data
-          mountPath: /data
         livenessProbe:
           httpGet:
             path: /api/health
@@ -58,6 +48,16 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 6
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
       volumes:
       - name: data
         persistentVolumeClaim:

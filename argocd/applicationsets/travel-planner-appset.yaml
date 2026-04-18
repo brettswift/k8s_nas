@@ -1,3 +1,4 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -9,11 +10,11 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "30"
+    argocd.argoproj.io/sync-wave: "35"
 spec:
   project: apps
   source:
-    repoURL: git@github.com:brettswift/k8s_nas.git
+    repoURL: https://github.com/brettswift/k8s_nas.git
     targetRevision: live
     path: apps/travel-planner/base
   destination:
