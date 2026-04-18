@@ -26,6 +26,8 @@ spec:
         - containerPort: 3000
           name: http
         env:
+        - name: NODE_ENV
+          value: production
         - name: DATABASE_URL
           value: file:/data/travel.db
         - name: API_KEY
