@@ -96,6 +96,14 @@ kubectl logs -n <namespace> <pod-name>
 kubectl logs -n <namespace> <pod-name> -f
 ```
 
+## Deploying updated app images
+
+Application **source and CI** live in **separate repositories** (for example travel-planner, f1-predictor). This repo holds Kubernetes manifests and ArgoCD wiring.
+
+- After CI pushes a new image to GHCR, the cluster may still run old pods if the Deployment tag string did not change (**mutable tags** such as `:latest`, `:dev`, `:live`). Use the **PostSync `image-refresh` Job** (where included in the app’s `kustomization.yaml`) or a **manual rollout restart**.
+- Full numbered flow, per-app table, log hints, and links to deeper docs: **`docs/AI_GUIDANCE.md`** → section **Application image refresh (multi-repo)**.
+- Never `kubectl apply` resources owned by ArgoCD; commit to Git and sync.
+
 ## Troubleshooting
 
 ### Cluster Won't Start

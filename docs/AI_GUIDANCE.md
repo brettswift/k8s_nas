@@ -89,6 +89,36 @@ ssh nas
 
 **travel-planner-data** uses annotations so ArgoCD will **not** prune or delete the PVC on sync; you can still remove it explicitly with `kubectl` when you intend to reset the database.
 
+## Application image refresh (multi-repo)
+
+This cluster runs **custom images** built in **separate app repositories** (for example `travel-planner`, `f1-predictor`). `k8s_nas` holds manifests; it usually does **not** commit a new digest for every app release when using a **mutable tag** (`:latest`, `:dev`, `:live`) plus **`imagePullPolicy: Always`**.
+
+### End-to-end flow (numbered)
+
+1. **App repo:** Merge (or push) to the branch your GitHub Actions workflow watches (often `main`). CI builds and pushes the image to GHCR.
+2. **Registry:** The tag you use in the Deployment manifest now points at a **new digest** behind the same tag string.
+3. **Kubernetes:** Pods do not automatically restart when only the digest changes. Either:
+   - **ArgoCD PostSync Job (`image-refresh`)** — polls GHCR for the manifest digest, compares to the running pod’s `imageID`, and runs `kubectl rollout restart` when they differ; or
+   - **Manual:** `kubectl rollout restart deployment/<name> -n <namespace>` after you confirm the new image exists.
+4. **GitOps:** Ensure the app’s `kustomization.yaml` actually **lists** `image-refresh-hook.yaml` and `image-refresh-rbac.yaml` if you rely on that pattern; otherwise the hook never runs.
+5. **Verify:** ArgoCD app healthy, `kubectl rollout status deployment/<name> -n <namespace>`, and optionally `kubectl logs job/image-refresh -n <namespace>` (job name may vary after hook recreation).
+
+### Per-app reference
+
+| App (example) | Namespace (typical) | Deployment | Image (see manifest) | PostSync `image-refresh` in kustomize |
+| --- | --- | --- | --- | --- |
+| travel-planner | `travel-planner` | `travel-planner` | `ghcr.io/brettswift/travel-planner:latest` | Must be in [`apps/travel-planner/base/kustomization.yaml`](../apps/travel-planner/base/kustomization.yaml) |
+| f1-predictor | `f1-predictor` / `f1-predictor-dev` | (see overlay) | `ghcr.io/...` `:live` / `:dev` | Yes — see [`apps/f1-predictor/DEPLOYMENT.md`](../apps/f1-predictor/DEPLOYMENT.md) |
+
+Add rows for other services as they gain the same pattern.
+
+### Troubleshooting
+
+- The hook script often **exits 0** even when GHCR auth fails or the digest cannot be read — **read the Job logs**, not only the exit code.
+- **`ghcr-pull`** (or equivalent) must exist in the **same namespace** as the Job when the registry is private.
+- If CI finishes **after** the hook’s poll window, trigger an **ArgoCD Refresh** on the Application or run a **manual rollout restart**.
+- **Design references:** [`docs/GUIDE_PUBLISHING_NEW_SITE.md`](GUIDE_PUBLISHING_NEW_SITE.md), [`docs/plans/f1-predictor-event-driven-image-refresh.md`](plans/f1-predictor-event-driven-image-refresh.md).
+
 ## Notes
 
 - Keep documentation concise and actionable. Prefer links to details in repository directories (e.g., `argocd/`, `apps/`, `environments/`).
