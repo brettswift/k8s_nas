@@ -1,0 +1,20 @@
+{
+  "travel-planner": {
+    "description": "After GHCR :latest digest updates, rollout these Deployments.",
+    "targets": [
+      {
+        "namespace": "travel-planner",
+        "deployment": "travel-planner"
+      }
+    ]
+  },
+  "f1-predictor": {
+    "description": "Example — adjust namespaces to match your overlays.",
+    "targets": [
+      {
+        "namespace": "f1-predictor",
+        "deployment": "f1-predictor"
+      }
+    ]
+  }
+}

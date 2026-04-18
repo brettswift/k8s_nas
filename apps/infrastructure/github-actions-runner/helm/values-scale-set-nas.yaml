@@ -1,0 +1,20 @@
+# gha-runner-scale-set values — Argo CD multi-source $values ref (see arc-runner-scale-set-nas.yaml).
+# Before sync: create secret arc-github-app-credentials in arc-runners (see docs/IMAGE_REFRESH_EVENTS.md).
+#
+# GitHub: runs-on in workflows must match runnerScaleSetName (nas-k8s-rollout).
+
+githubConfigUrl: "https://github.com/brettswift/k8s_nas"
+
+# Pre-created Kubernetes secret in namespace arc-runners:
+# - GitHub App: keys github_app_id, github_app_installation_id, github_app_private_key
+# - Or PAT: key github_token
+githubConfigSecret: arc-github-app-credentials
+
+runnerScaleSetName: nas-k8s-rollout
+
+maxRunners: 5
+minRunners: 0
+
+template:
+  spec:
+    serviceAccountName: arc-nas-runner

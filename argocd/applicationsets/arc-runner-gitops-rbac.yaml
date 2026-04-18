@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runner-gitops-rbac
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: arc-runner-gitops-rbac
+    category: infrastructure
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: infrastructure
+  source:
+    repoURL: git@github.com:brettswift/k8s_nas.git
+    targetRevision: live
+    path: apps/infrastructure/github-actions-runner
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

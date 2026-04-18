@@ -1,0 +1,71 @@
+# Reusable: notify k8s_nas to roll out workloads after a new image exists (repository_dispatch).
+# Callers: uses: brettswift/k8s_nas/.github/workflows/dispatch-image-ready-reusable.yml@live
+# Fallback: copy this file or the curl step into another repo if reusable workflows are blocked.
+
+name: Reusable — dispatch image ready (k8s_nas)
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: "Inventory key in scripts/image-refresh-inventory.json"
+        required: true
+        type: string
+      tag:
+        description: "Optional image tag (passed through client_payload for logging)"
+        required: false
+        type: string
+        default: ""
+      sha:
+        description: "Optional git SHA (passed through client_payload)"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      K8S_NAS_DISPATCH_PAT:
+        description: "PAT with permission to POST repository_dispatch on k8s_nas"
+        required: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: repository_dispatch (image_ready)
+        env:
+          PAT: ${{ secrets.K8S_NAS_DISPATCH_PAT }}
+          OWNER: ${{ github.repository_owner }}
+          APP: ${{ inputs.app }}
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, urllib.request
+
+          owner = os.environ["OWNER"]
+          app = os.environ["APP"]
+          tag = os.environ.get("TAG") or ""
+          sha = os.environ.get("SHA") or ""
+          pat = os.environ["PAT"]
+
+          body = {
+              "event_type": "image_ready",
+              "client_payload": {"app": app, "tag": tag, "sha": sha},
+          }
+          data = json.dumps(body).encode("utf-8")
+          url = f"https://api.github.com/repos/{owner}/k8s_nas/dispatches"
+          req = urllib.request.Request(
+              url,
+              data=data,
+              method="POST",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {pat}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(req) as resp:
+              print("dispatch status", resp.status)
+          PY

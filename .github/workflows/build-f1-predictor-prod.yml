@@ -46,3 +46,13 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/f1-predictor:dev
             ghcr.io/${{ github.repository_owner }}/f1-predictor:live
+
+  notify-cluster-image-ready:
+    needs: build
+    if: success()
+    uses: brettswift/k8s_nas/.github/workflows/dispatch-image-ready-reusable.yml@live
+    secrets:
+      K8S_NAS_DISPATCH_PAT: ${{ secrets.K8S_NAS_DISPATCH_PAT }}
+    with:
+      app: f1-predictor
+      sha: ${{ github.sha }}

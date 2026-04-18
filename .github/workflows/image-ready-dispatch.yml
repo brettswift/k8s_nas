@@ -1,0 +1,60 @@
+# Event-driven cluster rollouts after a new image exists on GHCR.
+#
+# Triggered by repository_dispatch from app repos (reusable workflow or copy-paste).
+# MUST run on a runner scale set in this repo (in-cluster kubectl). Scale set name = runs-on.
+#
+# Setup: docs/IMAGE_REFRESH_EVENTS.md
+
+name: Image ready — rollout from inventory
+
+on:
+  repository_dispatch:
+    types: [image_ready]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Inventory key (e.g. travel-planner)"
+        required: true
+        type: string
+
+jobs:
+  rollout:
+    # Must match runnerScaleSetName / Helm release for gha-runner-scale-set (see docs).
+    runs-on: nas-k8s-rollout
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout (for inventory + script)
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.33.0"
+
+      - name: Resolve app key
+        id: app
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_APP: ${{ github.event.client_payload.app }}
+          INPUT_APP: ${{ github.event.inputs.app }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            APP="$DISPATCH_APP"
+          else
+            APP="$INPUT_APP"
+          fi
+          if [ -z "${APP:-}" ] || [ "$APP" = "null" ]; then
+            echo "Missing app in client_payload or workflow_dispatch input"
+            exit 1
+          fi
+          echo "key=$APP" >> "$GITHUB_OUTPUT"
+
+      - name: kubectl version
+        run: kubectl version --client=true
+
+      - name: Roll out from inventory
+        run: python3 scripts/run-image-refresh-inventory.py "${{ steps.app.outputs.key }}"

@@ -93,6 +93,14 @@ ssh nas
 
 This cluster runs **custom images** built in **separate app repositories** (for example `travel-planner`, `f1-predictor`). `k8s_nas` holds manifests; it usually does **not** commit a new digest for every app release when using a **mutable tag** (`:latest`, `:dev`, `:live`) plus **`imagePullPolicy: Always`**.
 
+### Preferred: event-driven dispatch and ARC
+
+Use **[`docs/IMAGE_REFRESH_EVENTS.md`](IMAGE_REFRESH_EVENTS.md)** when Actions Runner Controller is installed: after CI pushes to GHCR, a caller workflow triggers **`repository_dispatch`** on `k8s_nas`, and **[`image-ready-dispatch.yml`](../.github/workflows/image-ready-dispatch.yml)** runs on the in-cluster scale set (**`runs-on: nas-k8s-rollout`**) to **`kubectl rollout restart`** targets listed in **`scripts/image-refresh-inventory.json`**. Callers can **`uses:`** [`.github/workflows/dispatch-image-ready-reusable.yml`](../.github/workflows/dispatch-image-ready-reusable.yml) or copy that workflow if reusable workflows are blocked.
+
+### Fallback: PostSync hook or manual
+
+Use this numbered flow when dispatch + ARC is not wired, or as a backup.
+
 ### End-to-end flow (numbered)
 
 1. **App repo:** Merge (or push) to the branch your GitHub Actions workflow watches (often `main`). CI builds and pushes the image to GHCR.

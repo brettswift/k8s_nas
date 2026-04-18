@@ -9,6 +9,7 @@ spec:
   sourceRepos:
     - 'https://github.com/brettswift/k8s_nas.git'
     - 'git@github.com:brettswift/k8s_nas.git'
+    - 'ghcr.io/actions/actions-runner-controller-charts'
 
   destinations:
     - namespace: 'ingress-nginx'
@@ -35,6 +36,10 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: 'qbittorrent'
       server: https://kubernetes.default.svc
+    - namespace: 'arc-system'
+      server: https://kubernetes.default.svc
+    - namespace: 'arc-runners'
+      server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
     - group: ''
@@ -55,6 +60,8 @@ spec:
       kind: ClusterRole
     - group: 'rbac.authorization.k8s.io'
       kind: ClusterRoleBinding
+    - group: 'apiextensions.k8s.io'
+      kind: CustomResourceDefinition
     # Traefik CRDs
     - group: 'traefik.io'
       kind: IngressRoute
@@ -79,6 +86,8 @@ spec:
     - group: ''
       kind: Deployment
     - group: ''
+      kind: Pod
+    - group: ''
       kind: PersistentVolumeClaim
     - group: 'apps'
       kind: Deployment
@@ -94,10 +103,22 @@ spec:
       kind: CronJob
     - group: 'batch'
       kind: Job
+    - group: 'coordination.k8s.io'
+      kind: Lease
+    - group: 'apps'
+      kind: ReplicaSet
     - group: 'rbac.authorization.k8s.io'
       kind: Role
     - group: 'rbac.authorization.k8s.io'
       kind: RoleBinding
+    - group: 'actions.github.com'
+      kind: AutoscalingRunnerSet
+    - group: 'actions.github.com'
+      kind: AutoscalingListener
+    - group: 'actions.github.com'
+      kind: EphemeralRunnerSet
+    - group: 'actions.github.com'
+      kind: EphemeralRunner
     # Traefik CRDs (namespaced)
     - group: 'traefik.io'
       kind: IngressRoute

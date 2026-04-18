@@ -1,0 +1,24 @@
+# ServiceAccount used by gha-runner-scale-set runner pods (see helm/values-scale-set-nas.yaml).
+# cluster-admin: operator-requested so rollouts and future Job-based hooks work in every namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: arc-nas-runner
+  namespace: arc-runners
+  labels:
+    app.kubernetes.io/name: github-actions-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: arc-nas-runner-cluster-admin
+  labels:
+    app.kubernetes.io/name: github-actions-runner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: arc-nas-runner
+    namespace: arc-runners
