@@ -54,13 +54,29 @@ notify-cluster-image-ready:
 
 ## ARC (runner scale set) on the cluster
 
-GitOps manifests live under:
+GitOps for **RBAC + namespace** lives under [`apps/infrastructure/github-actions-runner/`](../apps/infrastructure/github-actions-runner/) (Argo Application **`arc-runner-gitops-rbac`**). That includes namespace **`arc-runners`**, `ServiceAccount` **`arc-nas-runner`**, and **`ClusterRoleBinding`** to **`cluster-admin`**.
 
-- [`apps/infrastructure/github-actions-runner/`](../apps/infrastructure/github-actions-runner/) — namespace `arc-runners`, `ServiceAccount` **`arc-nas-runner`**, **`ClusterRoleBinding`** to **`cluster-admin`** (full cluster access for rollouts and future Job-based automation in any namespace).
-- [`argocd/applicationsets/arc-runner-scale-set-controller.yaml`](../argocd/applicationsets/arc-runner-scale-set-controller.yaml) — installs **`gha-runner-scale-set-controller`** into **`arc-system`** (chart `0.10.1` from `ghcr.io/actions/actions-runner-controller-charts`).
-- [`argocd/applicationsets/arc-runner-scale-set-nas.yaml`](../argocd/applicationsets/arc-runner-scale-set-nas.yaml) — installs **`gha-runner-scale-set`** as Helm release **`nas-k8s-rollout`** into **`arc-runners`**, with values from [`helm/values-scale-set-nas.yaml`](../apps/infrastructure/github-actions-runner/helm/values-scale-set-nas.yaml).
+The official Helm charts (**`gha-runner-scale-set-controller`**, **`gha-runner-scale-set`**) are installed with **Helm from this machine** (not Argo), because Argo CD can fail applying the chart CRDs with `metadata.annotations: Too long` unless CRDs are applied with **server-side apply** first.
 
 **`runs-on`:** For [runner scale sets](https://docs.github.com/en/actions/how-tos/manage-runners/use-actions-runner-controller/deploy-runner-scale-sets), workflows must use the **scale set name** as `runs-on` (here: **`nas-k8s-rollout`**), not only `self-hosted` labels.
+
+### Helm install (controller + scale set)
+
+From a clone of `k8s_nas` with `KUBECONFIG` pointing at the cluster, chart version **`0.10.1`**:
+
+```bash
+helm show crds oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller --version 0.10.1 \
+  | kubectl apply --server-side -f -
+
+helm upgrade --install arc-runner-scale-set-controller \
+  oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller \
+  --version 0.10.1 -n arc-system --create-namespace
+
+helm upgrade --install nas-k8s-rollout \
+  oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
+  --version 0.10.1 -n arc-runners \
+  -f apps/infrastructure/github-actions-runner/helm/values-scale-set-nas.yaml
+```
 
 ### GitHub App or PAT for runner registration
 
@@ -86,10 +102,7 @@ The App or PAT must be allowed to register **repository** runners for **`brettsw
 
 ### Argo CD
 
-- The **`infrastructure`** AppProject allows **`arc-system`**, **`arc-runners`**, and the OCI chart repo (see [`argocd/projects/infrastructure.yaml`](../argocd/projects/infrastructure.yaml)).
-- The scale set Application uses **multi-source** (`$values` ref). Argo CD **2.6+** is required. If your Argo CD is older, upgrade or inline the Helm values in the Application manifest.
-
-If Argo CD cannot pull OCI charts anonymously, add the Helm OCI repository in Argo CD settings (same URL as `repoURL`).
+- The **`infrastructure`** AppProject allows **`arc-system`**, **`arc-runners`**, and the OCI chart repo (see [`argocd/projects/infrastructure.yaml`](../argocd/projects/infrastructure.yaml)) so you can move Helm back under Argo later if you solve CRD apply (for example server-side CRD apply in a Job, or a newer chart).
 
 ### Manual test
 

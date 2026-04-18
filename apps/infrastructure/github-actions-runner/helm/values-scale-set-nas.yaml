@@ -1,4 +1,4 @@
-# gha-runner-scale-set values — Argo CD multi-source $values ref (see arc-runner-scale-set-nas.yaml).
+# gha-runner-scale-set values — used by Helm -f (see docs/IMAGE_REFRESH_EVENTS.md).
 # Before sync: create secret arc-github-app-credentials in arc-runners (see docs/IMAGE_REFRESH_EVENTS.md).
 #
 # GitHub: runs-on in workflows must match runnerScaleSetName (nas-k8s-rollout).
