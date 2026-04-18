@@ -118,6 +118,7 @@ See [`scripts/image-refresh-inventory.json`](../scripts/image-refresh-inventory.
 | Symptom | Likely cause |
 | --- | --- |
 | Dispatch workflow fails with `401` / `403` | PAT missing, wrong scopes, or reusable workflow access not allowed from the caller repo. |
+| **`startup_failure` on every job** (caller repo) | Repository **Actions → General → Actions permissions** set to **“Allow local actions and reusable workflows only”** (`local_only`) blocks Marketplace actions such as `actions/checkout`. Use **“Allow all actions and reusable workflows”** or **“Allow select actions”** with the actions you need. |
 | **`image-ready-dispatch`** queued forever | No runner registered for scale set **`nas-k8s-rollout`**; check controller logs, GitHub App install, and secret **`arc-github-app-credentials`**. |
 | Rollout fails with RBAC errors | Runner `ServiceAccount` should be **`arc-nas-runner`** (cluster-admin binding). Confirm pod spec uses that SA. |
 | Argo CD sync denied | AppProject `infrastructure` missing a resource kind or namespace; compare with the ARC manifests and extend the project if you upgrade chart versions. |
