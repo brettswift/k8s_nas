@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: travel-planner-data
   namespace: travel-planner
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   accessModes:
     - ReadWriteOnce

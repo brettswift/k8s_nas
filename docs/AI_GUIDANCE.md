@@ -77,6 +77,18 @@ ssh nas
 - `qbittorrent`: qBittorrent with VPN (gluetun)
 - `monitoring`: Prometheus, Grafana
 
+## Stateful apps (PVCs) with ArgoCD auto-sync
+
+**Problem seen 2026-04-18:** `travel-planner` had a PVC manifest in Git but it was **not** listed in `kustomization.yaml` resources while the app used `automated: { prune: true, selfHeal: true }`. A later commit added `pvc.yaml` to `kustomization`. ArgoCD reconciled drift against a manually-created PVC on **`local-path`**, which **replaced** the claim and **wiped** the SQLite volume.
+
+**Rules for agents**
+
+- From the **first** commit of a stateful app, include every PVC in `kustomization.yaml` resources (or do not use a PVC until it is fully wired). Never “add PVC to kustomize later” without a backup and a migration plan.
+- **`local-path`**: deleting the PVC deletes the underlying host directory — data is not recoverable from the cluster alone.
+- **Intentional wipe:** scale deployment to 0 → backup if needed → `kubectl delete pvc …` → let GitOps recreate → restore data → scale up. Do not rely on ArgoCD prune to “clean up” data PVCs.
+
+**travel-planner-data** uses annotations so ArgoCD will **not** prune or delete the PVC on sync; you can still remove it explicitly with `kubectl` when you intend to reset the database.
+
 ## Notes
 
 - Keep documentation concise and actionable. Prefer links to details in repository directories (e.g., `argocd/`, `apps/`, `environments/`).
