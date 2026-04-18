@@ -16,6 +16,8 @@ spec:
       labels:
         app: travel-planner
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull
       containers:
       - name: app
         image: ghcr.io/brettswift/travel-planner:latest
