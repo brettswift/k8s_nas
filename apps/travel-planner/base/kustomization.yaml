@@ -6,6 +6,5 @@ resources:
 - deployment.yaml
 - service.yaml
 - ingress.yaml
-- ingress-external.yaml
 - image-refresh-rbac.yaml
 - image-refresh-hook.yaml

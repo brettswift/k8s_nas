@@ -6,16 +6,16 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    external-dns.alpha.kubernetes.io/hostname: vacation.home.brettswift.com
-    external-dns.alpha.kubernetes.io/target: home.brettswift.com
+    external-dns.alpha.kubernetes.io/hostname: vacation.brettswift.com
+    external-dns.alpha.kubernetes.io/target: "68.147.109.77"
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - vacation.home.brettswift.com
-    secretName: home-brettswift-com-tls
+    - vacation.brettswift.com
+    secretName: brettswift-com-tls
   rules:
-  - host: vacation.home.brettswift.com
+  - host: vacation.brettswift.com
     http:
       paths:
       - path: /
